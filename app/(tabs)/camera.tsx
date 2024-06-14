@@ -1,4 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import * as tf from "@tensorflow/tfjs";
+import "@tensorflow/tfjs-react-native";
+import * as mobilenet from "@tensorflow-models/mobilenet";
+import * as jpeg from "jpeg-js";
+import * as ImagePicker from "expo-image-picker";
+import { CameraView, useCameraPermissions, CameraType } from "expo-camera";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   StyleSheet,
   Text,
@@ -8,22 +15,24 @@ import {
   Image,
   TouchableOpacity,
   Platform,
+  Button,
 } from "react-native";
-import * as tf from "@tensorflow/tfjs";
-import "@tensorflow/tfjs-react-native";
-import * as mobilenet from "@tensorflow-models/mobilenet";
-import * as jpeg from "jpeg-js";
-import * as ImagePicker from "expo-image-picker";
 
 export default function Camera() {
-  // State variables
+  // TensorFlow.js and model state
   const [isTfReady, setTfReady] = useState(false);
   const [isModelReady, setModelReady] = useState(false);
+  const [isPredictionLoading, setPredictionLoading] = useState(false);
   const [predictions, setPredictions] = useState<
     { className: string; probability: number }[]
   >([]);
   const [image, setImage] = useState("");
   const [model, setModel] = useState<mobilenet.MobileNet | null>(null);
+  // Camera state
+  const [facing, setFacing] = useState<CameraType | undefined>("back");
+  const [permission, requestPermission] = useCameraPermissions();
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const cameraRef = useRef<CameraView>(null);
 
   // Load the TensorFlow.js model and request camera roll permissions
   useEffect(() => {
@@ -68,17 +77,60 @@ export default function Camera() {
     }
   };
 
+  // Request permission to access the camera roll
+  const getPermissionAsync = async () => {
+    if (Platform.OS === "ios") {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        alert("We need camera roll permissions to make this work!");
+      }
+    }
+  };
+
+  // Request permission to access the camera when opening the camera
+  const openCamera = async () => {
+    if (!permission || !permission.granted) {
+      const { status } = await requestPermission();
+      if (status !== "granted") {
+        alert("We need camera permissions to open the camera");
+        return;
+      }
+    }
+    setCameraOpen(true);
+  };
+
+  function toggleCameraFacing() {
+    setFacing((current) => (current === "back" ? "front" : "back"));
+  }
+
+  const takePicture = async () => {
+    if (cameraRef.current) {
+      const photo = await cameraRef.current.takePictureAsync();
+      if (photo) {
+        setImage(photo.uri);
+        console.log("Image taken:", photo.uri);
+      } else {
+        console.log("Failed to take picture");
+      }
+      setCameraOpen(false);
+    } else {
+      console.log("Camera not ready");
+    }
+  };
   // Classify the image
   const classifyImage = async () => {
     try {
       if (!isTfReady || !isModelReady || !image || !model) {
         return;
       }
+      setPredictionLoading(true);
+      setPredictions([]); // Clear previous predictions
 
       // Get the raw image data
       const response = await fetch(image);
       const rawImageData = await response.arrayBuffer();
-      const imageTensor = imageToTensor(rawImageData);
+      const imageTensor = tf.tidy(() => imageToTensor(rawImageData));
 
       // Make a prediction through the model on our image
       const predictions = await model.classify(imageTensor);
@@ -88,19 +140,13 @@ export default function Camera() {
       } else {
         console.log("No predictions available");
       }
+
+      // Dispose the tensor to free up GPU memory
+      imageTensor.dispose();
     } catch (error) {
       console.log(error);
-    }
-  };
-
-  // Request permission to access the camera roll
-  const getPermissionAsync = async () => {
-    if (Platform.OS === "ios") {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        alert("Sorry, we need camera roll permissions to make this work!");
-      }
+    } finally {
+      setPredictionLoading(false);
     }
   };
 
@@ -111,7 +157,7 @@ export default function Camera() {
       useTArray: TO_UINT8ARRAY,
     });
 
-    // Drop the alpha channel info for mobilenet
+    // Drop the alpha channel info
     const buffer = new Uint8Array(width * height * 3);
     let offset = 0;
     for (let i = 0; i < buffer.length; i += 3) {
@@ -120,7 +166,6 @@ export default function Camera() {
       buffer[i + 2] = data[offset + 2];
       offset += 4;
     }
-
     return tf.tensor3d(buffer, [height, width, 3]);
   };
 
@@ -133,7 +178,7 @@ export default function Camera() {
       return null;
     }
     return (
-      <Text key={prediction.className} style={styles.text}>
+      <Text key={prediction.className} className="text-white text-lg">
         {prediction.className} ({(prediction.probability * 100).toFixed(2)}%)
       </Text>
     );
@@ -145,105 +190,85 @@ export default function Camera() {
   }, [isTfReady, isModelReady, image]);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView className="flex-1 bg-gray-800 items-center justify-center ">
       <StatusBar barStyle="light-content" />
-      <View style={styles.loadingContainer}>
-        <Text style={styles.text}>
-          TFJS ready? {isTfReady ? <Text>✅</Text> : ""}
-        </Text>
-
-        <View style={styles.loadingModelContainer}>
-          <Text style={styles.text}>Model ready? </Text>
-          {isModelReady ? (
-            <Text style={styles.text}>✅</Text>
-          ) : (
-            <ActivityIndicator size="small" />
-          )}
+      {!cameraOpen && (
+        <View>
+          <View className="flex justify-center items-center m-4">
+            <Text className="text-white text-lg">
+              TFJS ready? {isTfReady ? <Text>✅</Text> : ""}
+            </Text>
+            <Text className="text-white text-lg">
+              Model ready?{" "}
+              {isModelReady ? (
+                <Text>✅</Text>
+              ) : (
+                <ActivityIndicator size="small" />
+              )}
+            </Text>
+          </View>
+          <View className="m-4 flex justify-center items-center">
+            <TouchableOpacity
+              onPress={selectImage}
+              className="p-2 m-2 bg-white rounded-xl"
+            >
+              <Text className="text-lg">Upload Picture</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={openCamera}
+              className="p-2 m-2 bg-white rounded-xl"
+            >
+              <Text className="text-lg">Open Camera</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-      <TouchableOpacity
-        style={styles.imageWrapper}
-        onPress={isModelReady ? selectImage : undefined}
-      >
-        {image ? (
-          <Image source={{ uri: image }} style={styles.imageContainer} />
-        ) : (
-          <Text style={styles.transparentText}>No image selected</Text>
-        )}
+      )}
 
-        {isModelReady && !image && (
-          <Text style={styles.transparentText}>Tap to choose image</Text>
-        )}
-      </TouchableOpacity>
-      <View style={styles.predictionWrapper}>
-        {isModelReady && image && (
-          <Text style={styles.text}>
+      {image && !cameraOpen && (
+        <TouchableOpacity
+          className="w-72 h-72 p-2 border-4 border-dashed border-red-500 relative justify-center items-center"
+          onPress={isModelReady ? selectImage : undefined}
+        >
+          <Image
+            source={{ uri: image }}
+            className="w-64 h-64 absolute justify-center items-center"
+          />
+          {isModelReady && !image && (
+            <Text className="text-lg text-white">Tap to choose image</Text>
+          )}
+        </TouchableOpacity>
+      )}
+      <View className="flex justify-center items-center m-4">
+        {isModelReady && image && !cameraOpen && (
+          <Text className="text-white text-lg">
             Predictions:{" "}
-            {predictions ? (
-              ""
+            {isPredictionLoading ? (
+              <ActivityIndicator size="small" color="#00ff00" />
             ) : (
-              <ActivityIndicator size="large" color="#00ff00" />
+              ""
             )}
           </Text>
         )}
-        {isModelReady && predictions && renderPrediction(predictions[0])}
+        {isModelReady &&
+          !cameraOpen &&
+          predictions &&
+          renderPrediction(predictions[0])}
       </View>
-    </View>
+      {cameraOpen && (
+        <CameraView ref={cameraRef} facing={facing} className="flex-1 w-full">
+          <View className="absolute bottom-0 left-0 right-0 flex flex-row justify-between p-4">
+            <TouchableOpacity onPress={takePicture}>
+              <Text className="text-white text-lg">Take Picture</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={toggleCameraFacing}>
+              <Text className="text-white text-lg">Flip Camera</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setCameraOpen(false)}>
+              <Text className="text-white text-lg">Close Camera</Text>
+            </TouchableOpacity>
+          </View>
+        </CameraView>
+      )}
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#171f24",
-    alignItems: "center",
-  },
-  loadingContainer: {
-    marginTop: 80,
-    justifyContent: "center",
-  },
-  text: {
-    color: "#ffffff",
-    fontSize: 16,
-  },
-  loadingModelContainer: {
-    flexDirection: "row",
-    marginTop: 10,
-  },
-  imageWrapper: {
-    width: 280,
-    height: 280,
-    padding: 10,
-    borderColor: "#cf667f",
-    borderWidth: 5,
-    borderStyle: "dashed",
-    marginTop: 40,
-    marginBottom: 10,
-    position: "relative",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  imageContainer: {
-    width: 250,
-    height: 250,
-    position: "absolute",
-    top: 10,
-    left: 10,
-    bottom: 10,
-    right: 10,
-  },
-  predictionWrapper: {
-    height: 100,
-    width: "100%",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  transparentText: {
-    color: "#ffffff",
-    opacity: 0.7,
-  },
-  footer: {
-    marginTop: 40,
-    alignItems: "center",
-  },
-});

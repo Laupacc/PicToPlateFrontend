@@ -14,30 +14,26 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
         tabBarLabelStyle: {
+          backgroundColor: Colors[colorScheme ?? "light"].background,
           fontSize: 14,
+          fontWeight: "500",
         },
         tabBarIconStyle: {
           marginBottom: -3,
         },
+        tabBarStyle: {
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+          backgroundColor: Colors[colorScheme ?? "light"].background,
+          padding: 5,
+          height: 60,
+        },
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="recipeSearch"
         options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "home" : "home-outline"}
-              color={color}
-              iconSet="Ionicons"
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="recipes"
-        options={{
-          title: "Recipes",
+          title: "Recipe",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
               name={focused ? "fast-food" : "fast-food-outline"}
@@ -48,14 +44,54 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="favourite"
+        options={{
+          title: "Favourite",
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={focused ? "heart" : "heart-outline"}
+              color={color}
+              iconSet="MaterialCommunityIcons"
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="camera"
         options={{
           title: "Camera",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? "camera" : "camera-outline"}
+              name={"camera-retro"}
               color={color}
-              iconSet="Ionicons"
+              iconSet="FontAwesome"
+              size={40}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="fridge"
+        options={{
+          title: "Fridge",
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={focused ? "fridge" : "fridge-outline"}
+              color={color}
+              iconSet="MaterialCommunityIcons"
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon
+              name={"user-secret"}
+              color={color}
+              iconSet="FontAwesome"
             />
           ),
         }}
