@@ -6,10 +6,11 @@ import AntDesign from "react-native-vector-icons/AntDesign";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 export function TabBarIcon({
-  iconSet = "Ionicons", // default to Ionicons
+  iconSet,
   ...rest
-}: IconProps<ComponentProps<typeof Ionicons>["name"]> & {
-  iconSet?: "Ionicons" | "MaterialCommunityIcons" | "FontAwesome" | "AntDesign";
+}: {
+  iconSet: string;
+  [key: string]: any;
 }) {
   let IconComponent;
   switch (iconSet) {
@@ -20,7 +21,7 @@ export function TabBarIcon({
       IconComponent = MaterialCommunityIcons;
       break;
     case "FontAwesome":
-      IconComponent = FontAwesome; // Use FaUserSecret for "FaIcons"
+      IconComponent = FontAwesome;
       break;
     case "AntDesign":
       IconComponent = AntDesign;
