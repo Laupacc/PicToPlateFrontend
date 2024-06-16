@@ -1,9 +1,8 @@
 import { Tabs } from "expo-router";
 import React from "react";
-
+import { useColorScheme } from "react-native";
 import { TabBarIcon } from "@/components/TabBarIcon";
 import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -20,13 +19,14 @@ export default function TabLayout() {
         },
         tabBarIconStyle: {
           marginBottom: -3,
+          marginTop: 3,
         },
         tabBarStyle: {
           borderTopLeftRadius: 30,
           borderTopRightRadius: 30,
           backgroundColor: Colors[colorScheme ?? "light"].background,
           padding: 5,
-          height: 60,
+          height: 70,
         },
       }}
     >
@@ -94,6 +94,27 @@ export default function TabLayout() {
               iconSet="FontAwesome"
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="insideRecipe"
+        options={{
+          tabBarButton: () => null,
+          tabBarIcon: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="recipeResults"
+        options={{
+          tabBarButton: () => null,
+          tabBarIcon: () => null,
+        }}
+      />
+      <Tabs.Screen
+        name="addItemsFridge"
+        options={{
+          tabBarButton: () => null,
+          tabBarIcon: () => null,
         }}
       />
     </Tabs>

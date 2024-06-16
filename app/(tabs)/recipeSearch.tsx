@@ -17,8 +17,8 @@ export default function RecipeSearch() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <Text className="text-cyan-800">Recipe Search</Text>
-      <Link href="/(stacks)/recipeResults">Recipe Results</Link>
-      <Link href="/(stacks)/insideRecipe">Inside Recipe</Link>
+      <Link href="/recipeResults">Recipe Results</Link>
+      <Link href="/insideRecipe">Inside Recipe</Link>
     </SafeAreaView>
   );
 }

@@ -8,6 +8,7 @@ export default function Fridge() {
   return (
     <SafeAreaView style={styles.container}>
       <Text className="text-cyan-800">Fridge</Text>
+      <Link href="/addItemsFridge">Add Items Fridge</Link>
     </SafeAreaView>
   );
 }

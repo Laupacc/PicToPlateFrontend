@@ -4,6 +4,7 @@ import { type ComponentProps } from "react";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import { View } from "react-native";
 
 export function TabBarIcon({
   iconSet,
