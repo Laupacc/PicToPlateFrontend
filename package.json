@@ -48,6 +48,7 @@
     "react-dom": "18.2.0",
     "react-icons": "^5.2.1",
     "react-native": "0.74.2",
+    "react-native-animated-nav-tab-bar": "^3.1.10",
     "react-native-elements": "^3.4.3",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "~2.16.1",

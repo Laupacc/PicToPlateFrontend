@@ -27,6 +27,12 @@ export default function TabLayout() {
           backgroundColor: Colors[colorScheme ?? "light"].background,
           padding: 5,
           height: 70,
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          overflow: "hidden",
+          elevation: 0,
         },
       }}
     >
