@@ -21,19 +21,19 @@ export default function TabLayout() {
           marginBottom: -3,
           marginTop: 3,
         },
-        tabBarStyle: {
-          borderTopLeftRadius: 30,
-          borderTopRightRadius: 30,
-          backgroundColor: Colors[colorScheme ?? "light"].background,
-          padding: 5,
-          height: 70,
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          overflow: "hidden",
-          elevation: 0,
-        },
+        // tabBarStyle: {
+        //   borderTopLeftRadius: 30,
+        //   borderTopRightRadius: 30,
+        //   backgroundColor: Colors[colorScheme ?? "light"].background,
+        //   padding: 5,
+        //   height: 70,
+        //   position: "absolute",
+        //   bottom: 0,
+        //   left: 0,
+        //   right: 0,
+        //   overflow: "hidden",
+        //   elevation: 0,
+        // },
       }}
     >
       <Tabs.Screen
@@ -42,7 +42,7 @@ export default function TabLayout() {
           title: "Recipe",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
-              name={focused ? "fast-food" : "fast-food-outline"}
+              name={focused ? "restaurant" : "restaurant-outline"}
               color={color}
               iconSet="Ionicons"
             />

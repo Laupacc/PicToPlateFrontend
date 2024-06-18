@@ -1,7 +1,6 @@
 import {
   DarkTheme,
   DefaultTheme,
-  NavigationContainer,
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
@@ -10,7 +9,8 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
 import "react-native-screens";
-import TabLayout from "@/app/(tabs)/_layout";
+import "react-native-safe-area-context";
+import React from "react";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 
@@ -21,6 +21,9 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    Nobile: require("../assets/fonts/Nobile-Regular.ttf"),
+    Maax: require("../assets/fonts/Maax.ttf"),
+    Steradian: require("../assets/fonts/Steradian-Rg.ttf"),
   });
 
   useEffect(() => {

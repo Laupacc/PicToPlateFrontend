@@ -11,6 +11,9 @@ export default function Index() {
       <Link href="/(tabs)/profile" className="text-blue-500">
         Go to Profile
       </Link>
+      <Link href="/(tabs)/recipeSearch" className="text-blue-500">
+        Go to Recipe Search
+      </Link>
     </SafeAreaView>
   );
 }

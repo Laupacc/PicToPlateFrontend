@@ -8,11 +8,14 @@ import {
   TouchableOpacity,
   Modal,
   ScrollView,
+  TextInput,
+  KeyboardAvoidingView,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 export default function RecipeSearch() {
   const navigation = useNavigation();
@@ -41,19 +44,19 @@ export default function RecipeSearch() {
     const data = await response.json();
     console.log(data);
     const recipe = data.recipes[0];
-    setRandomRecipe(recipe); // Update state, but don't rely on it for immediate navigation
+    setRandomRecipe(recipe);
     navigation.navigate("insideRecipe", { recipe });
   };
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center">
       <StatusBar barStyle="dark-content" />
-      <Text className="text-cyan-800">Recipe Search</Text>
-      <Link href="/recipeResults">Recipe Results</Link>
-      <Link href="/insideRecipe">Inside Recipe</Link>
+
       <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Text>Go Back</Text>
+        <Ionicons name="arrow-undo-sharp" size={30} />
       </TouchableOpacity>
+
+      <Text className="text-cyan-800">Recipe Search</Text>
 
       <TouchableOpacity onPress={fetchTrivia}>
         <Text>Fetch Trivia</Text>
@@ -63,6 +66,20 @@ export default function RecipeSearch() {
       <TouchableOpacity onPress={fetchJoke}>
         <Text>Fetch Joke</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity onPress={fetchRandomRecipe}>
+        <Text>Fetch Random Recipe</Text>
+      </TouchableOpacity>
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <TextInput
+          placeholder="Search for a recipe"
+          className="border-2 border-gray-300 rounded-lg p-2 w-64"
+        />
+      </KeyboardAvoidingView>
+
       <Modal
         animationType="slide"
         transparent={true}
@@ -82,10 +99,6 @@ export default function RecipeSearch() {
           </View>
         </ScrollView>
       </Modal>
-
-      <TouchableOpacity onPress={fetchRandomRecipe}>
-        <Text>Fetch Random Recipe</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
