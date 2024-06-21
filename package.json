@@ -17,15 +17,18 @@
   "dependencies": {
     "@expo/vector-icons": "^14.0.0",
     "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-community/checkbox": "^0.5.17",
     "@react-navigation/native": "^6.0.2",
     "@tensorflow-models/coco-ssd": "^2.2.3",
     "@tensorflow-models/mobilenet": "^2.1.1",
     "@tensorflow/tfjs": "^4.20.0",
     "@tensorflow/tfjs-converter": "^4.20.0",
     "@tensorflow/tfjs-react-native": "^1.0.0",
+    "add": "^2.0.6",
     "autoprefixer": "^10.4.19",
     "expo": "~51.0.14",
     "expo-camera": "~15.0.11",
+    "expo-checkbox": "^3.0.0",
     "expo-constants": "~16.0.2",
     "expo-file-system": "^17.0.1",
     "expo-font": "~12.0.7",
@@ -49,6 +52,7 @@
     "react-icons": "^5.2.1",
     "react-native": "0.74.2",
     "react-native-animated-nav-tab-bar": "^3.1.10",
+    "react-native-bouncy-checkbox": "^4.0.1",
     "react-native-elements": "^3.4.3",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "~2.16.1",
@@ -58,7 +62,8 @@
     "react-native-screens": "3.31.1",
     "react-native-svg": "15.2.0",
     "react-native-svg-transformer": "^1.4.0",
-    "react-native-web": "~0.19.10"
+    "react-native-web": "~0.19.10",
+    "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

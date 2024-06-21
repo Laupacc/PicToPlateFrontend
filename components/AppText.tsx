@@ -4,7 +4,7 @@ import { Text, StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
   text: {
-    fontFamily: "Steradian",
+    fontFamily: "Nobile",
   },
 });
 

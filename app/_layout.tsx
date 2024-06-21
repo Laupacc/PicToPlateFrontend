@@ -24,6 +24,10 @@ export default function RootLayout() {
     Nobile: require("../assets/fonts/Nobile-Regular.ttf"),
     Maax: require("../assets/fonts/Maax.ttf"),
     Steradian: require("../assets/fonts/Steradian-Rg.ttf"),
+    ConceptDraft: require("../assets/fonts/ConceptDraft.otf"),
+    CreamyCookies: require("../assets/fonts/Creamycookies.otf"),
+    Sketch: require("../assets/fonts/Sketch.ttf"),
+    Flux: require("../assets/fonts/Flux_Architect_Regular.ttf"),
   });
 
   useEffect(() => {
