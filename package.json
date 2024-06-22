@@ -36,6 +36,7 @@
     "expo-gl-cpp": "^11.4.0",
     "expo-image-manipulator": "^12.0.5",
     "expo-image-picker": "^15.0.5",
+    "expo-linear-gradient": "~13.0.2",
     "expo-linking": "~6.3.1",
     "expo-module-scripts": "^3.5.2",
     "expo-router": "~3.5.16",

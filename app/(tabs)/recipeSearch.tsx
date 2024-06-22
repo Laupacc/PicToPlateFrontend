@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Dimensions,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
@@ -21,7 +21,7 @@ import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
 import Background from "@/components/Background";
 import { fetchRandomRecipe } from "@/apiFunctions";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
-import { op } from "@tensorflow/tfjs";
+import RNBounceable from "@freakycoder/react-native-bounceable";
 
 export default function RecipeSearch() {
   const navigation = useNavigation();
@@ -36,6 +36,7 @@ export default function RecipeSearch() {
   const [intolerances, setIntolerances] = useState([]);
   const [showDiet, setShowDiet] = useState(false);
   const [showIntolerances, setShowIntolerances] = useState(false);
+  const isInitialMount = useRef(true);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -60,35 +61,29 @@ export default function RecipeSearch() {
     navigation.navigate("insideRecipe", { recipeId: recipe.id });
   };
 
-  // const searchByIngredients = async (search: string) => {
-  //   const ingredients = search.split(" ").join(",").replace(/%2C/g, ",");
-  //   const response = await fetch(
-  //     `http://192.168.1.34:3000/recipes/findByIngredients?ingredients=${ingredients}`
-  //   );
-  //   console.log(response);
-  //   const recipe = await response.json();
-  //   console.log(recipe);
-  //   setSearch(ingredients);
-  //   setRecipesFromIngredients(recipe);
-  // };
-
-  const complexSearchByIngredients = async (
-    search: string
-    // diet: string[] = [],
-    // intolerances: string[] = []
-  ) => {
-    const ingredients = search.split(" ").join(",").replace(/%2C/g, ",");
-    // const dietQuery = diet.length > 0 ? `&diet=${diet.join(",")}` : "";
-    // const intolerancesQuery =
-    //   intolerances.length > 0 ? `&intolerances=${intolerances.join(",")}` : "";
-    const response = await fetch(
-      `http://192.168.1.34:3000/recipes/complexSearchByIngredients?ingredients=${ingredients}`
-    );
-    console.log(response);
-    const recipe = await response.json();
-    console.log(recipe);
-    setSearch(ingredients);
-    setRecipesFromIngredients(recipe.results);
+  const complexSearchByIngredients = async (search, diet, intolerances) => {
+    const ingredients = encodeURIComponent(search.split(" ").join(","));
+    let URL = `http://192.168.1.34:3000/recipes/complexSearchByIngredients?ingredients=${ingredients}`;
+    if (diet.length > 0) {
+      const dietParam = encodeURIComponent(diet.join(","));
+      URL += `&diet=${dietParam}`;
+    }
+    if (intolerances.length > 0) {
+      const intolerancesParam = encodeURIComponent(intolerances.join(","));
+      URL += `&intolerances=${intolerancesParam}`;
+    }
+    try {
+      const response = await fetch(URL);
+      console.log(response);
+      const recipe = await response.json();
+      console.log(recipe);
+      setSearch(ingredients);
+      setDiet(diet);
+      setIntolerances(intolerances);
+      setRecipesFromIngredients(recipe.results);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+    }
   };
 
   const randomStickerImage = () => {
@@ -103,37 +98,33 @@ export default function RecipeSearch() {
 
   const toggleDiet = (item: string) => {
     if (diet.includes(item)) {
-      console.log(`Removing ${item} from diet array`);
       setDiet(diet.filter((x) => x !== item));
     } else {
-      console.log(`Adding ${item} to diet array`);
       setDiet([...diet, item]);
+    }
+  };
+
+  const toggleIntolerances = (item: string) => {
+    if (intolerances.includes(item)) {
+      setIntolerances(intolerances.filter((x) => x !== item));
+    } else {
+      setIntolerances([...intolerances, item]);
     }
   };
 
   const dietOptions = [
     { key: "vegetarian", label: "Vegetarian" },
     { key: "vegan", label: "Vegan" },
-    { key: "glutenFree", label: "Gluten Free" },
+    { key: "glutenfree", label: "Gluten Free" },
     { key: "ketogenic", label: "Ketogenic" },
+    { key: "pescetarian", label: "Pescetarian" },
     { key: "paleo", label: "Paleo" },
     { key: "primal", label: "Primal" },
     { key: "whole30", label: "Whole 30" },
-    { key: "pescetarian", label: "Pescetarian" },
     { key: "lactoVegetarian", label: "Lacto Vegetarian" },
     { key: "ovoVegetarian", label: "Ovo Vegetarian" },
     { key: "lowFodmap", label: "Low Fodmap" },
   ];
-
-  const toggleIntolerances = (item: string) => {
-    if (intolerances.includes(item)) {
-      console.log(`Removing ${item} from intolerances array`);
-      setIntolerances(intolerances.filter((x) => x !== item));
-    } else {
-      console.log(`Adding ${item} to intolerances array`);
-      setIntolerances([...intolerances, item]);
-    }
-  };
 
   const intolerancesOptions = [
     { key: "dairy", label: "Dairy" },
@@ -150,14 +141,22 @@ export default function RecipeSearch() {
     { key: "wheat", label: "Wheat" },
   ];
 
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    } else {
+      complexSearchByIngredients(search, diet, intolerances);
+    }
+  }, [diet, intolerances]);
+
   return (
     <SafeAreaView className="flex-1 items-center justify-center">
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
 
-      <TouchableOpacity onPress={() => navigation.goBack()}>
+      {/* <TouchableOpacity onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-undo-sharp" size={30} />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* <TouchableOpacity onPress={fetchTrivia}>
         <Text>Fetch Trivia</Text>
@@ -168,26 +167,39 @@ export default function RecipeSearch() {
         <Text>Fetch Joke</Text>
       </TouchableOpacity> */}
 
-      <TouchableOpacity
-        onPress={handleFetchRandomRecipe}
-        className="flex flex-row justify-center items-center"
-      >
-        <Text
-          style={{
-            fontFamily: "Nobile",
-            color: "blue",
-            fontSize: 18,
-            textAlign: "center",
-          }}
+      {/* Radom Recipe Button */}
+      <View className="flex flex-row justify-center items-center">
+        <View className="flex flex-row justify-center items-center">
+          <Text
+            style={{
+              fontFamily: "Nobile",
+              color: "#475569",
+              fontSize: 22,
+              textAlign: "center",
+            }}
+          >
+            Surprise me
+          </Text>
+          <Ionicons name="chevron-forward" size={30} color={"#475569"} />
+        </View>
+        <TouchableOpacity
+          onPress={handleFetchRandomRecipe}
+          className="flex flex-row justify-center items-center"
         >
-          Surprise me ➜
-        </Text>
-        <Image
-          source={require("../../assets/images/randomButton.png")}
-          className="w-20 h-20"
-        />
-      </TouchableOpacity>
+          <View className="relative w-20 h-20 flex justify-center items-center">
+            <Image
+              source={require("../../assets/images/randomButton.png")}
+              className="absolute inset-0 w-full h-full"
+            />
+            <Image
+              source={require("../../assets/images/dice5.png")}
+              className="w-8 h-8 bottom-2"
+            />
+          </View>
+        </TouchableOpacity>
+      </View>
 
+      {/* Search bar, by Ingredients */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
@@ -197,7 +209,9 @@ export default function RecipeSearch() {
             placeholderTextColor={"gray"}
             value={search}
             onChangeText={setSearch}
-            onSubmitEditing={() => complexSearchByIngredients(search)}
+            onSubmitEditing={() =>
+              complexSearchByIngredients(search, diet, intolerances)
+            }
             className="border-2 border-gray-400 rounded-lg pl-10 w-72 h-12"
           />
           <Ionicons
@@ -226,6 +240,7 @@ export default function RecipeSearch() {
         </View>
       </KeyboardAvoidingView>
 
+      {/* Diet and Intolerances Buttons */}
       <View className="flex flex-row justify-center items-center my-3">
         <TouchableOpacity
           onPress={() => setShowDiet(!showDiet)}
@@ -273,6 +288,7 @@ export default function RecipeSearch() {
         </TouchableOpacity>
       </View>
 
+      {/* Diet and Intolerances Checkbox */}
       <View className="flex flex-row justify-center items-start">
         {showDiet && (
           <>
@@ -290,20 +306,31 @@ export default function RecipeSearch() {
                   elevation: 6,
                 }}
               ></View>
-              <View className="bg-white w-[200] p-2 rounded-lg justify-center">
+              <View className="bg-white w-[200] p-2 rounded-lg">
                 {dietOptions.map((option) => (
-                  <View key={option.key} className="flex-row m-0.5 ml-2">
+                  <View
+                    key={option.key}
+                    className="flex-row m-0.5 ml-2 items-center"
+                  >
                     <BouncyCheckbox
+                      onPress={() => toggleDiet(option.key)}
+                      isChecked={diet.includes(option.key)}
                       size={25}
+                      text={option.label}
+                      textStyle={{
+                        fontFamily: "Nobile",
+                        color: "green",
+                        fontSize: 14,
+                        textDecorationLine: "none",
+                      }}
                       fillColor={"green"}
                       unFillColor={"transparent"}
                       innerIconStyle={{ borderWidth: 2, borderColor: "green" }}
-                      onPress={() => toggleDiet(option.key)}
-                      isChecked={diet.includes(option.key)}
+                      bounceEffectIn={0.6}
                     />
-                    <Text style={{ fontFamily: "Nobile", color: "green" }}>
-                      {option.label}
-                    </Text>
+                    <RNBounceable
+                      onPress={() => toggleDiet(option.key)}
+                    ></RNBounceable>
                   </View>
                 ))}
               </View>
@@ -326,20 +353,31 @@ export default function RecipeSearch() {
                   elevation: 6,
                 }}
               ></View>
-              <View className="bg-white w-[140] p-2 rounded-lg justify-center">
+              <View className="bg-white w-[140] p-2 rounded-lg">
                 {intolerancesOptions.map((option) => (
-                  <View key={option.key} className="flex-row m-0.5 ml-2">
+                  <View
+                    key={option.key}
+                    className="flex-row m-0.5 ml-2 items-center"
+                  >
                     <BouncyCheckbox
+                      onPress={() => toggleIntolerances(option.key)}
+                      isChecked={intolerances.includes(option.key)}
                       size={25}
+                      text={option.label}
+                      textStyle={{
+                        fontFamily: "Nobile",
+                        color: "orange",
+                        fontSize: 14,
+                        textDecorationLine: "none",
+                      }}
                       fillColor={"orange"}
                       unFillColor={"transparent"}
                       innerIconStyle={{ borderWidth: 2, borderColor: "orange" }}
-                      onPress={() => toggleIntolerances(option.key)}
-                      isChecked={intolerances.includes(option.key)}
+                      bounceEffectIn={0.6}
                     />
-                    <Text style={{ fontFamily: "Nobile", color: "orange" }}>
-                      {option.label}
-                    </Text>
+                    <RNBounceable
+                      onPress={() => toggleIntolerances(option.key)}
+                    ></RNBounceable>
                   </View>
                 ))}
               </View>
@@ -348,62 +386,65 @@ export default function RecipeSearch() {
         )}
       </View>
 
+      {/* Recipe Results */}
       <ScrollView className="flex-1">
-        {recipesFromIngredients.map((recipe) => (
-          <View
-            className="flex-1 items-center justify-center relative"
-            key={recipe.id}
-          >
+        {recipesFromIngredients &&
+          recipesFromIngredients.map((recipe) => (
             <View
-              className="absolute bg-[#FF9B50] rounded-2xl right-0.5 bottom-0.5 w-[280] h-[280]"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 6,
-                  height: 6,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 8,
-              }}
-            ></View>
+              className="flex-1 items-center justify-center relative"
+              key={recipe.id}
+            >
+              <View
+                className="absolute bg-[#FF9B50] rounded-2xl right-0.5 bottom-0.5 w-[280] h-[280]"
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: {
+                    width: 6,
+                    height: 6,
+                  },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 8,
+                }}
+              ></View>
 
-            <View>
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("insideRecipe", { recipeId: recipe.id })
-                }
-                key={recipe.id}
-                className="bg-white p-4 w-[280] h-[280] m-4 items-center justify-center rounded-br-full rounded-tr-full"
-              >
-                <Image
-                  source={{ uri: recipe.image }}
-                  className="rounded-full w-[200] h-[200]"
-                />
-
-                <View className="relative w-[280] h-[70] mt-2">
+              <View>
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate("insideRecipe", { recipeId: recipe.id })
+                  }
+                  key={recipe.id}
+                  className="bg-white p-4 w-[280] h-[280] m-4 items-center justify-center rounded-br-full rounded-tr-full"
+                >
                   <Image
-                    source={randomStickerImage()}
-                    className="absolute inset-0 w-[280] h-[70] top-0 right-0"
+                    source={{ uri: recipe.image }}
+                    className="rounded-full w-[200] h-[200]"
                   />
-                  <View className="absolute top-0 bottom-0 left-0 right-0 flex justify-center items-center">
-                    <Text
-                      style={{
-                        fontFamily: "Flux",
-                        textAlignVertical: "center",
-                      }}
-                      className="text-center"
-                    >
-                      {recipe.title}
-                    </Text>
+
+                  <View className="relative w-[280] h-[70] mt-2">
+                    <Image
+                      source={randomStickerImage()}
+                      className="absolute inset-0 w-[280] h-[70] top-0 right-0"
+                    />
+                    <View className="absolute top-0 bottom-0 left-0 right-0 flex justify-center items-center">
+                      <Text
+                        style={{
+                          fontFamily: "Flux",
+                          textAlignVertical: "center",
+                        }}
+                        className="text-center"
+                      >
+                        {recipe.title}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        ))}
+          ))}
       </ScrollView>
 
+      {/* Modal for Joke */}
       <Modal
         animationType="slide"
         transparent={true}

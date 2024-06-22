@@ -110,7 +110,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="recipeResults"
+        name="similarRecipes"
         options={{
           tabBarButton: () => null,
           tabBarIcon: () => null,

@@ -9,6 +9,7 @@ import {
   Dimensions,
   Switch,
   StatusBar,
+  Modal,
 } from "react-native";
 import React from "react";
 import { useNavigation } from "expo-router";
@@ -33,6 +34,11 @@ export default function InsideRecipe() {
   const [servings, setServings] = useState(0);
   const [unitSystem, setUnitSystem] = useState("us");
   const [dynamicHeight, setDynamicHeight] = useState(0);
+  const [ingredientSubstitutes, setIngredientSubstitutes] = useState([]);
+  const [ingSubModalVisible, setIngSubModalVisible] = useState(false);
+  const [showWinePairing, setShowWinePairing] = useState(false);
+  const [winePairing, setWinePairing] = useState([]);
+  const [wineDescription, setWineDescription] = useState("");
 
   useEffect(() => {
     const fetchRecipeData = async () => {
@@ -52,6 +58,53 @@ export default function InsideRecipe() {
     };
     fetchRecipeData();
   }, [recipeId]);
+
+  const fetchIngredientSubstitution = async (id) => {
+    try {
+      const response = await fetch(
+        `http://192.168.1.34:3000/recipes/ingredientSubstitutes/${id}`
+      );
+      const data = await response.json();
+      setIngredientSubstitutes(data.substitutes);
+      setIngSubModalVisible(true);
+      return data.substitutes;
+    } catch (error) {
+      console.log("Error fetching ingredient substitutes:", error.message);
+      throw error;
+    }
+  };
+
+  const fetchWinePairing = async (food, wine) => {
+    try {
+      const winePairing = await fetch(
+        `http://192.168.1.34:3000/recipes/winePairing/${food}`
+      );
+      const wineDescription = await fetch(
+        `http://192.168.1.34:3000/recipes/wineDescription/${wine}`
+      );
+      const data = await winePairing.json();
+      const description = await wineDescription.json();
+      setWinePairing(data.winePairing);
+      setWineDescription(description.wineDescription);
+      return data.winePairing;
+    } catch (error) {
+      console.log("Error fetching wine pairing:", error.message);
+      throw error;
+    }
+  };
+
+  const fetchSimilarRecipes = async (id) => {
+    try {
+      const response = await fetch(
+        `http://192.168.1.34:3000/recipes/similarRecipes/${id}`
+      );
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.log("Error fetching similar recipes:", error.message);
+      throw error;
+    }
+  };
 
   const constructImageUrl = (imageFileName: string) => {
     return `https://spoonacular.com/cdn/ingredients_100x100/${imageFileName}`;
@@ -82,6 +135,124 @@ export default function InsideRecipe() {
   const handleFetchRandomRecipe = async () => {
     const randomRecipe = await fetchRandomRecipe();
     navigation.navigate("insideRecipe", { recipeId: randomRecipe.id });
+  };
+
+  const imageForWine = (wine) => {
+    const wineImages = {
+      white_wine: require("../../assets/images/whitewine.png"),
+      red_wine: require("../../assets/images/redwine.png"),
+      rose_wine: require("../../assets/images/rosewine.png"),
+      dessert_wine: require("../../assets/images/dessertwine.png"),
+      sparkling_wine: require("../../assets/images/sparklingwine.png"),
+      default: require("../../assets/images/defaultwine.png"),
+    };
+
+    const wineCategories = {
+      assyrtiko: "white_wine",
+      pinot_blanc: "white_wine",
+      cortese: "white_wine",
+      roussanne: "white_wine",
+      moschofilero: "white_wine",
+      muscadet: "white_wine",
+      viognier: "white_wine",
+      verdicchio: "white_wine",
+      greco: "white_wine",
+      marsanne: "white_wine",
+      white_burgundy: "white_wine",
+      chardonnay: "white_wine",
+      gruener_veltliner: "white_wine",
+      white_rioja: "white_wine",
+      frascati: "white_wine",
+      gavi: "white_wine",
+      l_acadie_blanc: "white_wine",
+      trebbiano: "white_wine",
+      sauvignon_blanc: "white_wine",
+      catarratto: "white_wine",
+      albarino: "white_wine",
+      arneis: "white_wine",
+      verdejo: "white_wine",
+      vermentino: "white_wine",
+      soave: "white_wine",
+      pinot_grigio: "white_wine",
+      dry_riesling: "white_wine",
+      torrontes: "white_wine",
+      mueller_thurgau: "white_wine",
+      grechetto: "white_wine",
+      gewurztraminer: "white_wine",
+      chenin_blanc: "white_wine",
+      white_bordeaux: "white_wine",
+      semillon: "white_wine",
+      riesling: "white_wine",
+      sauternes: "white_wine",
+      sylvaner: "white_wine",
+      lillet_blanc: "white_wine",
+      petite_sirah: "red_wine",
+      zweigelt: "red_wine",
+      baco_noir: "red_wine",
+      bonarda: "red_wine",
+      cabernet_franc: "red_wine",
+      bairrada: "red_wine",
+      barbera_wine: "red_wine",
+      primitivo: "red_wine",
+      pinot_noir: "red_wine",
+      nebbiolo: "red_wine",
+      dolcetto: "red_wine",
+      tannat: "red_wine",
+      negroamaro: "red_wine",
+      red_burgundy: "red_wine",
+      corvina: "red_wine",
+      rioja: "red_wine",
+      cotes_du_rhone: "red_wine",
+      grenache: "red_wine",
+      malbec: "red_wine",
+      zinfandel: "red_wine",
+      sangiovese: "red_wine",
+      carignan: "red_wine",
+      carmenere: "red_wine",
+      cesanese: "red_wine",
+      cabernet_sauvignon: "red_wine",
+      aglianico: "red_wine",
+      tempranillo: "red_wine",
+      shiraz: "red_wine",
+      mourvedre: "red_wine",
+      merlot: "red_wine",
+      nero_d_avola: "red_wine",
+      bordeaux: "red_wine",
+      marsala: "red_wine",
+      gamay: "red_wine",
+      dornfelder: "red_wine",
+      concord_wine: "red_wine",
+      sparkling_red_wine: "red_wine",
+      pinotage: "red_wine",
+      agiorgitiko: "red_wine",
+      pedro_ximenez: "dessert_wine",
+      moscato: "dessert_wine",
+      late_harvest: "dessert_wine",
+      ice_wine: "dessert_wine",
+      white_port: "dessert_wine",
+      lambrusco_dolce: "dessert_wine",
+      madeira: "dessert_wine",
+      banyuls: "dessert_wine",
+      vin_santo: "dessert_wine",
+      port: "dessert_wine",
+      cava: "sparkling_wine",
+      cremant: "sparkling_wine",
+      champagne: "sparkling_wine",
+      prosecco: "sparkling_wine",
+      spumante: "sparkling_wine",
+      sparkling_rose: "sparkling_wine",
+      cream_sherry: "default",
+      dry_sherry: "default",
+      dry_vermouth: "default",
+      fruit_wine: "default",
+      mead: "default",
+    };
+    const category = wineCategories[wine];
+    if (category) {
+      return wineImages[category];
+    } else {
+      return wineImages.default;
+    }
   };
 
   return (
@@ -133,7 +304,6 @@ export default function InsideRecipe() {
                 />
               </View>
             </View>
-
             {/* Back Button */}
             <TouchableOpacity
               onPress={() => navigation.goBack()}
@@ -141,17 +311,14 @@ export default function InsideRecipe() {
             >
               <Ionicons name="arrow-undo-sharp" size={30} />
             </TouchableOpacity>
-
             <TouchableOpacity
               onPress={handleFetchRandomRecipe}
               className="absolute top-5 right-5"
             >
               <FontAwesome name="random" size={30} />
             </TouchableOpacity>
-
             {/* Recipe Title */}
             <Text style={styles.title}>{recipe.title}</Text>
-
             {/* Recipe Attributes */}
             <ScrollView>
               <View className="flex flex-row m-1 flex-wrap justify-center items-center">
@@ -180,7 +347,6 @@ export default function InsideRecipe() {
                 )}
               </View>
             </ScrollView>
-
             {/* Switch , time and servings */}
             <View>
               <View className="flex flex-row justify-around items-center m-2">
@@ -267,6 +433,14 @@ export default function InsideRecipe() {
                           </Text>
                         </ScrollView>
                       </View>
+                      <View className="flex flex-row justify-center items-center">
+                        <Ionicons
+                          name="plus-circle"
+                          size={20}
+                          color={"#149575"}
+                          onPress={fetchIngredientSubstitution}
+                        ></Ionicons>
+                      </View>
                       <View className="flex flex-row items-center justify-center mr-3">
                         <Text
                           style={{
@@ -293,7 +467,95 @@ export default function InsideRecipe() {
                 </>
               ))}
             </View>
+            {/* Ingredient substitution modal */}\
+            <Modal
+              animationType="slide"
+              visible={ingSubModalVisible}
+              onRequestClose={() => {
+                setIngSubModalVisible(!ingSubModalVisible);
+              }}
+            >
+              <View className="flex justify-center items-center">
+                <View className="flex justify-center items-center bg-white rounded-2xl m-2 p-2">
+                  <Text>Ingredient Substitutions</Text>
+                  {ingredientSubstitutes.map((substitute, index) => (
+                    <View
+                      key={index}
+                      className="flex flex-row justify-between items-center rounded-2xl m-2 p-3 border"
+                      style={{
+                        width: screenWidth - 70,
+                      }}
+                    >
+                      <Text
+                        className="text-justify p-1 mx-2"
+                        style={{
+                          fontFamily: "Nobile",
+                          fontSize: 15,
+                        }}
+                      >
+                        {substitute}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setIngSubModalVisible(!ingSubModalVisible)}
+                className="absolute top-5 right-5"
+              >
+                <Ionicons name="close" size={30} />
+              </TouchableOpacity>
+            </Modal>
+            {/* Wine Pairing */}
+            <View className="flex justify-center items-center m-2">
+              <TouchableOpacity
+                onPress={() => {
+                  setShowWinePairing(true);
+                  fetchWinePairing(recipe.title, recipe.winePairing);
+                }}
+                className="p-2 m-2 bg-white rounded-xl"
+              >
+                <Text className="text-lg">Show Wine Pairing</Text>
+              </TouchableOpacity>
+            </View>
+            {showWinePairing && (
+              <View className="flex justify-center items-center m-2">
+                <View className="flex justify-center items-center bg-white rounded-2xl m-2 p-2">
+                  <Text>Wine Pairing</Text>
+                  {winePairing.map((wine, index) => (
+                    <View
+                      key={index}
+                      className="flex justify-between items-center rounded-2xl m-2 p-3 border"
+                      style={{
+                        width: screenWidth - 70,
+                      }}
+                    >
+                      <Text
+                        className="text-justify p-1 mx-2"
+                        style={{
+                          fontFamily: "Nobile",
+                          fontSize: 15,
+                        }}
+                      >
+                        {wine}
+                      </Text>
+                      <Image
+                        source={imageForWine(wine)}
+                        className="w-10 h-10 rounded-2xl m-1"
+                      />
+                    </View>
+                  ))}
+                  <Text>{wineDescription}</Text>
 
+                  <TouchableOpacity
+                    onPress={() => setShowWinePairing(false)}
+                    className="absolute top-5 right-5"
+                  >
+                    <Ionicons name="close" size={30} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
             {/* Box behind instructions */}
             <View className="relative mb-5">
               <View
