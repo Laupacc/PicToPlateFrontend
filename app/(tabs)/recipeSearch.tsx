@@ -88,10 +88,10 @@ export default function RecipeSearch() {
 
   const randomStickerImage = () => {
     const images = [
-      require("../../assets/images/stickerB1.png"),
-      require("../../assets/images/stickerB2.png"),
-      require("../../assets/images/stickerB3.png"),
-      require("../../assets/images/stickerB4.png"),
+      require("../../assets/images/stickers/stickerB1.png"),
+      require("../../assets/images/stickers/stickerB2.png"),
+      require("../../assets/images/stickers/stickerB3.png"),
+      require("../../assets/images/stickers/stickerB4.png"),
     ];
     return images[Math.floor(Math.random() * images.length)];
   };
@@ -257,7 +257,7 @@ export default function RecipeSearch() {
           }}
         >
           <Image
-            source={require("../../assets/images/yellowTape2.png")}
+            source={require("../../assets/images/stickers/yellowTape2.png")}
             className="absolute inset-0 w-full h-full"
           ></Image>
           <Text style={{ fontFamily: "Nobile" }} className="text-center">
@@ -279,7 +279,7 @@ export default function RecipeSearch() {
           }}
         >
           <Image
-            source={require("../../assets/images/yellowTape1.png")}
+            source={require("../../assets/images/stickers/yellowTape1.png")}
             className="absolute inset-0 w-full h-full"
           ></Image>
           <Text style={{ fontFamily: "Nobile" }} className="text-center">

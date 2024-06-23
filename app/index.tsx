@@ -16,12 +16,23 @@ import { LinearGradient } from "expo-linear-gradient";
 export default function Index() {
   const randomBackgroundImages = () => {
     const images = [
-      require("../assets/images/background1.jpg"),
-      require("../assets/images/background2.jpg"),
-      require("../assets/images/background3.jpg"),
-      require("../assets/images/background4.jpg"),
-      require("../assets/images/background5.png"),
-      require("../assets/images/background6.jpg"),
+      require("../assets/images/backgrounds/background1.jpg"),
+      require("../assets/images/backgrounds/background2.jpg"),
+      require("../assets/images/backgrounds/background5.png"),
+      require("../assets/images/backgrounds/background6.jpg"),
+      require("../assets/images/backgrounds/background7.jpg"),
+      require("../assets/images/backgrounds/background8.jpg"),
+      require("../assets/images/backgrounds/background9.jpg"),
+      require("../assets/images/backgrounds/background11.jpg"),
+      require("../assets/images/backgrounds/background12.jpg"),
+      require("../assets/images/backgrounds/background13.jpg"),
+      require("../assets/images/backgrounds/background14.jpg"),
+      require("../assets/images/backgrounds/background15.jpg"),
+      require("../assets/images/backgrounds/background16.jpg"),
+      require("../assets/images/backgrounds/background17.jpg"),
+      require("../assets/images/backgrounds/background18.jpg"),
+      require("../assets/images/backgrounds/background19.jpg"),
+      require("../assets/images/backgrounds/background20.jpg"),
     ];
     return images[Math.floor(Math.random() * images.length)];
   };

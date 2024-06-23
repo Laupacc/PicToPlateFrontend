@@ -6,6 +6,7 @@ import * as jpeg from "jpeg-js";
 import * as ImagePicker from "expo-image-picker";
 import { CameraView, useCameraPermissions, CameraType } from "expo-camera";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Entypo from "react-native-vector-icons/Entypo";
 import {
   StyleSheet,
   Text,
@@ -33,6 +34,7 @@ export default function Camera() {
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraOpen, setCameraOpen] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+  const [show, setShow] = useState(false);
 
   // Load the TensorFlow.js model and request camera roll permissions
   useEffect(() => {
@@ -41,11 +43,11 @@ export default function Camera() {
         // Ensure that the TensorFlow.js environment is properly initialized
         await tf.ready();
         setTfReady(true);
-        console.log("TensorFlow.js ready.");
+        console.log("TensorFlow.js ready");
 
         // Load mobilenet model
         const loadedModel = await mobilenet.load();
-        console.log("Model loaded.");
+        console.log("Model loaded");
         setModel(loadedModel);
 
         setModelReady(true);
@@ -61,7 +63,7 @@ export default function Camera() {
   // Select an image from the camera roll
   const selectImage = async () => {
     try {
-      let result = await ImagePicker.launchImageLibraryAsync({
+      const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
@@ -100,10 +102,12 @@ export default function Camera() {
     setCameraOpen(true);
   };
 
+  // Toggle the camera facing
   function toggleCameraFacing() {
     setFacing((current) => (current === "back" ? "front" : "back"));
   }
 
+  // Take a picture with the camera
   const takePicture = async () => {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync();
@@ -118,6 +122,7 @@ export default function Camera() {
       console.log("Camera not ready");
     }
   };
+
   // Classify the image
   const classifyImage = async () => {
     try {
@@ -184,45 +189,51 @@ export default function Camera() {
     );
   };
 
-  // Main effect to run the classification
-  useEffect(() => {
-    classifyImage();
-  }, [isTfReady, isModelReady, image]);
-
   return (
     <SafeAreaView className="flex-1 bg-gray-800 items-center justify-center ">
       <StatusBar barStyle="light-content" />
-      {!cameraOpen && (
-        <View>
-          <View className="flex justify-center items-center m-4">
-            <Text className="text-white text-lg">
-              TFJS ready? {isTfReady ? <Text>✅</Text> : ""}
-            </Text>
-            <Text className="text-white text-lg">
-              Model ready?{" "}
-              {isModelReady ? (
-                <Text>✅</Text>
-              ) : (
-                <ActivityIndicator size="small" />
-              )}
-            </Text>
+      <View className="flex justify-center items-center m-4">
+        {show && !cameraOpen && isTfReady && isModelReady && (
+          <View className="flex flex-row justify-center items-center">
+            <Text className="text-white text-xl m-2">You're all set</Text>
+            <Image
+              source={require("../../assets/images/handOkEmoji.png")}
+              className="w-10 h-10"
+            />
           </View>
-          <View className="m-4 flex justify-center items-center">
-            <TouchableOpacity
-              onPress={selectImage}
-              className="p-2 m-2 bg-white rounded-xl"
-            >
-              <Text className="text-lg">Upload Picture</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={openCamera}
-              className="p-2 m-2 bg-white rounded-xl"
-            >
-              <Text className="text-lg">Open Camera</Text>
-            </TouchableOpacity>
+        )}
+
+        {!show && !cameraOpen && isTfReady && isModelReady ? (
+          <View className="flex justify-center items-center">
+            <View className="m-4 flex justify-center items-center">
+              <Text className="text-white text-lg">You can</Text>
+              <TouchableOpacity
+                onPress={selectImage}
+                className="p-2 m-2 bg-white rounded-xl"
+              >
+                <Entypo name="upload" size={24} color="black" />
+              </TouchableOpacity>
+              <Text className="text-white text-lg">Or</Text>
+              <TouchableOpacity
+                onPress={openCamera}
+                className="p-2 m-2 bg-white rounded-xl"
+              >
+                <Entypo name="video-camera" size={24} color="black" />
+              </TouchableOpacity>
+              <Text className="text-white text-lg">
+                And scan what's in your fridge or pantry
+              </Text>
+            </View>
           </View>
-        </View>
-      )}
+        ) : (
+          <View className="flex flex-row justify-center items-center">
+            <Text className="text-white text-xl m-2">
+              Preparing AI detection
+            </Text>
+            <ActivityIndicator size="small" />
+          </View>
+        )}
+      </View>
 
       {image && !cameraOpen && (
         <TouchableOpacity
