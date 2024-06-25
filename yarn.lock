@@ -8344,6 +8344,11 @@ marky@^1.2.2:
   resolved "https://registry.npmjs.org/marky/-/marky-1.2.5.tgz"
   integrity sha512-q9JtQJKjpsVxCRVgQ+WapguSbKC3SQ5HEzFGPAJMStgh3QjCawp00UKv3MTTAArTmGmmPUvllHZoNbZ3gs0I+Q==
 
+material-symbols@^0.20.0:
+  version "0.20.0"
+  resolved "https://registry.yarnpkg.com/material-symbols/-/material-symbols-0.20.0.tgz#e99707600f4c5ebc6a35489d0d56f01362941934"
+  integrity sha512-bTxLbVDimYqe1+iY0qcWXJSqoxKfQhzfdVLlvi8DegHAuSJ93oXhMjHY95zOVcgKUsLjszR2heIYhLWjobE1BQ==
+
 md5-file@^3.2.3:
   version "3.2.3"
   resolved "https://registry.npmjs.org/md5-file/-/md5-file-3.2.3.tgz"

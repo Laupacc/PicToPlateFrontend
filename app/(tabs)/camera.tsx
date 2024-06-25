@@ -72,6 +72,7 @@ export default function Camera() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         setImage(result.assets[0].uri);
+        classifyImage();
         console.log("Image selected:", result.assets[0].uri);
       }
     } catch (error) {
@@ -113,6 +114,7 @@ export default function Camera() {
       const photo = await cameraRef.current.takePictureAsync();
       if (photo) {
         setImage(photo.uri);
+        classifyImage();
         console.log("Image taken:", photo.uri);
       } else {
         console.log("Failed to take picture");

@@ -62,22 +62,29 @@ export default function RecipeSearch() {
   };
 
   const complexSearchByIngredients = async (search, diet, intolerances) => {
-    const ingredients = encodeURIComponent(search.split(" ").join(","));
+    const ingredients = search
+      .toLowerCase()
+      .replace(/\band\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .split(" ")
+      .join(",");
     let URL = `http://192.168.1.34:3000/recipes/complexSearchByIngredients?ingredients=${ingredients}`;
     if (diet.length > 0) {
-      const dietParam = encodeURIComponent(diet.join(","));
+      const dietParam = diet.join(",");
       URL += `&diet=${dietParam}`;
     }
     if (intolerances.length > 0) {
-      const intolerancesParam = encodeURIComponent(intolerances.join(","));
+      const intolerancesParam = intolerances.join(",");
       URL += `&intolerances=${intolerancesParam}`;
     }
     try {
       const response = await fetch(URL);
+      console.log(URL);
       console.log(response);
       const recipe = await response.json();
-      console.log(recipe);
-      setSearch(ingredients);
+      // console.log(recipe);
+      setSearch(search);
       setDiet(diet);
       setIntolerances(intolerances);
       setRecipesFromIngredients(recipe.results);
