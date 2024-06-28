@@ -1,13 +1,54 @@
-import { Image, StyleSheet, Platform, View, Text } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Platform,
+  View,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import React from "react";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "@/store/user";
+import * as SecureStore from "expo-secure-store";
+import Background from "@/components/Background";
+("use client");
 
 export default function Profile() {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.value);
+
+  const handleLogout = async () => {
+    if (!user.token) {
+      return;
+    }
+    await SecureStore.deleteItemAsync("token");
+    dispatch(logout());
+    alert("Logged out");
+  };
+  console.log(user);
   return (
     <SafeAreaView style={styles.container}>
+      <Background cellSize={25} />
       <Text className="text-cyan-800">Profile</Text>
+      <Link href="/">Got to home</Link>
+      {user.token && (
+        <Text className="text-xl text-cyan-600">
+          Welcome back {user.username}
+        </Text>
+      )}
+      {!user.token ? (
+        <Link href="/authentication">
+          <Text>Please Log in</Text>
+        </Link>
+      ) : (
+        <TouchableOpacity onPress={handleLogout}>
+          <Text>Logout</Text>
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }

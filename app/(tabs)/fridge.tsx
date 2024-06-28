@@ -5,6 +5,7 @@ import {
   View,
   Text,
   StatusBar,
+  TouchableOpacity,
 } from "react-native";
 import React from "react";
 import { Link } from "expo-router";
@@ -15,6 +16,7 @@ import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
 
 export default function Fridge() {
+  const navigation = useNavigation();
   const fridgeItems = [
     {
       id: 1,
@@ -37,6 +39,16 @@ export default function Fridge() {
       checked: false,
     },
   ];
+
+  const searchRecipesFromIngredients = async () => {
+    const selectedIgredients = fridgeItems.filter((item) => item.checked);
+    console.log("Selected Ingredients:", selectedIgredients);
+    const ingredients = selectedIgredients.map((item) => item.name);
+    console.log("Ingredients:", ingredients);
+    const searchQuery = ingredients.join(",").toLowerCase();
+
+    navigation.navigate("recipesFromFridge", { searchQuery });
+  };
 
   return (
     <SafeAreaView className="flex-1 justify-center items-center mt-8">
@@ -75,6 +87,7 @@ export default function Fridge() {
                 fontFamily: "Nobile",
                 color: "black",
                 fontSize: 14,
+                textDecorationLine: "none",
               }}
               fillColor={"green"}
               unFillColor={"transparent"}
@@ -87,6 +100,23 @@ export default function Fridge() {
           </View>
         ))}
       </View>
+
+      <TouchableOpacity
+        onPress={searchRecipesFromIngredients}
+        className="relative flex justify-center items-center top-4"
+      >
+        <Image
+          source={require("@/assets/images/button/button3.png")}
+          alt="button"
+          className="w-40 h-12"
+        />
+        <Text
+          className="text-lg text-white absolute"
+          style={{ fontFamily: "Nobile" }}
+        >
+          Search Recipes
+        </Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }

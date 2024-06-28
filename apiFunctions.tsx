@@ -1,8 +1,8 @@
+const BACKEND_URL = "http://192.168.1.34:3000";
+
 export const fetchRandomRecipe = async () => {
   try {
-    const response = await fetch(
-      `http://192.168.1.34:3000/recipes/randomRecipe`
-    );
+    const response = await fetch(`${BACKEND_URL}/recipes/randomRecipe`);
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Error ${response.status}: ${errorText}`);
@@ -18,7 +18,7 @@ export const fetchRandomRecipe = async () => {
 export const fetchRecipeInformation = async (id) => {
   try {
     const response = await fetch(
-      `http://192.168.1.34:3000/recipes/recipeInformation/${id}`
+      `${BACKEND_URL}/recipes/recipeInformation/${id}`
     );
     if (!response.ok) {
       const errorText = await response.text();
@@ -35,7 +35,7 @@ export const fetchRecipeInformation = async (id) => {
 export const fetchAnalyzedInstructions = async (id) => {
   try {
     const response = await fetch(
-      `http://192.168.1.34:3000/recipes/analyzedInstructions/${id}`
+      `${BACKEND_URL}/recipes/analyzedInstructions/${id}`
     );
     if (!response.ok) {
       const errorText = await response.text();
@@ -47,4 +47,14 @@ export const fetchAnalyzedInstructions = async (id) => {
     console.log("Error fetching analyzed instructions:", error.message);
     throw error;
   }
+};
+
+export const randomStickerImage = () => {
+  const images = [
+    require("./assets/images/stickers/stickerB1.png"),
+    require("./assets/images/stickers/stickerB2.png"),
+    require("./assets/images/stickers/stickerB3.png"),
+    require("./assets/images/stickers/stickerB4.png"),
+  ];
+  return images[Math.floor(Math.random() * images.length)];
 };

@@ -37,9 +37,9 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="recipeSearch"
+        name="search"
         options={{
-          title: "Recipe",
+          title: "Search",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
               name={focused ? "restaurant" : "restaurant-outline"}
@@ -50,9 +50,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="favourite"
+        name="favourites"
         options={{
-          title: "Favourite",
+          title: "Favourites",
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
               name={focused ? "heart" : "heart-outline"}
@@ -103,14 +103,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="insideRecipe"
+        name="recipeCard"
         options={{
           tabBarButton: () => null,
           tabBarIcon: () => null,
         }}
       />
       <Tabs.Screen
-        name="similarRecipes"
+        name="recipesFromFridge"
         options={{
           tabBarButton: () => null,
           tabBarIcon: () => null,

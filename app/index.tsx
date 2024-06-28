@@ -80,7 +80,7 @@ export default function Index() {
         </View>
         <View className="absolute bottom-32">
           <TouchableOpacity className="border-2 border-sky-700 p-4 rounded-xl">
-            <Link href="/(tabs)/recipeSearch">
+            <Link href="/authentication">
               <Text
                 className="text-3xl text-sky-700 text-center"
                 style={{ fontFamily: "Nobile" }}
@@ -90,6 +90,7 @@ export default function Index() {
             </Link>
           </TouchableOpacity>
         </View>
+        <View className="absolute bottom-8"></View>
       </View>
     </View>
   );

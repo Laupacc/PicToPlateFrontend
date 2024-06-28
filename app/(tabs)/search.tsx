@@ -19,12 +19,13 @@ import { useNavigation } from "expo-router";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
 import Background from "@/components/Background";
-import { fetchRandomRecipe } from "@/apiFunctions";
+import { fetchRandomRecipe, randomStickerImage } from "@/apiFunctions";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
 
-export default function RecipeSearch() {
+export default function Search() {
   const navigation = useNavigation();
+
   const [trivia, setTrivia] = useState("");
   const [joke, setJoke] = useState("");
   const [recipe, setRecipe] = useState<any[]>([]);
@@ -41,24 +42,26 @@ export default function RecipeSearch() {
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const fetchTrivia = async () => {
-    const response = await fetch(`http://192.168.1.34:3000/recipes/trivia`);
-    const data = await response.json();
-    console.log(data);
-    setTrivia(data.text);
-  };
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
-  const fetchJoke = async () => {
-    const response = await fetch(`http://192.168.1.34:3000/recipes/joke`);
-    const data = await response.json();
-    console.log(data);
-    setJoke(data.text);
-  };
+  // const fetchTrivia = async () => {
+  //   const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
+  //   const data = await response.json();
+  //   console.log(data);
+  //   setTrivia(data.text);
+  // };
+
+  // const fetchJoke = async () => {
+  //   const response = await fetch(`${BACKEND_URL}/recipes/joke`);
+  //   const data = await response.json();
+  //   console.log(data);
+  //   setJoke(data.text);
+  // };
 
   const handleFetchRandomRecipe = async () => {
     const recipe = await fetchRandomRecipe();
     setRecipe(recipe);
-    navigation.navigate("insideRecipe", { recipeId: recipe.id });
+    navigation.navigate("recipeCard", { recipeId: recipe.id });
   };
 
   const complexSearchByIngredients = async (search, diet, intolerances) => {
@@ -69,7 +72,7 @@ export default function RecipeSearch() {
       .trim()
       .split(" ")
       .join(",");
-    let URL = `http://192.168.1.34:3000/recipes/complexSearchByIngredients?ingredients=${ingredients}`;
+    let URL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}`;
     if (diet.length > 0) {
       const dietParam = diet.join(",");
       URL += `&diet=${dietParam}`;
@@ -91,16 +94,6 @@ export default function RecipeSearch() {
     } catch (error) {
       console.error("Error fetching recipes:", error);
     }
-  };
-
-  const randomStickerImage = () => {
-    const images = [
-      require("../../assets/images/stickers/stickerB1.png"),
-      require("../../assets/images/stickers/stickerB2.png"),
-      require("../../assets/images/stickers/stickerB3.png"),
-      require("../../assets/images/stickers/stickerB4.png"),
-    ];
-    return images[Math.floor(Math.random() * images.length)];
   };
 
   const toggleDiet = (item: string) => {
@@ -148,6 +141,7 @@ export default function RecipeSearch() {
     { key: "wheat", label: "Wheat" },
   ];
 
+  //
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -162,17 +156,17 @@ export default function RecipeSearch() {
       <Background cellSize={25} />
 
       {/* <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Ionicons name="arrow-undo-sharp" size={30} />
-      </TouchableOpacity> */}
+          <Ionicons name="arrow-undo-sharp" size={30} />
+        </TouchableOpacity> */}
 
       {/* <TouchableOpacity onPress={fetchTrivia}>
-        <Text>Fetch Trivia</Text>
-      </TouchableOpacity>
-      <Text className="items-center justify-center">{trivia}</Text>
-
-      <TouchableOpacity onPress={fetchJoke}>
-        <Text>Fetch Joke</Text>
-      </TouchableOpacity> */}
+          <Text>Fetch Trivia</Text>
+        </TouchableOpacity>
+        <Text className="items-center justify-center">{trivia}</Text>
+  
+        <TouchableOpacity onPress={fetchJoke}>
+          <Text>Fetch Joke</Text>
+        </TouchableOpacity> */}
 
       {/* Radom Recipe Button */}
       <View className="flex flex-row justify-center items-center">
@@ -418,7 +412,7 @@ export default function RecipeSearch() {
               <View>
                 <TouchableOpacity
                   onPress={() =>
-                    navigation.navigate("insideRecipe", { recipeId: recipe.id })
+                    navigation.navigate("recipeCard", { recipeId: recipe.id })
                   }
                   key={recipe.id}
                   className="bg-white p-4 w-[280] h-[280] m-4 items-center justify-center rounded-br-full rounded-tr-full"

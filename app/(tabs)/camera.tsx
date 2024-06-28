@@ -14,7 +14,7 @@ import FontAwesome6 from "react-native-vector-icons/FontAwesome5";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import AntDesign from "react-native-vector-icons/AntDesign";
-import { PAT, USER_ID, APP_ID, MODEL_ID, MODEL_VERSION_ID } from "@env";
+// import { PAT, USER_ID, APP_ID, MODEL_ID, MODEL_VERSION_ID } from "@env";
 import { PinchGestureHandler, State } from "react-native-gesture-handler";
 import Background from "@/components/Background";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
@@ -30,6 +30,12 @@ import {
   Platform,
   ImageBackground,
 } from "react-native";
+
+const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
+const USER_ID = "clarifai";
+const APP_ID = "main";
+const MODEL_ID = "food-item-recognition";
+const MODEL_VERSION_ID = "1d5fd481e0cf4826aa72ec3ff049e044";
 
 export default function Camera() {
   const [isPredictionLoading, setPredictionLoading] = useState(false);

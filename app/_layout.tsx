@@ -12,8 +12,10 @@ import "react-native-screens";
 import "react-native-safe-area-context";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { Provider } from "react-redux";
+import { configureStore } from "@reduxjs/toolkit";
+import user from "@/store/user";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -41,15 +43,24 @@ export default function RootLayout() {
     return null;
   }
 
+  const store = configureStore({
+    reducer: { user },
+  });
+
   return (
-    <GestureHandlerRootView>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-      </ThemeProvider>
-    </GestureHandlerRootView>
+    <Provider store={store}>
+      <GestureHandlerRootView>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+        >
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="authentication" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    </Provider>
   );
 }

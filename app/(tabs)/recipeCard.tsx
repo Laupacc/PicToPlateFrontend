@@ -31,9 +31,14 @@ import {
   fetchRecipeInformation,
   fetchAnalyzedInstructions,
 } from "@/apiFunctions";
+import { useDispatch, useSelector } from "react-redux";
 
-export default function InsideRecipe() {
+export default function RecipeCard() {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.value);
+  const token = useSelector((state) => state.user.value.token);
+
   const route = useRoute();
   const { recipeId } = route.params as { recipeId: number };
   const [recipe, setRecipe] = useState<any>(null);
@@ -49,6 +54,9 @@ export default function InsideRecipe() {
   const [selectedIngredientNutrition, setSelectedIngredientNutrition] =
     useState(null);
   const [showNutrition, setShowNutrition] = useState(false);
+  const [isFavourite, setIsFavourite] = useState(false);
+
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   // useEffect(() => {
   //   const fetchRecipeData = async () => {
@@ -112,7 +120,7 @@ export default function InsideRecipe() {
     try {
       console.log("Fetching substitutes for ingredient ID:", id);
       const response = await fetch(
-        `http://192.168.1.34:3000/recipes/ingredientSubstitutes/${id}`
+        `${BACKEND_URL}/recipes/ingredientSubstitutes/${id}`
       );
       const data = await response.json();
 
@@ -165,7 +173,9 @@ export default function InsideRecipe() {
 
   const handleFetchRandomRecipe = async () => {
     const randomRecipe = await fetchRandomRecipe();
-    navigation.navigate("insideRecipe", { recipeId: randomRecipe.id });
+    const isFav = user?.favourites?.includes(randomRecipe.recipeId) || false;
+    setIsFavourite(isFav);
+    navigation.navigate("recipeCard", { recipeId: randomRecipe.id });
   };
 
   // const fetchWineDescription = async (pairedWines) => {
@@ -219,6 +229,50 @@ export default function InsideRecipe() {
       setIngredientModalVisible(true);
     }
   }, [selectedIngredientNutrition]);
+
+  const addToFavouriteRecipes = async () => {
+    try {
+      const recipeId = recipe.id;
+      const token = user.token;
+      const response = await fetch(
+        `${BACKEND_URL}/users/addFavourite/${recipeId}/${token}`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        console.log("Error adding recipe to favourites");
+      }
+
+      const data = await response.json();
+      console.log(data);
+      setIsFavourite(true);
+      alert("Recipe added to favourites");
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
+
+  const removeFromFavouriteRecipes = async () => {
+    try {
+      const recipeId = recipe.id;
+      const token = user.token;
+      const response = await fetch(
+        `${BACKEND_URL}/users/removeFavourite/${recipeId}/${token}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        console.log("Error removing recipe from favourites");
+      }
+
+      const data = await response.json();
+      console.log(data);
+      setIsFavourite(false);
+      alert("Recipe removed from favourites");
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -281,7 +335,7 @@ export default function InsideRecipe() {
               </View>
             </View>
 
-            {/* Back Button */}
+            {/* Back Button and Random Recipe Button */}
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               className="absolute top-5 left-5"
@@ -296,25 +350,29 @@ export default function InsideRecipe() {
               <FontAwesome name="random" size={30} />
             </TouchableOpacity>
 
+            {/* Favourite Button */}
+            {user.token && (
+              <TouchableOpacity
+                onPress={
+                  isFavourite
+                    ? removeFromFavouriteRecipes
+                    : addToFavouriteRecipes
+                }
+                className="absolute top-5 right-14"
+              >
+                <Ionicons
+                  name={isFavourite ? "heart" : "heart-outline"}
+                  size={30}
+                  color={"#ba0000"}
+                />
+              </TouchableOpacity>
+            )}
             {/* Recipe Title */}
             <Text style={styles.title}>{recipe.title}</Text>
 
             {/* Recipe Attributes */}
             <ScrollView>
               <View className="flex flex-row m-1 flex-wrap justify-center items-center">
-                {/* {recipe.vegetarian && (
-                  <Text style={styles.attributes}>Vegetarian</Text>
-                )}
-                {recipe.vegan && <Text style={styles.attributes}>Vegan</Text>}
-                {recipe.glutenFree && (
-                  <Text style={styles.attributes}>Gluten Free</Text>
-                )}
-                {recipe.ketogenic && (
-                  <Text style={styles.attributes}>Ketogenic</Text>
-                )} */}
-                {/* {recipe.dairyFree && (
-                  <Text style={styles.attributes}>Dairy Free</Text>
-                )} */}
                 {recipe.veryHealthy && (
                   <Text style={styles.attributes}>Very Healthy</Text>
                 )}
