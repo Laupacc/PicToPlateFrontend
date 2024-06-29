@@ -16,15 +16,20 @@ import Background from "@/components/Background";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchRecipeInformation, randomStickerImage } from "@/apiFunctions";
 import { useRoute } from "@react-navigation/native";
-import { updateFavouriteRecipes } from "@/store/user";
+import {
+  removeFromFavouriteRecipes,
+  updateFavouriteRecipes,
+} from "@/store/recipes";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Favourites() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const route = useRoute();
   const user = useSelector((state) => state.user.value);
+  const favourites = useSelector((state) => state.recipes.favourites);
 
-  const [favourites, setFavourites] = useState([]);
+  const [favouriteRecipes, setFavouriteRecipes] = useState([]);
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
@@ -33,10 +38,10 @@ export default function Favourites() {
     const fetchFavouriteRecipes = async () => {
       try {
         // Check if favorites are already cached
-        if (cachedFavorites.current.length > 0) {
-          setFavourites(cachedFavorites.current);
-          return;
-        }
+        // if (cachedFavorites.current.length > 0) {
+        //   setFavouriteRecipes(cachedFavorites.current);
+        //   return;
+        // }
 
         const response = await fetch(
           `${BACKEND_URL}/users/fetchFavourites/${user.token}`
@@ -45,15 +50,15 @@ export default function Favourites() {
           throw new Error("Failed to fetch favourite recipes");
         }
         const data = await response.json();
-        console.log("Favourite recipes:", data.favourites);
 
         const recipes = await Promise.all(
           data.favourites.map((recipeId) => fetchRecipeInformation(recipeId))
         );
-        console.log("Favourite recipes:", recipes);
+        console.log("Favourite recipes:", recipes.length);
 
-        setFavourites(recipes);
-        // dispatch(updateFavouriteRecipes(recipes));
+        dispatch(updateFavouriteRecipes(recipes));
+        setFavouriteRecipes(recipes);
+
         cachedFavorites.current = recipes;
       } catch (error) {
         console.error(error);
@@ -61,7 +66,28 @@ export default function Favourites() {
     };
 
     fetchFavouriteRecipes();
-  }, [user.token]);
+  }, [user.token, favourites.length]);
+
+  const removeRecipeFromFavourites = async (recipeId) => {
+    try {
+      const token = user.token;
+      const response = await fetch(
+        `${BACKEND_URL}/users/removeFavourite/${recipeId}/${token}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        console.log("Error removing recipe from favourites");
+      }
+
+      dispatch(removeFromFavouriteRecipes(recipeId));
+      setFavouriteRecipes(favouriteRecipes.filter((r) => r.id !== recipeId));
+      console.log("Recipe removed from favourites:", recipeId);
+      alert("Recipe removed from favourites");
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 justify-center items-center">
@@ -80,8 +106,8 @@ export default function Favourites() {
       </Text>
 
       <ScrollView className="flex-1">
-        {favourites &&
-          favourites.map((recipe) => (
+        {favouriteRecipes &&
+          favouriteRecipes.map((recipe) => (
             <View
               className="flex-1 items-center justify-center relative"
               key={recipe.id}
@@ -99,6 +125,16 @@ export default function Favourites() {
                   elevation: 8,
                 }}
               ></View>
+              <TouchableOpacity
+                onPress={() => removeRecipeFromFavourites(recipe.id)}
+              >
+                <Ionicons
+                  name="trash"
+                  size={24}
+                  color="red"
+                  className="absolute top-0 right-0 m-4"
+                />
+              </TouchableOpacity>
 
               <View key={recipe.id}>
                 <TouchableOpacity

@@ -17,6 +17,7 @@ import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
 import { useDispatch, useSelector } from "react-redux";
 import { useRoute } from "@react-navigation/native";
+import { addIngredient, updateIngredients } from "@/store/fridge";
 import {
   StyleSheet,
   Text,
@@ -239,6 +240,8 @@ export default function Camera() {
       const data = await response.json();
       console.log("Added ingredients:", data);
       alert("Ingredients added successfully");
+
+      dispatch(addIngredient(ingredientNames));
     } catch (error) {
       console.error(error);
     }

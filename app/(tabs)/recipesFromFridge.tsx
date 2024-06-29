@@ -26,13 +26,21 @@ export default function recipesFromFridge() {
   useEffect(() => {
     const searchRecipesFromFridge = async () => {
       try {
-        if (cachedRecipes.current.length > 0) {
-          setRecipes(cachedRecipes.current);
-          return;
-        }
+        // if (cachedRecipes.current.length > 0) {
+        //   setRecipes(cachedRecipes.current);
+        //   return;
+        // }
+
+        const search = searchQuery
+          .toLowerCase()
+          .replace(/\band\b/g, " ")
+          .replace(/\s+/g, " ")
+          .trim()
+          .split(" ")
+          .join(",");
 
         const response = await fetch(
-          `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${searchQuery}`
+          `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${search}`
         );
         console.log("Search response:", response);
         if (!response.ok) {
@@ -62,7 +70,7 @@ export default function recipesFromFridge() {
       >
         Recipes From my ingredients
       </Text>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
+      <TouchableOpacity onPress={() => navigation.navigate("fridge")}>
         <Text>Go Back</Text>
       </TouchableOpacity>
 

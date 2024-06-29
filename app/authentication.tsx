@@ -30,22 +30,44 @@ export default function Authentication() {
   const [isloginPasswordHidden, setIsLoginPasswordHidden] = useState(true);
   const [isSignUpPasswordHidden, setIsSignUpPasswordHidden] = useState(true);
   const [signUpVisible, setSignUpVisible] = useState(false);
+  const [signUpUsernameEmpty, setSignUpUsernameEmpty] = useState(false);
+  const [signUpPasswordEmpty, setSignUpPasswordEmpty] = useState(false);
+  const [loginUsernameEmpty, setLoginUsernameEmpty] = useState(false);
+  const [loginPasswordEmpty, setLoginPasswordEmpty] = useState(false);
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = await SecureStore.getItemAsync("token");
-      if (token) {
-        dispatch(login({ token }));
-        console.log("Token found, navigating to profile");
-        navigation.navigate("(tabs)", { screen: "profile" });
-      }
-    };
-    checkToken();
-  }, []);
+  // useEffect(() => {
+  //   const checkToken = async () => {
+  //     try {
+  //       const token = await SecureStore.getItemAsync("token");
+  //       if (token) {
+  //         dispatch(login({ token }));
+  //         console.log("Token found, navigating to profile");
+  //         navigation.navigate("(tabs)", { screen: "profile" });
+  //       } else {
+  //         console.log("No token found");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error retrieving token:", error);
+  //     }
+  //   };
+  //   checkToken();
+  // }, []);
 
   const handleSignUp = async () => {
+    setSignUpUsernameEmpty(false);
+    setSignUpPasswordEmpty(false);
+
+    if (!signUpUsername.trim()) {
+      setSignUpUsernameEmpty(true);
+      return;
+    }
+    if (!signUpPassword.trim()) {
+      setSignUpPasswordEmpty(true);
+      return;
+    }
+
     try {
       const response = await fetch(`${BACKEND_URL}/users/signup`, {
         method: "POST",
@@ -59,23 +81,39 @@ export default function Authentication() {
       });
       const data = await response.json();
       console.log(data);
-      if (data.error) {
-        console.log(data.error);
-      } else {
+      if (!response.ok) {
+        alert(data.message);
+        return;
+      }
+      if (data.result) {
+        // await SecureStore.setItemAsync("token", data.token);
+        // console.log("Token stored successfully");
+
+        console.log("User signed up successfully", data);
         dispatch(login(data));
-        await SecureStore.setItemAsync("token", data.token);
+
         navigation.navigate("(tabs)", { screen: "profile" });
         setSignUpUsername("");
         setSignUpPassword("");
         alert("User signed up successfully");
-        console.log("User signed up successfully", data);
       }
     } catch (error) {
       console.error("Error:", error);
     }
   };
-
   const handleLogin = async () => {
+    setLoginUsernameEmpty(false);
+    setLoginPasswordEmpty(false);
+
+    if (!loginUsername.trim()) {
+      setLoginUsernameEmpty(true);
+      return;
+    }
+    if (!loginPassword.trim()) {
+      setLoginPasswordEmpty(true);
+      return;
+    }
+
     try {
       const response = await fetch(`${BACKEND_URL}/users/login`, {
         method: "POST",
@@ -87,22 +125,25 @@ export default function Authentication() {
           password: loginPassword,
         }),
       });
+
       const data = await response.json();
-      console.log(data);
-      if (data.error) {
-        console.log(data.error);
-      } else {
+
+      if (!response.ok) {
+        alert(data.message);
+        return;
+      }
+
+      if (data.result) {
         console.log("User logged in successfully", data);
         dispatch(login(data));
 
-        await SecureStore.setItemAsync("token", data.token);
-        console.log("Token stored successfully");
+        // await SecureStore.setItemAsync("token", data.token);
+        // console.log("Token stored successfully");
 
         navigation.navigate("(tabs)", { screen: "profile" });
         setLoginUsername("");
         setLoginPassword("");
         alert("Signed in successfully");
-        console.log("User signed in successfully", data);
       }
     } catch (error) {
       console.error("Error:", error);
@@ -152,10 +193,17 @@ export default function Authentication() {
           <View className="flex justify-center items-center absolute">
             <TextInput
               placeholder="Username"
+              autoCapitalize="none"
               value={loginUsername}
-              onChangeText={setLoginUsername}
+              onChangeText={(text) => {
+                setLoginUsername(text);
+                setLoginUsernameEmpty(false);
+              }}
               className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
             />
+            {loginUsernameEmpty && (
+              <Text className="text-red-500">Username cannot be empty</Text>
+            )}
             <View className="relative">
               <TextInput
                 placeholder="Password"
@@ -163,6 +211,7 @@ export default function Authentication() {
                 secureTextEntry={isloginPasswordHidden}
                 onChangeText={(text) => {
                   setLoginPassword(text);
+                  setLoginPasswordEmpty(false);
                 }}
                 className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
               />
@@ -176,6 +225,9 @@ export default function Authentication() {
                 />
               </TouchableOpacity>
             </View>
+            {loginPasswordEmpty && (
+              <Text className="text-red-500">Password cannot be empty</Text>
+            )}
             <TouchableOpacity
               onPress={handleLogin}
               className="relative flex justify-center items-center top-4"
@@ -225,10 +277,17 @@ export default function Authentication() {
           <View className="flex justify-center items-center absolute">
             <TextInput
               placeholder="Username"
+              autoCapitalize="none"
               value={signUpUsername}
-              onChangeText={setSignUpUsername}
+              onChangeText={(text) => {
+                setSignUpUsername(text);
+                setSignUpUsernameEmpty(false);
+              }}
               className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
             />
+            {signUpUsernameEmpty && (
+              <Text className="text-red-500">Username cannot be empty</Text>
+            )}
             <View className="relative">
               <TextInput
                 placeholder="Password"
@@ -236,6 +295,7 @@ export default function Authentication() {
                 secureTextEntry={isSignUpPasswordHidden}
                 onChangeText={(text) => {
                   setSignUpPassword(text);
+                  setSignUpPasswordEmpty(false);
                 }}
                 className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
               />
@@ -249,6 +309,9 @@ export default function Authentication() {
                 />
               </TouchableOpacity>
             </View>
+            {signUpPasswordEmpty && (
+              <Text className="text-red-500">Password cannot be empty</Text>
+            )}
             <TouchableOpacity
               className="relative flex justify-center items-center top-4"
               onPress={handleSignUp}

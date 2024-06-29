@@ -13,9 +13,17 @@ import "react-native-safe-area-context";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useColorScheme } from "@/hooks/useColorScheme";
+
 import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, combineReducers } from "@reduxjs/toolkit";
+
+import { persistStore, persistReducer } from "redux-persist";
+import { PersistGate } from "redux-persist/integration/react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import user from "@/store/user";
+import fridge from "@/store/fridge";
+import recipes from "@/store/recipes";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -43,24 +51,44 @@ export default function RootLayout() {
     return null;
   }
 
-  const store = configureStore({
-    reducer: { user },
+  const reducers = combineReducers({
+    user: user,
+    fridge: fridge,
+    recipes: recipes,
   });
+
+  const persistConfig = {
+    key: "root",
+    storage: AsyncStorage,
+    whitelist: ["user", "fridge", "recipes"],
+  };
+
+  const persistedReducer = persistReducer(persistConfig, reducers);
+
+  const store = configureStore({
+    reducer: persistedReducer,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({ serializableCheck: false }),
+  });
+
+  const persistor = persistStore(store);
 
   return (
     <Provider store={store}>
-      <GestureHandlerRootView>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="authentication" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-        </ThemeProvider>
-      </GestureHandlerRootView>
+      <PersistGate loading={null} persistor={persistor}>
+        <GestureHandlerRootView>
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="authentication" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </ThemeProvider>
+        </GestureHandlerRootView>
+      </PersistGate>
     </Provider>
   );
 }

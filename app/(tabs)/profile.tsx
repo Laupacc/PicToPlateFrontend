@@ -14,7 +14,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/user";
 import * as SecureStore from "expo-secure-store";
 import Background from "@/components/Background";
-("use client");
 
 export default function Profile() {
   const navigation = useNavigation();

@@ -32,12 +32,18 @@ import {
   fetchAnalyzedInstructions,
 } from "@/apiFunctions";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  addToFavouriteRecipes,
+  removeFromFavouriteRecipes,
+  updateFavouriteRecipes,
+} from "@/store/recipes";
 
 export default function RecipeCard() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.value);
   const token = useSelector((state) => state.user.value.token);
+  const favourites = useSelector((state) => state.recipes.favourites);
 
   const route = useRoute();
   const { recipeId } = route.params as { recipeId: number };
@@ -57,6 +63,8 @@ export default function RecipeCard() {
   const [isFavourite, setIsFavourite] = useState(false);
 
   const BACKEND_URL = "http://192.168.1.34:3000";
+  const screenWidth = Dimensions.get("window").width;
+  const calculatedHeight = screenWidth * (9 / 16);
 
   // useEffect(() => {
   //   const fetchRecipeData = async () => {
@@ -77,6 +85,7 @@ export default function RecipeCard() {
   //   fetchRecipeData();
   // }, [recipeId]);
 
+  // Fetch full recipe data
   const cachedRecipe = useRef<any>(null);
   useEffect(() => {
     const fetchRecipeData = async () => {
@@ -108,6 +117,7 @@ export default function RecipeCard() {
     fetchRecipeData();
   }, [recipeId]);
 
+  // Fetch ingredient substitutes
   const cachedIngredientSubstitutes = useRef<any>({});
   const fetchIngredientSubstitution = async (id) => {
     if (
@@ -148,9 +158,6 @@ export default function RecipeCard() {
   const constructImageUrl = (imageFileName: string) => {
     return `https://spoonacular.com/cdn/ingredients_100x100/${imageFileName}`;
   };
-
-  const screenWidth = Dimensions.get("window").width;
-  const calculatedHeight = screenWidth * (9 / 16);
 
   const incrementServings = () => {
     setServings(servings + 1);
@@ -210,6 +217,7 @@ export default function RecipeCard() {
     }
   };
 
+  // Fetch nutrition data for clicked ingredient
   const handleIngredientClick = (ingredientId) => {
     // Find the ingredient in the recipe data
     const ingredient = recipe.extendedIngredients.find(
@@ -224,13 +232,15 @@ export default function RecipeCard() {
     }
   };
 
+  // Show nutrition modal when nutrition data is available
   useEffect(() => {
     if (selectedIngredientNutrition) {
       setIngredientModalVisible(true);
     }
   }, [selectedIngredientNutrition]);
 
-  const addToFavouriteRecipes = async () => {
+  // Add or remove recipe from favourites
+  const addRecipeToFavourites = async () => {
     try {
       const recipeId = recipe.id;
       const token = user.token;
@@ -245,6 +255,7 @@ export default function RecipeCard() {
 
       const data = await response.json();
       console.log(data);
+      dispatch(addToFavouriteRecipes(recipe));
       setIsFavourite(true);
       alert("Recipe added to favourites");
     } catch (error) {
@@ -252,7 +263,7 @@ export default function RecipeCard() {
     }
   };
 
-  const removeFromFavouriteRecipes = async () => {
+  const removeRecipeFromFavourites = async () => {
     try {
       const recipeId = recipe.id;
       const token = user.token;
@@ -267,6 +278,7 @@ export default function RecipeCard() {
 
       const data = await response.json();
       console.log(data);
+      dispatch(removeFromFavouriteRecipes(recipe));
       setIsFavourite(false);
       alert("Recipe removed from favourites");
     } catch (error) {
@@ -355,8 +367,8 @@ export default function RecipeCard() {
               <TouchableOpacity
                 onPress={
                   isFavourite
-                    ? removeFromFavouriteRecipes
-                    : addToFavouriteRecipes
+                    ? removeRecipeFromFavourites
+                    : addRecipeToFavourites
                 }
                 className="absolute top-5 right-14"
               >
