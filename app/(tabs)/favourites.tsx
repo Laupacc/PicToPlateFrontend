@@ -53,7 +53,7 @@ export default function Favourites() {
         console.log("Favourite recipes:", recipes);
 
         setFavourites(recipes);
-        dispatch(updateFavouriteRecipes(recipes));
+        // dispatch(updateFavouriteRecipes(recipes));
         cachedFavorites.current = recipes;
       } catch (error) {
         console.error(error);

@@ -35,6 +35,9 @@ export default function Profile() {
       <Background cellSize={25} />
       <Text className="text-cyan-800">Profile</Text>
       <Link href="/">Got to home</Link>
+      <Link href="/recipesFromFridge">Got to recipes from fridge</Link>
+      <Link href="/recipesCard">Got to recipes card</Link>
+      <Link href="/authentication">Got to authentication</Link>
       {user.token && (
         <Text className="text-xl text-cyan-600">
           Welcome back {user.username}

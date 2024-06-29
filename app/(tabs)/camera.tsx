@@ -9,16 +9,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Entypo from "react-native-vector-icons/Entypo";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
-import FontAwesome6 from "react-native-vector-icons/FontAwesome5";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
-import AntDesign from "react-native-vector-icons/AntDesign";
-// import { PAT, USER_ID, APP_ID, MODEL_ID, MODEL_VERSION_ID } from "@env";
 import { PinchGestureHandler, State } from "react-native-gesture-handler";
 import Background from "@/components/Background";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
+import { useDispatch, useSelector } from "react-redux";
+import { useRoute } from "@react-navigation/native";
 import {
   StyleSheet,
   Text,
@@ -48,6 +46,13 @@ export default function Camera() {
   const [cameraOpen, setCameraOpen] = useState(false);
   const cameraRef = useRef<CameraView>(null);
   const pinchRef = useRef(null);
+  const [selectedIngredients, setSelectedIngredients] = useState([]);
+
+  const dispatch = useDispatch();
+  const route = useRoute();
+  const user = useSelector((state) => state.user.value);
+
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   // useEffect to get the camera permissions
   useEffect(() => {
@@ -136,72 +141,6 @@ export default function Camera() {
     }
   };
 
-  // Classify the image
-  // const classifyImage = async () => {
-  //   try {
-  //     if (!isTfReady || !isModelReady || !image || !model) {
-  //       return;
-  //     }
-  //     setPredictionLoading(true);
-  //     setPredictions([]); // Clear previous predictions
-
-  //     // Get the raw image data
-  //     const response = await fetch(image);
-  //     const rawImageData = await response.arrayBuffer();
-  //     const imageTensor = tf.tidy(() => imageToTensor(rawImageData));
-
-  //     // Make a prediction through the model on our image
-  //     const predictions = await model.classify(imageTensor);
-  //     if (predictions && predictions.length > 0) {
-  //       console.log("Predictions:", predictions);
-  //       setPredictions(predictions);
-  //     } else {
-  //       console.log("No predictions available");
-  //     }
-
-  //     // Dispose the tensor to free up GPU memory
-  //     imageTensor.dispose();
-  //   } catch (error) {
-  //     console.log(error);
-  //   } finally {
-  //     setPredictionLoading(false);
-  //   }
-  // };
-
-  // // Helper function to convert an image to a tensor
-  // const imageToTensor = (rawImageData: ArrayBuffer) => {
-  //   const TO_UINT8ARRAY = true;
-  //   const { width, height, data } = jpeg.decode(rawImageData, {
-  //     useTArray: TO_UINT8ARRAY,
-  //   });
-
-  //   // Drop the alpha channel info
-  //   const buffer = new Uint8Array(width * height * 3);
-  //   let offset = 0;
-  //   for (let i = 0; i < buffer.length; i += 3) {
-  //     buffer[i] = data[offset];
-  //     buffer[i + 1] = data[offset + 1];
-  //     buffer[i + 2] = data[offset + 2];
-  //     offset += 4;
-  //   }
-  //   return tf.tensor3d(buffer, [height, width, 3]);
-  // };
-
-  // // Helper function to render a prediction
-  // const renderPrediction = (prediction: {
-  //   className: string;
-  //   probability: number;
-  // }) => {
-  //   if (!prediction) {
-  //     return null;
-  //   }
-  //   return (
-  //     <Text key={prediction.className} className="text-white text-lg">
-  //       {prediction.className} ({(prediction.probability * 100).toFixed(2)}%)
-  //     </Text>
-  //   );
-  // };
-
   const classifyImage = async (imageUri) => {
     try {
       setPredictionLoading(true);
@@ -266,15 +205,43 @@ export default function Camera() {
     });
   };
 
-  const renderPrediction = (prediction) => {
-    if (!prediction) {
-      return null;
+  const toggleIngredient = (prediction) => {
+    setSelectedIngredients((prev) => {
+      if (prev.includes(prediction)) {
+        return prev.filter((item) => item !== prediction);
+      } else {
+        return [...prev, prediction];
+      }
+    });
+  };
+
+  // Add the selected ingredients to the user.ingredients array
+  const addIngredients = async () => {
+    try {
+      const ingredientNames = selectedIngredients.map(
+        (ingredient) => ingredient.name
+      );
+      console.log("ingredientNames:", ingredientNames);
+
+      const response = await fetch(
+        `${BACKEND_URL}/users/addIngredient/${user.token}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ ingredients: ingredientNames }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to add ingredients");
+      }
+      const data = await response.json();
+      console.log("Added ingredients:", data);
+      alert("Ingredients added successfully");
+    } catch (error) {
+      console.error(error);
     }
-    return (
-      <Text key={prediction.id} className="text-white text-lg">
-        {prediction.name} ({(prediction.value * 100).toFixed(2)}%)
-      </Text>
-    );
   };
 
   return (
@@ -357,22 +324,32 @@ export default function Camera() {
           predictions.slice(0, 5).map((prediction, index) => (
             <View key={index} className="w-[200] p-2">
               <BouncyCheckbox
-                onPress={() => console.log("Pressed")}
-                isChecked={false}
+                onPress={() => toggleIngredient(prediction)}
+                isChecked={selectedIngredients.includes(prediction)}
                 text={
-                  prediction.name +
-                  " (" +
-                  (prediction.value * 100).toFixed(2) +
-                  "%)"
+                  (
+                    prediction.name +
+                    " (" +
+                    (prediction.value * 100).toFixed(2) +
+                    "%)"
+                  )
+                    .charAt(0)
+                    .toUpperCase() +
+                  (
+                    prediction.name +
+                    " (" +
+                    (prediction.value * 100).toFixed(2) +
+                    "%)"
+                  ).slice(1)
                 }
                 textStyle={{
                   color: "white",
                   fontFamily: "Nobile",
+                  textDecorationLine: "none",
                 }}
-                iconStyle={{
-                  borderColor: "white",
-                }}
-                fillColor="white"
+                fillColor="#FED400"
+                unFillColor={"transparent"}
+                innerIconStyle={{ borderColor: "white" }}
                 bounceEffectIn={0.6}
               />
               <RNBounceable
@@ -381,6 +358,27 @@ export default function Camera() {
             </View>
           ))}
       </View>
+
+      {selectedIngredients.length > 0 && (
+        <TouchableOpacity
+          onPress={addIngredients}
+          className="relative flex justify-center items-center top-4"
+        >
+          <Image
+            source={require("../../assets/images/button/button8.png")}
+            alt="button"
+            className="w-48 h-12"
+          />
+          <Text
+            className="text-lg text-slate-700 absolute"
+            style={{
+              fontFamily: "Nobile",
+            }}
+          >
+            Add Ingredient(s)
+          </Text>
+        </TouchableOpacity>
+      )}
       {cameraOpen && (
         <PinchGestureHandler
           ref={pinchRef}

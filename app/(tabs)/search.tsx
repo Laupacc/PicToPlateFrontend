@@ -155,19 +155,6 @@ export default function Search() {
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
 
-      {/* <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-undo-sharp" size={30} />
-        </TouchableOpacity> */}
-
-      {/* <TouchableOpacity onPress={fetchTrivia}>
-          <Text>Fetch Trivia</Text>
-        </TouchableOpacity>
-        <Text className="items-center justify-center">{trivia}</Text>
-  
-        <TouchableOpacity onPress={fetchJoke}>
-          <Text>Fetch Joke</Text>
-        </TouchableOpacity> */}
-
       {/* Radom Recipe Button */}
       <View className="flex flex-row justify-center items-center">
         <View className="flex flex-row justify-center items-center">

@@ -58,3 +58,4 @@ export const randomStickerImage = () => {
   ];
   return images[Math.floor(Math.random() * images.length)];
 };
+

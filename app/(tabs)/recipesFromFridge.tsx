@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigation } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Background from "@/components/Background";
@@ -21,9 +21,16 @@ export default function recipesFromFridge() {
   const [recipes, setRecipes] = useState([]);
   const BACKEND_URL = "http://192.168.1.34:3000";
 
+  const cachedRecipes = useRef<any[]>([]);
+
   useEffect(() => {
     const searchRecipesFromFridge = async () => {
       try {
+        if (cachedRecipes.current.length > 0) {
+          setRecipes(cachedRecipes.current);
+          return;
+        }
+
         const response = await fetch(
           `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${searchQuery}`
         );
@@ -34,6 +41,7 @@ export default function recipesFromFridge() {
         const data = await response.json();
         console.log("Search results:", data);
         setRecipes(data.results);
+        cachedRecipes.current = data.results;
       } catch (error) {
         console.error(error);
       }
@@ -44,7 +52,16 @@ export default function recipesFromFridge() {
   return (
     <SafeAreaView style={styles.container}>
       <Background cellSize={25} />
-      <Text className="text-cyan-800">From Fridge</Text>
+      <Text
+        style={{
+          fontFamily: "Flux",
+          fontSize: 24,
+          textAlign: "center",
+          margin: 20,
+        }}
+      >
+        Recipes From my ingredients
+      </Text>
       <TouchableOpacity onPress={() => navigation.goBack()}>
         <Text>Go Back</Text>
       </TouchableOpacity>
