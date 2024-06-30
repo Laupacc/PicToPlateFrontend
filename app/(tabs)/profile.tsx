@@ -32,25 +32,34 @@ export default function Profile() {
   return (
     <SafeAreaView style={styles.container}>
       <Background cellSize={25} />
-      <Text className="text-cyan-800">Profile</Text>
-      <Link href="/">Got to home</Link>
-      <Link href="/recipesFromFridge">Got to recipes from fridge</Link>
-      <Link href="/recipesCard">Got to recipes card</Link>
-      <Link href="/authentication">Got to authentication</Link>
-      {user.token && (
-        <Text className="text-xl text-cyan-600">
-          Welcome back {user.username}
-        </Text>
-      )}
-      {!user.token ? (
-        <Link href="/authentication">
-          <Text>Please Log in</Text>
-        </Link>
-      ) : (
-        <TouchableOpacity onPress={handleLogout}>
-          <Text>Logout</Text>
-        </TouchableOpacity>
-      )}
+
+      <View className="absolute top-16">
+        <Image
+          source={require("../../assets/images/logo7.png")}
+          className="w-60 h-14"
+        />
+      </View>
+      <View className="flex justify-center items-center">
+        <Text className="text-cyan-800">Profile</Text>
+        <Link href="/">Got to home</Link>
+        <Link href="/recipesFromFridge">Got to recipes from fridge</Link>
+        <Link href="/recipesCard">Got to recipes card</Link>
+        <Link href="/authentication">Got to authentication</Link>
+        {user.token && (
+          <Text className="text-xl text-cyan-600">
+            Welcome back {user.username}
+          </Text>
+        )}
+        {!user.token ? (
+          <Link href="/authentication">
+            <Text>Please Log in</Text>
+          </Link>
+        ) : (
+          <TouchableOpacity onPress={handleLogout}>
+            <Text>Logout</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </SafeAreaView>
   );
 }

@@ -78,6 +78,7 @@ export default function Index() {
             {randomCatchPhrases()}
           </Text>
         </View>
+
         <View className="absolute bottom-32">
           <TouchableOpacity className="border-2 border-sky-700 p-4 rounded-xl">
             <Link href="/authentication">
@@ -90,6 +91,13 @@ export default function Index() {
             </Link>
           </TouchableOpacity>
         </View>
+        <View className="absolute bottom-10">
+          <Image
+            source={require("../assets/images/logo7.png")}
+            className="w-40 h-10"
+          />
+        </View>
+
         <View className="absolute bottom-8"></View>
       </View>
     </View>

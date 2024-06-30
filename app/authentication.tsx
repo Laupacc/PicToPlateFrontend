@@ -6,6 +6,8 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
+  StatusBar,
+  ImageBackground,
 } from "react-native";
 import React from "react";
 import { Link } from "expo-router";
@@ -14,6 +16,7 @@ import { useNavigation } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import Background from "@/components/Background";
+import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/store/user";
@@ -37,23 +40,23 @@ export default function Authentication() {
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
-  // useEffect(() => {
-  //   const checkToken = async () => {
-  //     try {
-  //       const token = await SecureStore.getItemAsync("token");
-  //       if (token) {
-  //         dispatch(login({ token }));
-  //         console.log("Token found, navigating to profile");
-  //         navigation.navigate("(tabs)", { screen: "profile" });
-  //       } else {
-  //         console.log("No token found");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error retrieving token:", error);
-  //     }
-  //   };
-  //   checkToken();
-  // }, []);
+  useEffect(() => {
+    const checkToken = async () => {
+      try {
+        const token = await SecureStore.getItemAsync("token");
+        if (token) {
+          dispatch(login({ token }));
+          console.log("Token found, navigating to profile");
+          navigation.navigate("(tabs)", { screen: "profile" });
+        } else {
+          console.log("No token found");
+        }
+      } catch (error) {
+        console.error("Error retrieving token:", error);
+      }
+    };
+    checkToken();
+  }, []);
 
   const handleSignUp = async () => {
     setSignUpUsernameEmpty(false);
@@ -137,8 +140,8 @@ export default function Authentication() {
         console.log("User logged in successfully", data);
         dispatch(login(data));
 
-        // await SecureStore.setItemAsync("token", data.token);
-        // console.log("Token stored successfully");
+        await SecureStore.setItemAsync("token", data.token);
+        console.log("Token stored successfully");
 
         navigation.navigate("(tabs)", { screen: "profile" });
         setLoginUsername("");
@@ -166,9 +169,49 @@ export default function Authentication() {
     setIsLoginPasswordHidden(!isloginPasswordHidden);
   };
 
+  const randomBackgroundImages = () => {
+    const images = [
+      require("../assets/images/backgrounds/background1.jpg"),
+      require("../assets/images/backgrounds/background2.jpg"),
+      require("../assets/images/backgrounds/background5.png"),
+      require("../assets/images/backgrounds/background6.jpg"),
+      require("../assets/images/backgrounds/background7.jpg"),
+      require("../assets/images/backgrounds/background8.jpg"),
+      require("../assets/images/backgrounds/background9.jpg"),
+      require("../assets/images/backgrounds/background11.jpg"),
+      require("../assets/images/backgrounds/background12.jpg"),
+      require("../assets/images/backgrounds/background13.jpg"),
+      require("../assets/images/backgrounds/background14.jpg"),
+      require("../assets/images/backgrounds/background15.jpg"),
+      require("../assets/images/backgrounds/background16.jpg"),
+      require("../assets/images/backgrounds/background17.jpg"),
+      require("../assets/images/backgrounds/background18.jpg"),
+      require("../assets/images/backgrounds/background19.jpg"),
+      require("../assets/images/backgrounds/background20.jpg"),
+    ];
+    return images[Math.floor(Math.random() * images.length)];
+  };
+
   return (
-    <SafeAreaView className="flex-1 justify-center items-center">
+    <View className="flex-1 justify-center items-center">
+      <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
+
+      {/* <ImageBackground
+        source={randomBackgroundImages()}
+        className="w-full h-full flex justify-center items-center"
+      >
+        <LinearGradient
+          colors={["transparent", "black"]}
+          className="absolute w-full h-full"
+        /> */}
+
+      <View className="absolute top-16">
+        <Image
+          source={require("../assets/images/logo7.png")}
+          className="w-60 h-14"
+        />
+      </View>
 
       {/* Login */}
       {!signUpVisible && (
@@ -338,9 +381,10 @@ export default function Authentication() {
         </View>
       )}
 
-      <TouchableOpacity onPress={() => getValueFor("token")}>
+      {/* <TouchableOpacity onPress={() => getValueFor("token")}>
         <Text className="text-lg text-red-500">Get Token</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
+      </TouchableOpacity> */}
+      {/* </ImageBackground> */}
+    </View>
   );
 }

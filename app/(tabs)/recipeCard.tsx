@@ -944,15 +944,11 @@ export default function RecipeCard() {
                   Wine Paring?
                 </Text>
               </View>
-              {/* <MaterialCommunityIcons
-                name="liquor"
-                size={60}
-                color={"#7a1b0e"}
-              /> */}
             </TouchableOpacity>
 
             {showWinePairing &&
               recipe.winePairing.pairedWines &&
+              Array.isArray(recipe.winePairing.pairedWines) &&
               recipe.winePairing.pairedWines.length > 0 && (
                 <View className="relative m-2">
                   <View
@@ -1035,39 +1031,42 @@ export default function RecipeCard() {
                 </View>
               )}
 
-            {showWinePairing && recipe.winePairing.pairedWines.length === 0 && (
-              <View className="relative m-2">
-                <View
-                  className="absolute bg-[#0098a3] rounded-2xl right-0.5 bottom-0.5"
-                  style={{
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 6,
-                      height: 6,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 8,
-                    width: screenWidth - 40,
-                    height: 100,
-                  }}
-                ></View>
-                <View
-                  className="flex justify-center items-center bg-slate-300 rounded-2xl m-2 p-2"
-                  style={{
-                    width: screenWidth - 40,
-                    height: 100,
-                  }}
-                >
-                  <Text
-                    className="text-lg m-2 text-center"
-                    style={{ fontFamily: "SpaceMono" }}
+            {showWinePairing &&
+              (!recipe.winePairing.pairedWines ||
+                !Array.isArray(recipe.winePairing.pairedWines) ||
+                recipe.winePairing.pairedWines.length === 0) && (
+                <View className="relative m-2">
+                  <View
+                    className="absolute bg-[#0098a3] rounded-2xl right-0.5 bottom-0.5"
+                    style={{
+                      shadowColor: "#000",
+                      shadowOffset: {
+                        width: 6,
+                        height: 6,
+                      },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 4,
+                      elevation: 8,
+                      width: screenWidth - 40,
+                      height: 100,
+                    }}
+                  ></View>
+                  <View
+                    className="flex justify-center items-center bg-slate-300 rounded-2xl m-2 p-2"
+                    style={{
+                      width: screenWidth - 40,
+                      height: 100,
+                    }}
                   >
-                    There are no wine pairing suggestions for this recipe
-                  </Text>
+                    <Text
+                      className="text-lg m-2 text-center"
+                      style={{ fontFamily: "SpaceMono" }}
+                    >
+                      There are no wine pairing suggestions for this recipe
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            )}
+              )}
 
             {/* Box behind instructions */}
             <View className="relative mb-5">

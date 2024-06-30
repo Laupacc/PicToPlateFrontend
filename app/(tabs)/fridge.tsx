@@ -197,41 +197,43 @@ export default function Fridge() {
   };
 
   return (
-    <SafeAreaView className="flex-1 justify-center items-center mt-5">
+    <SafeAreaView className="flex-1 justify-center items-center">
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
-      {/* <ImageBackground
-        source={require("@/assets/images/fridge/fridge2.png")}
-        className="absolute -z-1 w-full h-full"
-        resizeMode="contain"
-        style={{
-          shadowColor: "#000",
-          shadowOffset: {
-            width: 4,
-            height: 4,
-          },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-          elevation: 8,
+      <ScrollView
+        className="w-full h-full"
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
         }}
-      /> */}
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 justify-start items-center w-full h-full"
       >
-        <View className="flex justify-center items-center -mt-6">
-          <Text
-            style={{
-              fontFamily: "Flux",
-              fontSize: 24,
-              textAlign: "center",
-              margin: 20,
-            }}
-          >
-            My Fridge
-          </Text>
-        </View>
+        {/* <ImageBackground
+          source={require("@/assets/images/fridge/fridge8.png")}
+          className="absolute w-full h-full"
+          resizeMode="contain"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: {
+              width: 4,
+              height: 4,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 8,
+          }}
+        /> */}
+
+        <Text
+          style={{
+            fontFamily: "Flux",
+            fontSize: 24,
+            textAlign: "center",
+            margin: 20,
+          }}
+        >
+          My Fridge
+        </Text>
 
         <Text
           style={{
@@ -244,6 +246,10 @@ export default function Fridge() {
           Add more ingredients to your fridge
         </Text>
 
+        {/* <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1 justify-start items-center w-full h-full"
+      > */}
         <View className="flex items-center justify-center relative">
           <TextInput
             placeholder="Search ingredient"
@@ -283,6 +289,97 @@ export default function Fridge() {
               transform: [{ translateY: -12.5 }],
             }}
           />
+        </View>
+        {/* </KeyboardAvoidingView> */}
+
+        <View className="relative flex justify-center items-center">
+          <Image
+            source={require("@/assets/images/fridge/fridge8.png")}
+            // className="w-80 h-96 absolute"
+            className="absolute inset-0 w-[350] h-[600]"
+          ></Image>
+          <View>
+            <View className="flex justify-center items-center mt-10">
+              {fridgeItems.map((item, index) => (
+                <View key={index} className="w-52 p-1">
+                  <BouncyCheckbox
+                    size={25}
+                    fillColor="#FF9B50"
+                    unFillColor="#e2e8f0"
+                    text={
+                      item.name.charAt(0).toUpperCase() + item.name.slice(1)
+                    }
+                    textStyle={{
+                      fontFamily: "Nobile",
+                      textDecorationLine: "none",
+                    }}
+                    iconStyle={{ borderColor: "#FF9B50" }}
+                    onPress={(isChecked) => {
+                      const updatedItems = fridgeItems.map((i) =>
+                        i.name === item.name ? { ...i, checked: isChecked } : i
+                      );
+                      // setFridgeItems(updatedItems);
+                      dispatch(updateIngredients(updatedItems));
+                    }}
+                  />
+                  <RNBounceable
+                    className="flex justify-center items-center"
+                    onPress={() => {
+                      const updatedItems = fridgeItems.filter(
+                        (i) => i.name !== item.name
+                      );
+                      // setFridgeItems(updatedItems);
+                      dispatch(updateIngredients(updatedItems));
+                    }}
+                  ></RNBounceable>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const updatedItems = fridgeItems.filter(
+                        (i) => i.name !== item.name
+                      );
+                      removeIngredientFromFridge(item.name);
+                      // setFridgeItems(updatedItems);
+                      dispatch(updateIngredients(updatedItems));
+                    }}
+                    className="absolute top-0 right-0"
+                  >
+                    <Ionicons name="trash" size={20} color="#FF9B50" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+            <View className="flex justify-center items-center">
+              {ingredients.length > 0 &&
+                ingredients.some((item) => item.checked) && (
+                  <TouchableOpacity
+                    onPress={searchRecipesFromIngredientsSelected}
+                    className="relative flex justify-center items-center top-4"
+                  >
+                    <Image
+                      source={require("@/assets/images/button/button10.png")}
+                      alt="button"
+                      className="w-40 h-12"
+                    />
+                    <Text
+                      className="text-lg text-white absolute"
+                      style={{
+                        fontFamily: "Nobile",
+                        shadowColor: "#000",
+                        shadowOffset: {
+                          width: 4,
+                          height: 4,
+                        },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 4,
+                        elevation: 8,
+                      }}
+                    >
+                      Search Recipes
+                    </Text>
+                  </TouchableOpacity>
+                )}
+            </View>
+          </View>
         </View>
 
         {isSearchModalVisible && searchResults.length > 0 && (
@@ -371,108 +468,7 @@ export default function Fridge() {
             </View>
           </Modal>
         )}
-
-        <View className="relative flex justify-start items-center w-full h-full mt-2">
-            <Image
-              source={require("@/assets/images/fridge/fridge8.png")}
-              style={{
-                position: "absolute",
-                width: "100%",
-                height: "100%",
-                resizeMode: "contain",
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 4,
-                  height: 4,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-              }}
-              />
-              <ScrollView>
-            <View className="flex justify-center items-center mt-16">
-              {fridgeItems.map((item, index) => (
-                <View key={index} className="w-52 p-1">
-                  <BouncyCheckbox
-                    size={25}
-                    fillColor="#FF9B50"
-                    unFillColor="#e2e8f0"
-                    text={
-                      item.name.charAt(0).toUpperCase() + item.name.slice(1)
-                    }
-                    textStyle={{
-                      fontFamily: "Nobile",
-                      textDecorationLine: "none",
-                    }}
-                    iconStyle={{ borderColor: "#FF9B50" }}
-                    onPress={(isChecked) => {
-                      const updatedItems = fridgeItems.map((i) =>
-                        i.name === item.name ? { ...i, checked: isChecked } : i
-                      );
-                      // setFridgeItems(updatedItems);
-                      dispatch(updateIngredients(updatedItems));
-                    }}
-                  />
-                  <RNBounceable
-                    className="flex justify-center items-center"
-                    onPress={() => {
-                      const updatedItems = fridgeItems.filter(
-                        (i) => i.name !== item.name
-                      );
-                      // setFridgeItems(updatedItems);
-                      dispatch(updateIngredients(updatedItems));
-                    }}
-                  ></RNBounceable>
-                  <TouchableOpacity
-                    onPress={() => {
-                      const updatedItems = fridgeItems.filter(
-                        (i) => i.name !== item.name
-                      );
-                      removeIngredientFromFridge(item.name);
-                      // setFridgeItems(updatedItems);
-                      dispatch(updateIngredients(updatedItems));
-                    }}
-                    className="absolute top-0 right-0"
-                  >
-                    <Ionicons name="trash" size={20} color="#FF9B50" />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-            <View className="flex justify-center items-center">
-              {ingredients.length > 0 &&
-                ingredients.some((item) => item.checked) && (
-                  <TouchableOpacity
-                    onPress={searchRecipesFromIngredientsSelected}
-                    className="relative flex justify-center items-center top-4"
-                  >
-                    <Image
-                      source={require("@/assets/images/button/button10.png")}
-                      alt="button"
-                      className="w-40 h-12"
-                    />
-                    <Text
-                      className="text-lg text-white absolute"
-                      style={{
-                        fontFamily: "Nobile",
-                        shadowColor: "#000",
-                        shadowOffset: {
-                          width: 4,
-                          height: 4,
-                        },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 4,
-                        elevation: 8,
-                      }}
-                    >
-                      Search Recipes
-                    </Text>
-                  </TouchableOpacity>
-                )}
-            </View>
-                </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
+      </ScrollView>
     </SafeAreaView>
   );
 }
