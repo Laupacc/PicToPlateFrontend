@@ -68,7 +68,7 @@ export default function RootLayout() {
   const store = configureStore({
     reducer: persistedReducer,
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({ serializableCheck: false }),
+      getDefaultMiddleware({ serializableCheck: false, immutableCheck: false }),
   });
 
   const persistor = persistStore(store);

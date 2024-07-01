@@ -21,6 +21,9 @@ import {
   updateFavouriteRecipes,
 } from "@/store/recipes";
 import { Ionicons } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Entypo } from "@expo/vector-icons";
 
 export default function Favourites() {
   const navigation = useNavigation();
@@ -38,10 +41,10 @@ export default function Favourites() {
     const fetchFavouriteRecipes = async () => {
       try {
         // Check if favorites are already cached
-        // if (cachedFavorites.current.length > 0) {
-        //   setFavouriteRecipes(cachedFavorites.current);
-        //   return;
-        // }
+        if (cachedFavorites.current.length > 0) {
+          setFavouriteRecipes(cachedFavorites.current);
+          return;
+        }
 
         const response = await fetch(
           `${BACKEND_URL}/users/fetchFavourites/${user.token}`
@@ -94,16 +97,33 @@ export default function Favourites() {
       <Background cellSize={25} />
       <StatusBar barStyle="dark-content" />
 
-      <Text
+      <View
+        className="flex justify-center items-center relative m-2 w-[330] h-[60]"
         style={{
-          fontFamily: "Flux",
-          fontSize: 24,
-          textAlign: "center",
-          margin: 20,
+          shadowColor: "#000",
+          shadowOffset: {
+            width: 4,
+            height: 4,
+          },
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
+          elevation: 15,
         }}
       >
-        My saved recipes
-      </Text>
+        <Image
+          source={require("../../assets/images/stickers/redTape.png")}
+          className="absolute inset-0 w-full h-full"
+        />
+        <Text
+          style={{
+            fontFamily: "Flux",
+            fontSize: 20,
+            textAlign: "center",
+          }}
+        >
+          My favourite recipes
+        </Text>
+      </View>
 
       <ScrollView className="flex-1">
         {favouriteRecipes &&
@@ -126,14 +146,10 @@ export default function Favourites() {
                 }}
               ></View>
               <TouchableOpacity
+                className="absolute top-10 right-2"
                 onPress={() => removeRecipeFromFavourites(recipe.id)}
               >
-                <Ionicons
-                  name="trash"
-                  size={24}
-                  color="red"
-                  className="absolute top-0 right-0 m-4"
-                />
+                <Entypo name="trash" size={28} color="gray" />
               </TouchableOpacity>
 
               <View key={recipe.id}>
