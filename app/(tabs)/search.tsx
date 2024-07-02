@@ -11,8 +11,11 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Dimensions,
+  Animated,
 } from "react-native";
 import React, { useEffect, useState, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { addToFavouriteRecipes } from "@/store/recipes";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
@@ -28,6 +31,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function Search() {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.value);
 
   const [trivia, setTrivia] = useState("");
   const [joke, setJoke] = useState("");
@@ -44,6 +49,7 @@ export default function Search() {
   const [showIntolerances, setShowIntolerances] = useState(false);
   const isInitialMount = useRef(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [isFavourite, setIsFavourite] = useState(false);
 
   const [ingredientName, setIngredientName] = useState("");
   const [sourceAmount, setSourceAmount] = useState("");
@@ -56,6 +62,7 @@ export default function Search() {
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
+  const bounceAnim = useRef(new Animated.Value(0)).current;
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
@@ -119,6 +126,27 @@ export default function Search() {
       setRecipesFromIngredients(recipe.results);
     } catch (error) {
       console.error("Error fetching recipes:", error);
+    }
+  };
+
+  const addRecipeToFavourites = async (recipeId) => {
+    try {
+      const token = user.token;
+      const response = await fetch(
+        `${BACKEND_URL}/users/addFavourite/${recipeId}/${token}`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        console.log("Error adding recipe to favourites");
+      }
+
+      dispatch(addToFavouriteRecipes(recipe));
+      setIsFavourite(true);
+      console.log("Recipe added to favourites:", recipe.id);
+      alert("Recipe added to favourites");
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -186,6 +214,18 @@ export default function Search() {
     complexSearchByIngredients("", [], [], null);
   };
 
+  const randomRecipeIcon = () => {
+    const icons = [
+      require("../../assets/images/recipe1.png"),
+      require("../../assets/images/recipe2.png"),
+      require("../../assets/images/recipe3.png"),
+      require("../../assets/images/recipe4.png"),
+      require("../../assets/images/recipe5.png"),
+      require("../../assets/images/recipe6.png"),
+    ];
+    return icons[Math.floor(Math.random() * icons.length)];
+  };
+
   const dietOptions = [
     { key: "vegetarian", label: "Vegetarian" },
     { key: "vegan", label: "Vegan" },
@@ -238,20 +278,128 @@ export default function Search() {
     }
   }, [diet, intolerances, maxReadyTime]);
 
+  useEffect(() => {
+    const bounceAnimation = () => {
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: -30,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: -15,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setTimeout(bounceAnimation, 8000);
+      });
+    };
+
+    // Start the first animation
+    bounceAnimation();
+
+    // Clear the timeout when the component unmounts
+    return () => clearTimeout(bounceAnimation);
+  }, []);
+
   return (
     <SafeAreaView className="flex-1 items-center justify-center">
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
-      <ScrollView>
-        <View className="flex flex-row justify-center items-center mt-2">
-          <Image
-            source={require("../../assets/images/logo7.png")}
-            className="w-60 h-14"
-          />
+      <View className="flex justify-center items-center mb-2">
+        <Image
+          source={require("../../assets/images/logo8.png")}
+          className="w-60 h-14"
+        />
+        <View className="w-72 h-[1] bg-slate-400"></View>
+      </View>
+
+      <Text
+        style={{
+          fontFamily: "CreamyCookies",
+          color: "#475569",
+          fontSize: 20,
+          textAlign: "center",
+          marginVertical: 10,
+          marginHorizontal: 35,
+        }}
+      >
+        Turn your pantry into delicious meals!
+      </Text>
+
+      <View className="flex flex-row justify-center items-center mb-2">
+        {/* Search bar, by Ingredients */}
+        <View className="flex justify-center items-center mx-2">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <View className="relative items-center w-full justify-center">
+              <TextInput
+                placeholder="Search by ingredients"
+                placeholderTextColor={"gray"}
+                value={search}
+                onChangeText={setSearch}
+                onSubmitEditing={() =>
+                  search.trim() &&
+                  complexSearchByIngredients(
+                    search,
+                    diet,
+                    intolerances,
+                    maxReadyTime
+                  )
+                }
+                className="border-2 border-gray-400 rounded-lg pl-4 w-60 h-12"
+              />
+              <FontAwesome6
+                name="circle-xmark"
+                size={25}
+                color={"#f87171"}
+                onPress={() => handleClearSearch()}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: [{ translateY: -12.5 }],
+                }}
+              />
+            </View>
+            <FontAwesome
+              onPress={() =>
+                search.trim() &&
+                complexSearchByIngredients(
+                  search,
+                  diet,
+                  intolerances,
+                  maxReadyTime
+                )
+              }
+              name="search"
+              size={25}
+              color={"#0891b2"}
+              style={{
+                position: "absolute",
+                right: 45,
+                top: "50%",
+                transform: [{ translateY: -12.5 }],
+              }}
+            />
+          </KeyboardAvoidingView>
         </View>
+
         {/* Radom Recipe Button */}
         <View
-          className="flex justify-center items-center my-4 p-4 border rounded-2xl bg-slate-300 "
+          className="flex justify-center items-center mx-2"
           style={{
             shadowColor: "#000",
             shadowOffset: {
@@ -264,742 +412,707 @@ export default function Search() {
           }}
         >
           <View className="flex justify-center items-center">
-            <Text
-              style={{
-                fontFamily: "Nobile",
-                color: "#475569",
-                fontSize: 22,
-                textAlign: "center",
-              }}
+            <TouchableOpacity
+              onPress={handleFetchRandomRecipe}
+              className="flex flex-row justify-center items-center"
             >
-              Surprise me
-            </Text>
-            <FontAwesome6 name="arrow-down" size={30} color={"#475569"} />
+              <View className="relative w-16 h-16 flex justify-center items-center">
+                <Animated.Image
+                  source={require("../../assets/images/randomButton.png")}
+                  className="absolute inset-0 w-full h-full"
+                  style={{
+                    transform: [{ translateY: bounceAnim }],
+                  }}
+                />
+                <Animated.Image
+                  source={require("../../assets/images/dice5.png")}
+                  className="w-6 h-6 bottom-2"
+                  style={{
+                    transform: [{ translateY: bounceAnim }],
+                  }}
+                />
+              </View>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={handleFetchRandomRecipe}
-            className="flex flex-row justify-center items-center"
-          >
-            <View className="relative w-20 h-20 flex justify-center items-center">
-              <Image
-                source={require("../../assets/images/randomButton.png")}
-                className="absolute inset-0 w-full h-full"
-              />
-              <Image
-                source={require("../../assets/images/dice5.png")}
-                className="w-8 h-8 bottom-2"
-              />
-            </View>
-          </TouchableOpacity>
         </View>
+      </View>
 
-        <View className="flex justify-center items-center m-2">
+      {/* Filters and Conversion Buttons */}
+      <View className="flex flex-row justify-center items-center">
+        <TouchableOpacity
+          onPress={() => {
+            setShowFilters(!showFilters);
+            setShowConversion(false);
+            setShowDiet(false);
+            setShowIntolerances(false);
+            setShowMaxReadyTime(false);
+          }}
+          className="flex justify-center items-center relative mx-2"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: {
+              width: 2,
+              height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 6,
+          }}
+        >
+          <Image
+            source={require("@/assets/images/button/button9.png")}
+            alt="button"
+            className="w-40 h-12"
+          />
           <Text
+            className="text-lg text-white absolute text-center"
             style={{
               fontFamily: "Nobile",
-              color: "#475569",
-              fontSize: 20,
-              textAlign: "center",
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 4,
+                height: 4,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 8,
             }}
           >
-            Or search for recipes by ingredients
+            Filters
           </Text>
-        </View>
-
-        {/* Search bar, by Ingredients */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            setShowConversion(!showConversion);
+            setShowFilters(false);
+            setShowDiet(false);
+            setShowIntolerances(false);
+            setShowMaxReadyTime(false);
+          }}
+          className="flex justify-center items-center relative mx-2"
+          style={{
+            shadowColor: "#000",
+            shadowOffset: {
+              width: 2,
+              height: 2,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 6,
+          }}
         >
-          <View className="relative items-center w-full justify-center">
-            <TextInput
-              placeholder="Search by ingredients"
-              placeholderTextColor={"gray"}
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={() =>
-                search.trim() &&
-                complexSearchByIngredients(
-                  search,
-                  diet,
-                  intolerances,
-                  maxReadyTime
-                )
-              }
-              className="border-2 border-gray-400 rounded-lg pl-4 w-72 h-12"
-            />
-            <FontAwesome6
-              name="circle-xmark"
-              size={25}
-              color={"#f87171"}
-              onPress={() => handleClearSearch()}
-              style={{
-                position: "absolute",
-                right: 10,
-                top: "50%",
-                transform: [{ translateY: -12.5 }],
-              }}
-            />
-          </View>
-          <FontAwesome
-            onPress={() =>
-              search.trim() &&
-              complexSearchByIngredients(
-                search,
-                diet,
-                intolerances,
-                maxReadyTime
-              )
-            }
-            name="search"
-            size={25}
-            color={"#0891b2"}
-            style={{
-              position: "absolute",
-              right: 45,
-              top: "50%",
-              transform: [{ translateY: -12.5 }],
-            }}
+          <Image
+            source={require("@/assets/images/button/button4.png")}
+            alt="button"
+            className="w-40 h-12"
           />
-        </KeyboardAvoidingView>
-
-        <View className="flex flex-row justify-center items-center">
-          <TouchableOpacity
-            onPress={() => {
-              setShowFilters(!showFilters);
-              setShowConversion(false);
-              setShowDiet(false);
-              setShowIntolerances(false);
-              setShowMaxReadyTime(false);
-            }}
-            className="flex justify-center items-center relative mx-2 mt-2"
+          <Text
+            className="text-lg text-white absolute text-center"
             style={{
+              fontFamily: "Nobile",
               shadowColor: "#000",
               shadowOffset: {
-                width: 2,
-                height: 2,
+                width: 4,
+                height: 4,
               },
               shadowOpacity: 0.25,
               shadowRadius: 4,
-              elevation: 6,
+              elevation: 8,
             }}
           >
-            <Image
-              source={require("@/assets/images/button/button9.png")}
-              alt="button"
-              className="w-40 h-12"
-            />
-            <Text
-              className="text-lg text-white absolute text-center"
-              style={{
-                fontFamily: "Nobile",
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 4,
-                  height: 4,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 8,
-              }}
-            >
-              Filters
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setShowConversion(!showConversion);
-              setShowFilters(false);
-              setShowDiet(false);
-              setShowIntolerances(false);
-              setShowMaxReadyTime(false);
-            }}
-            className="flex justify-center items-center relative mx-2 mt-2"
-            style={{
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 2,
-                height: 2,
-              },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 6,
-            }}
-          >
-            <Image
-              source={require("@/assets/images/button/button4.png")}
-              alt="button"
-              className="w-40 h-12"
-            />
-            <Text
-              className="text-lg text-white absolute text-center"
-              style={{
-                fontFamily: "Nobile",
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 4,
-                  height: 4,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 8,
-              }}
-            >
-              Convert Units
-            </Text>
-          </TouchableOpacity>
-        </View>
+            Convert Units
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-        {showConversion && (
-          <View>
-            <View className="flex justify-center items-center my-3">
-              <View className="flex flex-row justify-center items-center m-2">
-                <TextInput
-                  placeholder="Ingredient"
-                  placeholderTextColor={"gray"}
-                  value={ingredientName}
-                  onChangeText={setIngredientName}
-                  className="border-2 border-gray-400 rounded-lg w-40 h-10 mx-2 text-center"
-                />
-                <TextInput
-                  placeholder="Amount"
-                  placeholderTextColor={"gray"}
-                  value={sourceAmount}
-                  onChangeText={setSourceAmount}
-                  className="border-2 border-gray-400 rounded-lg w-20 h-10 mx-2 text-center"
-                />
-              </View>
-              <View className="flex flex-row justify-center items-center m-2">
-                <RNPickerSelect
-                  onValueChange={(value) => setSourceUnit(value)}
-                  items={conversionAmounts}
-                  style={{
-                    inputAndroid: {
-                      color: "black",
-                      fontFamily: "Nobile",
-                      fontSize: 16,
-                      paddingVertical: 12,
-                      paddingHorizontal: 10,
-                      borderWidth: 1,
-                      borderColor: "gray",
-                      borderRadius: 4,
-                      paddingRight: 30,
-                      marginHorizontal: 20,
-                    },
-                    inputIOS: {
-                      color: "black",
-                      fontFamily: "Nobile",
-                      fontSize: 16,
-                      paddingVertical: 12,
-                      paddingHorizontal: 10,
-                      borderWidth: 1,
-                      borderColor: "gray",
-                      borderRadius: 4,
-                      paddingRight: 30,
-                      marginHorizontal: 20,
-                    },
-                    iconContainer: {
-                      position: "absolute",
-                      top: "50%",
-                      left: "60%",
-                    },
-                  }}
-                  value={sourceUnit}
-                  useNativeAndroidPickerStyle={false}
-                  placeholder={{ label: "Unit", value: null }}
-                  Icon={() => {
-                    return (
-                      <Ionicons name="chevron-down" size={24} color="gray" />
-                    );
-                  }}
-                />
-                <RNPickerSelect
-                  onValueChange={(value) => setTargetUnit(value)}
-                  items={conversionAmounts}
-                  style={{
-                    inputAndroid: {
-                      color: "black",
-                      fontFamily: "Nobile",
-                      fontSize: 16,
-                      paddingVertical: 12,
-                      paddingHorizontal: 10,
-                      borderWidth: 1,
-                      borderColor: "gray",
-                      borderRadius: 4,
-                      paddingRight: 30,
-                    },
-                    inputIOS: {
-                      color: "black",
-                      fontFamily: "Nobile",
-                      fontSize: 16,
-                      paddingVertical: 12,
-                      paddingHorizontal: 10,
-                      borderWidth: 1,
-                      borderColor: "gray",
-                      borderRadius: 4,
-                      paddingRight: 30,
-                    },
-                    iconContainer: {
-                      position: "absolute",
-                      top: "50%",
-                      left: "60%",
-                    },
-                  }}
-                  value={targetUnit}
-                  useNativeAndroidPickerStyle={false}
-                  placeholder={{ label: "Unit", value: null }}
-                  Icon={() => {
-                    return (
-                      <Ionicons name="chevron-down" size={24} color="gray" />
-                    );
-                  }}
-                />
-              </View>
-              <TouchableOpacity
-                onPress={() => {
-                  convertAmount(
-                    ingredientName,
-                    sourceAmount,
-                    sourceUnit,
-                    targetUnit
-                  );
-                  setShowConversionResult(true);
-                }}
-                className="flex justify-center items-center relative mx-2"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 2,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 6,
-                }}
-              >
-                <Image
-                  source={require("@/assets/images/button/button1.png")}
-                  alt="button"
-                  className="w-36 h-12"
-                />
-                <Text
-                  className="text-lg text-white absolute text-center"
-                  style={{
-                    fontFamily: "Nobile",
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 4,
-                      height: 4,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 8,
-                  }}
-                >
-                  Convert
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  setIngredientName("");
-                  setSourceAmount("");
-                  setSourceUnit("");
-                  setTargetUnit("");
-                  setConvertedAmount("");
-                  setShowConversionResult(false);
-                }}
-                className="flex justify-center items-center relative mx-2"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 2,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 6,
-                }}
-              >
-                <Image
-                  source={require("@/assets/images/button/button12.png")}
-                  alt="button"
-                  className="w-28 h-10"
-                />
-                <Text
-                  className="text-lg text-white absolute text-center"
-                  style={{
-                    fontFamily: "Nobile",
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 4,
-                      height: 4,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 8,
-                  }}
-                >
-                  Clear
-                </Text>
-              </TouchableOpacity>
+      {showConversion && (
+        <View>
+          <View className="flex justify-center items-center my-3">
+            <View className="flex flex-row justify-center items-center m-2">
+              <TextInput
+                placeholder="Ingredient"
+                placeholderTextColor={"gray"}
+                value={ingredientName}
+                onChangeText={setIngredientName}
+                className="border-2 border-gray-400 rounded-lg w-40 h-10 mx-2 text-center"
+              />
+              <TextInput
+                placeholder="Amount"
+                placeholderTextColor={"gray"}
+                value={sourceAmount}
+                onChangeText={setSourceAmount}
+                className="border-2 border-gray-400 rounded-lg w-20 h-10 mx-2 text-center"
+              />
             </View>
+            <View className="flex flex-row justify-center items-center m-2">
+              <RNPickerSelect
+                onValueChange={(value) => setSourceUnit(value)}
+                items={conversionAmounts}
+                style={{
+                  inputAndroid: {
+                    color: "black",
+                    fontFamily: "Nobile",
+                    fontSize: 16,
+                    paddingVertical: 12,
+                    paddingHorizontal: 10,
+                    borderWidth: 1,
+                    borderColor: "gray",
+                    borderRadius: 4,
+                    paddingRight: 30,
+                    marginHorizontal: 20,
+                  },
+                  inputIOS: {
+                    color: "black",
+                    fontFamily: "Nobile",
+                    fontSize: 16,
+                    paddingVertical: 12,
+                    paddingHorizontal: 10,
+                    borderWidth: 1,
+                    borderColor: "gray",
+                    borderRadius: 4,
+                    paddingRight: 30,
+                    marginHorizontal: 20,
+                  },
+                  iconContainer: {
+                    position: "absolute",
+                    top: "50%",
+                    left: "60%",
+                  },
+                }}
+                value={sourceUnit}
+                useNativeAndroidPickerStyle={false}
+                placeholder={{ label: "Unit", value: null }}
+                Icon={() => {
+                  return (
+                    <Ionicons name="chevron-down" size={24} color="gray" />
+                  );
+                }}
+              />
+              <RNPickerSelect
+                onValueChange={(value) => setTargetUnit(value)}
+                items={conversionAmounts}
+                style={{
+                  inputAndroid: {
+                    color: "black",
+                    fontFamily: "Nobile",
+                    fontSize: 16,
+                    paddingVertical: 12,
+                    paddingHorizontal: 10,
+                    borderWidth: 1,
+                    borderColor: "gray",
+                    borderRadius: 4,
+                    paddingRight: 30,
+                  },
+                  inputIOS: {
+                    color: "black",
+                    fontFamily: "Nobile",
+                    fontSize: 16,
+                    paddingVertical: 12,
+                    paddingHorizontal: 10,
+                    borderWidth: 1,
+                    borderColor: "gray",
+                    borderRadius: 4,
+                    paddingRight: 30,
+                  },
+                  iconContainer: {
+                    position: "absolute",
+                    top: "50%",
+                    left: "60%",
+                  },
+                }}
+                value={targetUnit}
+                useNativeAndroidPickerStyle={false}
+                placeholder={{ label: "Unit", value: null }}
+                Icon={() => {
+                  return (
+                    <Ionicons name="chevron-down" size={24} color="gray" />
+                  );
+                }}
+              />
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                convertAmount(
+                  ingredientName,
+                  sourceAmount,
+                  sourceUnit,
+                  targetUnit
+                );
+                setShowConversionResult(true);
+              }}
+              className="flex justify-center items-center relative mx-2"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: {
+                  width: 2,
+                  height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 6,
+              }}
+            >
+              <Image
+                source={require("@/assets/images/button/button1.png")}
+                alt="button"
+                className="w-36 h-12"
+              />
+              <Text
+                className="text-lg text-white absolute text-center"
+                style={{
+                  fontFamily: "Nobile",
+                  shadowColor: "#000",
+                  shadowOffset: {
+                    width: 4,
+                    height: 4,
+                  },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 8,
+                }}
+              >
+                Convert
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setIngredientName("");
+                setSourceAmount("");
+                setSourceUnit("");
+                setTargetUnit("");
+                setConvertedAmount("");
+                setShowConversionResult(false);
+              }}
+              className="flex justify-center items-center relative mx-2"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: {
+                  width: 2,
+                  height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 6,
+              }}
+            >
+              <Image
+                source={require("@/assets/images/button/button12.png")}
+                alt="button"
+                className="w-28 h-10"
+              />
+              <Text
+                className="text-lg text-white absolute text-center"
+                style={{
+                  fontFamily: "Nobile",
+                  shadowColor: "#000",
+                  shadowOffset: {
+                    width: 4,
+                    height: 4,
+                  },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 8,
+                }}
+              >
+                Clear
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-            {errorMessage !== "" && (
-              <View className="flex justify-center items-center">
+          {errorMessage !== "" && (
+            <View className="flex justify-center items-center">
+              <Text
+                style={{
+                  fontFamily: "Nobile",
+                  color: "red",
+                  fontSize: 16,
+                  textAlign: "center",
+                }}
+              >
+                {errorMessage}
+              </Text>
+            </View>
+          )}
+
+          {showConversionResult && !errorMessage && (
+            <View className="relative">
+              <View
+                className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1"
+                style={{
+                  width: 350,
+                  height: 50,
+                  shadowColor: "#000",
+                  shadowOffset: {
+                    width: 2,
+                    height: 2,
+                  },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 6,
+                }}
+              ></View>
+              <View
+                className="flex justify-center items-center bg-white rounded-2xl"
+                style={{
+                  width: 350,
+                  height: 50,
+                }}
+              >
                 <Text
                   style={{
                     fontFamily: "Nobile",
-                    color: "red",
+                    color: "#475569",
                     fontSize: 16,
                     textAlign: "center",
                   }}
                 >
-                  {errorMessage}
+                  {convertedAmount !== "" && `${convertedAmount}`}
                 </Text>
-              </View>
-            )}
-
-            {showConversionResult && !errorMessage && (
-              <View className="relative">
-                <View
-                  className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1"
-                  style={{
-                    width: 350,
-                    height: 50,
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 2,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 6,
-                  }}
-                ></View>
-                <View
-                  className="flex justify-center items-center bg-white rounded-2xl"
-                  style={{
-                    width: 350,
-                    height: 50,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: "Nobile",
-                      color: "#475569",
-                      fontSize: 16,
-                      textAlign: "center",
-                    }}
-                  >
-                    {convertedAmount !== "" && `${convertedAmount}`}
-                  </Text>
-                </View>
-              </View>
-            )}
-          </View>
-        )}
-
-        {/* Filters */}
-        {showFilters && (
-          <View className="flex flex-row justify-center items-center my-3">
-            <TouchableOpacity
-              onPress={() => {
-                setShowDiet(!showDiet);
-                setShowIntolerances(false);
-                setShowMaxReadyTime(false);
-              }}
-              className="flex justify-center items-center relative w-20 h-10 mx-2"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 2,
-                  height: 2,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 6,
-              }}
-            >
-              <Image
-                source={require("../../assets/images/stickers/yellowTape2.png")}
-                className="absolute inset-0 w-full h-full"
-              ></Image>
-              <Text style={{ fontFamily: "Nobile" }} className="text-center">
-                Diet
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                setShowIntolerances(!showIntolerances);
-                setShowDiet(false);
-                setShowMaxReadyTime(false);
-              }}
-              className="flex justify-center items-center relative w-32 h-10 mx-2"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 2,
-                  height: 2,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 6,
-              }}
-            >
-              <Image
-                source={require("../../assets/images/stickers/yellowTape1.png")}
-                className="absolute inset-0 w-full h-full"
-              ></Image>
-              <Text style={{ fontFamily: "Nobile" }} className="text-center">
-                Intolerances
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                setShowMaxReadyTime(!showMaxReadyTime);
-                setShowDiet(false);
-                setShowIntolerances(false);
-              }}
-              className="flex justify-center items-center relative w-28 h-10 mx-2"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 2,
-                  height: 2,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 6,
-              }}
-            >
-              <Image
-                source={require("../../assets/images/stickers/yellowTape1.png")}
-                className="absolute inset-0 w-full h-full"
-              />
-              <Text style={{ fontFamily: "Nobile" }} className="text-center">
-                Max Time
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Diet and Intolerances Checkbox */}
-        <View className="flex flex-row justify-center items-start mb-2">
-          {showDiet && (
-            <View className="relative mx-3">
-              <View
-                className="absolute bg-[#64E6A6] rounded-2xl -right-2 -bottom-2 w-[200] h-[330]"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 2,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 6,
-                }}
-              ></View>
-              <View className="bg-white w-[200] p-2 rounded-lg">
-                {dietOptions.map((option) => (
-                  <View
-                    key={option.key}
-                    className="flex-row m-0.5 ml-2 items-center"
-                  >
-                    <BouncyCheckbox
-                      onPress={() => toggleDiet(option.key)}
-                      isChecked={diet.includes(option.key)}
-                      size={25}
-                      text={option.label}
-                      textStyle={{
-                        fontFamily: "Nobile",
-                        color: "green",
-                        fontSize: 14,
-                        textDecorationLine: "none",
-                      }}
-                      fillColor={"green"}
-                      unFillColor={"transparent"}
-                      innerIconStyle={{ borderWidth: 2, borderColor: "green" }}
-                      bounceEffectIn={0.6}
-                    />
-                    <RNBounceable
-                      onPress={() => toggleDiet(option.key)}
-                    ></RNBounceable>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-          {showIntolerances && (
-            <View className="relative mx-3">
-              <View
-                className="absolute bg-[#FF9B50] rounded-2xl -right-2 -bottom-2 w-[140] h-[360]"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 2,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 6,
-                }}
-              ></View>
-              <View className="bg-white w-[140] p-2 rounded-lg">
-                {intolerancesOptions.map((option) => (
-                  <View
-                    key={option.key}
-                    className="flex-row m-0.5 ml-2 items-center"
-                  >
-                    <BouncyCheckbox
-                      onPress={() => toggleIntolerances(option.key)}
-                      isChecked={intolerances.includes(option.key)}
-                      size={25}
-                      text={option.label}
-                      textStyle={{
-                        fontFamily: "Nobile",
-                        color: "orange",
-                        fontSize: 14,
-                        textDecorationLine: "none",
-                      }}
-                      fillColor={"orange"}
-                      unFillColor={"transparent"}
-                      innerIconStyle={{ borderWidth: 2, borderColor: "orange" }}
-                      bounceEffectIn={0.6}
-                    />
-                    <RNBounceable
-                      onPress={() => toggleIntolerances(option.key)}
-                    ></RNBounceable>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-          {showMaxReadyTime && (
-            <View className="relative mx-3">
-              <View
-                className="absolute bg-[#0098a3] rounded-2xl -right-2 -bottom-2 w-[140] h-[240]"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 2,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 6,
-                }}
-              ></View>
-              <View className="bg-white w-[140] p-2 rounded-lg">
-                {maxReadyTimeOptions.map((time) => (
-                  <View key={time} className="flex-row m-0.5 ml-2 items-center">
-                    <BouncyCheckbox
-                      onPress={() => toggleMaxReadyTime(time)}
-                      isChecked={maxReadyTime === time}
-                      size={25}
-                      text={`${time} mins`}
-                      textStyle={{
-                        fontFamily: "Nobile",
-                        color: "#0098a3",
-                        fontSize: 14,
-                        textDecorationLine: "none",
-                      }}
-                      fillColor={"#0098a3"}
-                      unFillColor={"transparent"}
-                      innerIconStyle={{
-                        borderWidth: 2,
-                        borderColor: "#0098a3",
-                      }}
-                      bounceEffectIn={0.6}
-                    />
-                    <RNBounceable
-                      onPress={() => toggleMaxReadyTime(time)}
-                    ></RNBounceable>
-                  </View>
-                ))}
               </View>
             </View>
           )}
         </View>
+      )}
 
-        {/* Recipe Results */}
-        <ScrollView className="flex-1">
-          {recipesFromIngredients &&
-            recipesFromIngredients.map((recipe) => (
-              <View
-                className="flex-1 items-center justify-center relative"
-                key={recipe.id}
-              >
+      {/* Filters */}
+      {showFilters && (
+        <View className="flex flex-row justify-center items-center my-3">
+          <TouchableOpacity
+            onPress={() => {
+              setShowDiet(!showDiet);
+              setShowIntolerances(false);
+              setShowMaxReadyTime(false);
+            }}
+            className="flex justify-center items-center relative w-20 h-10 mx-2"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 2,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 6,
+            }}
+          >
+            <Image
+              source={require("../../assets/images/stickers/yellowTape2.png")}
+              className="absolute inset-0 w-full h-full"
+            ></Image>
+            <Text style={{ fontFamily: "Nobile" }} className="text-center">
+              Diet
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setShowIntolerances(!showIntolerances);
+              setShowDiet(false);
+              setShowMaxReadyTime(false);
+            }}
+            className="flex justify-center items-center relative w-32 h-10 mx-2"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 2,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 6,
+            }}
+          >
+            <Image
+              source={require("../../assets/images/stickers/yellowTape1.png")}
+              className="absolute inset-0 w-full h-full"
+            ></Image>
+            <Text style={{ fontFamily: "Nobile" }} className="text-center">
+              Intolerances
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setShowMaxReadyTime(!showMaxReadyTime);
+              setShowDiet(false);
+              setShowIntolerances(false);
+            }}
+            className="flex justify-center items-center relative w-28 h-10 mx-2"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 2,
+                height: 2,
+              },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 6,
+            }}
+          >
+            <Image
+              source={require("../../assets/images/stickers/yellowTape1.png")}
+              className="absolute inset-0 w-full h-full"
+            />
+            <Text style={{ fontFamily: "Nobile" }} className="text-center">
+              Max Time
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Diet and Intolerances Checkbox */}
+      <View className="flex flex-row justify-center items-start mb-2">
+        {showDiet && (
+          <View className="relative mx-3">
+            <View
+              className="absolute bg-[#64E6A6] rounded-2xl -right-2 -bottom-2 w-[200] h-[330]"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: {
+                  width: 2,
+                  height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 6,
+              }}
+            ></View>
+            <View className="bg-white w-[200] p-2 rounded-lg">
+              {dietOptions.map((option) => (
                 <View
-                  className="absolute bg-[#FF9B50] rounded-2xl right-0.5 bottom-0.5 w-[280] h-[280]"
-                  style={{
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 6,
-                      height: 6,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 8,
-                  }}
-                ></View>
-
-                <View>
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("recipeCard", { recipeId: recipe.id })
-                    }
-                    key={recipe.id}
-                    className="bg-white p-4 w-[280] h-[280] m-4 items-center justify-center rounded-br-full rounded-tr-full"
-                  >
-                    <Image
-                      source={{ uri: recipe.image }}
-                      className="rounded-full w-[200] h-[200]"
-                    />
-
-                    <View className="relative w-[280] h-[70] mt-2">
-                      <Image
-                        source={randomStickerImage()}
-                        className="absolute inset-0 w-[280] h-[70] top-0 right-0"
-                      />
-                      <View className="absolute top-0 bottom-0 left-0 right-0 flex justify-center items-center">
-                        <Text
-                          style={{
-                            fontFamily: "Flux",
-                            textAlignVertical: "center",
-                          }}
-                          className="text-center"
-                        >
-                          {recipe.title}
-                        </Text>
-                      </View>
-                    </View>
-                  </TouchableOpacity>
+                  key={option.key}
+                  className="flex-row m-0.5 ml-2 items-center"
+                >
+                  <BouncyCheckbox
+                    onPress={() => toggleDiet(option.key)}
+                    isChecked={diet.includes(option.key)}
+                    size={25}
+                    text={option.label}
+                    textStyle={{
+                      fontFamily: "Nobile",
+                      color: "green",
+                      fontSize: 14,
+                      textDecorationLine: "none",
+                    }}
+                    fillColor={"green"}
+                    unFillColor={"transparent"}
+                    innerIconStyle={{ borderWidth: 2, borderColor: "green" }}
+                    bounceEffectIn={0.6}
+                  />
+                  <RNBounceable
+                    onPress={() => toggleDiet(option.key)}
+                  ></RNBounceable>
                 </View>
-              </View>
-            ))}
-        </ScrollView>
+              ))}
+            </View>
+          </View>
+        )}
+        {showIntolerances && (
+          <View className="relative mx-3">
+            <View
+              className="absolute bg-[#FF9B50] rounded-2xl -right-2 -bottom-2 w-[140] h-[360]"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: {
+                  width: 2,
+                  height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 6,
+              }}
+            ></View>
+            <View className="bg-white w-[140] p-2 rounded-lg">
+              {intolerancesOptions.map((option) => (
+                <View
+                  key={option.key}
+                  className="flex-row m-0.5 ml-2 items-center"
+                >
+                  <BouncyCheckbox
+                    onPress={() => toggleIntolerances(option.key)}
+                    isChecked={intolerances.includes(option.key)}
+                    size={25}
+                    text={option.label}
+                    textStyle={{
+                      fontFamily: "Nobile",
+                      color: "orange",
+                      fontSize: 14,
+                      textDecorationLine: "none",
+                    }}
+                    fillColor={"orange"}
+                    unFillColor={"transparent"}
+                    innerIconStyle={{ borderWidth: 2, borderColor: "orange" }}
+                    bounceEffectIn={0.6}
+                  />
+                  <RNBounceable
+                    onPress={() => toggleIntolerances(option.key)}
+                  ></RNBounceable>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+        {showMaxReadyTime && (
+          <View className="relative mx-3">
+            <View
+              className="absolute bg-[#0098a3] rounded-2xl -right-2 -bottom-2 w-[140] h-[240]"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: {
+                  width: 2,
+                  height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 6,
+              }}
+            ></View>
+            <View className="bg-white w-[140] p-2 rounded-lg">
+              {maxReadyTimeOptions.map((time) => (
+                <View key={time} className="flex-row m-0.5 ml-2 items-center">
+                  <BouncyCheckbox
+                    onPress={() => toggleMaxReadyTime(time)}
+                    isChecked={maxReadyTime === time}
+                    size={25}
+                    text={`${time} mins`}
+                    textStyle={{
+                      fontFamily: "Nobile",
+                      color: "#0098a3",
+                      fontSize: 14,
+                      textDecorationLine: "none",
+                    }}
+                    fillColor={"#0098a3"}
+                    unFillColor={"transparent"}
+                    innerIconStyle={{
+                      borderWidth: 2,
+                      borderColor: "#0098a3",
+                    }}
+                    bounceEffectIn={0.6}
+                  />
+                  <RNBounceable
+                    onPress={() => toggleMaxReadyTime(time)}
+                  ></RNBounceable>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+      <View className="w-72 h-[1] bg-slate-500 mt-3"></View>
 
-        {/* Modal for Joke */}
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={joke !== ""}
-          onRequestClose={() => {
-            setJoke("");
-          }}
-        >
-          <ScrollView className="flex-1">
-            <View className="flex-1 items-center justify-center">
-              <View className="bg-white p-4 rounded-lg">
-                <Text>{joke}</Text>
-                <TouchableOpacity onPress={() => setJoke("")}>
-                  <Text>Close</Text>
+      {/* Recipe Results */}
+      <ScrollView className="flex-1 m-2">
+        {recipesFromIngredients && recipesFromIngredients.length > 0 ? (
+          recipesFromIngredients.map((recipe) => (
+            <View
+              className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
+              key={recipe.id}
+            >
+              <Image
+                source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                className="absolute inset-0 w-full h-full"
+                style={{
+                  shadowColor: "#000",
+                  shadowOffset: {
+                    width: 6,
+                    height: 6,
+                  },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 4,
+                  elevation: 8,
+                }}
+              />
+              <TouchableOpacity
+                className="absolute top-20 right-5"
+                onPress={() => addRecipeToFavourites(recipe.id)}
+              >
+                <Ionicons
+                  name={isFavourite ? "heart" : "heart-outline"}
+                  size={30}
+                  color="red"
+                />
+              </TouchableOpacity>
+
+              <View className="flex items-center justify-center">
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate("recipeCard", { recipeId: recipe.id })
+                  }
+                  key={recipe.id}
+                  className="flex items-center justify-center"
+                >
+                  <Image
+                    source={{ uri: recipe.image }}
+                    className="rounded-xl w-[200] h-[200] right-4"
+                  />
+
+                  <View className="flex items-center justify-center max-w-[200] mt-4">
+                    <Text
+                      style={{
+                        fontFamily: "Flux",
+                        textAlign: "center",
+                        fontSize: 15,
+                      }}
+                    >
+                      {recipe.title}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </View>
             </View>
-          </ScrollView>
-        </Modal>
+          ))
+        ) : (
+          <View className="flex items-center justify-center relative mt-4">
+            <View
+              className="absolute bg-[#FFBA00] rounded-2xl right-1 bottom-1 w-[300] h-[420]"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: {
+                  width: 4,
+                  height: 4,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+                elevation: 6,
+              }}
+            ></View>
+            <View className="bg-white w-[300] h-[420] m-4 items-center justify-center rounded-2xl">
+              <Text
+                style={{
+                  fontFamily: "Flux",
+                  color: "#475569",
+                  fontSize: 18,
+                  textAlign: "center",
+                  marginVertical: 10,
+                  marginHorizontal: 35,
+                }}
+              >
+                Use your available ingredients to unlock amazing recipe ideas!
+              </Text>
+              <Image source={randomRecipeIcon()} className="w-60 h-60" />
+            </View>
+          </View>
+        )}
       </ScrollView>
+
+      {/* Modal for Joke */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={joke !== ""}
+        onRequestClose={() => {
+          setJoke("");
+        }}
+      >
+        <ScrollView className="flex-1">
+          <View className="flex-1 items-center justify-center">
+            <View className="bg-white p-4 rounded-lg">
+              <Text>{joke}</Text>
+              <TouchableOpacity onPress={() => setJoke("")}>
+                <Text>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
+      </Modal>
     </SafeAreaView>
   );
 }

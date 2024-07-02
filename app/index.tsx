@@ -93,7 +93,7 @@ export default function Index() {
         </View>
         <View className="absolute bottom-10">
           <Image
-            source={require("../assets/images/logo7.png")}
+            source={require("../assets/images/logo8.png")}
             className="w-40 h-10"
           />
         </View>

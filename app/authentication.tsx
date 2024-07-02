@@ -169,46 +169,14 @@ export default function Authentication() {
     setIsLoginPasswordHidden(!isloginPasswordHidden);
   };
 
-  const randomBackgroundImages = () => {
-    const images = [
-      require("../assets/images/backgrounds/background1.jpg"),
-      require("../assets/images/backgrounds/background2.jpg"),
-      require("../assets/images/backgrounds/background5.png"),
-      require("../assets/images/backgrounds/background6.jpg"),
-      require("../assets/images/backgrounds/background7.jpg"),
-      require("../assets/images/backgrounds/background8.jpg"),
-      require("../assets/images/backgrounds/background9.jpg"),
-      require("../assets/images/backgrounds/background11.jpg"),
-      require("../assets/images/backgrounds/background12.jpg"),
-      require("../assets/images/backgrounds/background13.jpg"),
-      require("../assets/images/backgrounds/background14.jpg"),
-      require("../assets/images/backgrounds/background15.jpg"),
-      require("../assets/images/backgrounds/background16.jpg"),
-      require("../assets/images/backgrounds/background17.jpg"),
-      require("../assets/images/backgrounds/background18.jpg"),
-      require("../assets/images/backgrounds/background19.jpg"),
-      require("../assets/images/backgrounds/background20.jpg"),
-    ];
-    return images[Math.floor(Math.random() * images.length)];
-  };
-
   return (
     <View className="flex-1 justify-center items-center">
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
 
-      {/* <ImageBackground
-        source={randomBackgroundImages()}
-        className="w-full h-full flex justify-center items-center"
-      >
-        <LinearGradient
-          colors={["transparent", "black"]}
-          className="absolute w-full h-full"
-        /> */}
-
-      <View className="absolute top-16">
+      <View className="flex justify-center items-center mb-2 absolute top-16">
         <Image
-          source={require("../assets/images/logo7.png")}
+          source={require("../assets/images/logo8.png")}
           className="w-60 h-14"
         />
       </View>

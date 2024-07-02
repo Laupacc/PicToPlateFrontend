@@ -33,12 +33,13 @@ export default function Profile() {
     <SafeAreaView style={styles.container}>
       <Background cellSize={25} />
 
-      <View className="absolute top-16">
+      <View className="flex justify-center items-center mb-2 absolute top-16">
         <Image
-          source={require("../../assets/images/logo7.png")}
+          source={require("../../assets/images/logo8.png")}
           className="w-60 h-14"
         />
       </View>
+
       <View className="flex justify-center items-center">
         <Text className="text-cyan-800">Profile</Text>
         <Link href="/">Got to home</Link>

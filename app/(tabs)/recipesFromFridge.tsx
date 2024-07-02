@@ -8,17 +8,24 @@ import {
   ScrollView,
 } from "react-native";
 import React, { useEffect, useState, useRef } from "react";
+import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Background from "@/components/Background";
-import { useRoute } from "@react-navigation/native";
-import { randomStickerImage } from "@/apiFunctions";
+import { useDispatch, useSelector } from "react-redux";
+import { addToFavouriteRecipes } from "@/store/recipes";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 export default function recipesFromFridge() {
   const navigation = useNavigation();
   const route = useRoute();
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.value);
+
   const { searchQuery } = route.params as { searchQuery: string };
   const [recipes, setRecipes] = useState([]);
+  const [isFavourite, setIsFavourite] = useState(false);
+
   const BACKEND_URL = "http://192.168.1.34:3000";
 
   const cachedRecipes = useRef<any[]>([]);
@@ -57,6 +64,27 @@ export default function recipesFromFridge() {
     searchRecipesFromFridge();
   }, [searchQuery]);
 
+  const addRecipeToFavourites = async (recipeId) => {
+    try {
+      const token = user.token;
+      const response = await fetch(
+        `${BACKEND_URL}/users/addFavourite/${recipeId}/${token}`,
+        { method: "POST" }
+      );
+
+      if (!response.ok) {
+        console.log("Error adding recipe to favourites");
+      }
+
+      dispatch(addToFavouriteRecipes(recipes));
+      setIsFavourite(true);
+      console.log("Recipe added to favourites:", recipes.id);
+      alert("Recipe added to favourites");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Background cellSize={25} />
@@ -78,11 +106,12 @@ export default function recipesFromFridge() {
         {recipes &&
           recipes.map((recipe) => (
             <View
-              className="flex-1 items-center justify-center relative"
+              className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
               key={recipe.id}
             >
-              <View
-                className="absolute bg-[#FF9B50] rounded-2xl right-0.5 bottom-0.5 w-[280] h-[280]"
+              <Image
+                source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                className="absolute inset-0 w-full h-full"
                 style={{
                   shadowColor: "#000",
                   shadowOffset: {
@@ -93,37 +122,42 @@ export default function recipesFromFridge() {
                   shadowRadius: 4,
                   elevation: 8,
                 }}
-              ></View>
+              />
 
-              <View>
+              <TouchableOpacity
+                className="absolute top-20 right-5"
+                onPress={() => addRecipeToFavourites(recipe.id)}
+              >
+                <Ionicons
+                  name={isFavourite ? "heart" : "heart-outline"}
+                  size={30}
+                  color="red"
+                />
+              </TouchableOpacity>
+
+              <View className="flex items-center justify-center">
                 <TouchableOpacity
                   onPress={() =>
                     navigation.navigate("recipeCard", { recipeId: recipe.id })
                   }
                   key={recipe.id}
-                  className="bg-white p-4 w-[280] h-[280] m-4 items-center justify-center rounded-br-full rounded-tr-full"
+                  className="flex items-center justify-center"
                 >
                   <Image
                     source={{ uri: recipe.image }}
-                    className="rounded-full w-[200] h-[200]"
+                    className="rounded-xl w-[200] h-[200] right-4"
                   />
 
-                  <View className="relative w-[280] h-[70] mt-2">
-                    <Image
-                      source={randomStickerImage()}
-                      className="absolute inset-0 w-[280] h-[70] top-0 right-0"
-                    />
-                    <View className="absolute top-0 bottom-0 left-0 right-0 flex justify-center items-center">
-                      <Text
-                        style={{
-                          fontFamily: "Flux",
-                          textAlignVertical: "center",
-                        }}
-                        className="text-center"
-                      >
-                        {recipe.title}
-                      </Text>
-                    </View>
+                  <View className="flex items-center justify-center max-w-[200] mt-4">
+                    <Text
+                      style={{
+                        fontFamily: "Flux",
+                        textAlign: "center",
+                        fontSize: 15,
+                      }}
+                    >
+                      {recipe.title}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               </View>

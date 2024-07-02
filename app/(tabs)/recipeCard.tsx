@@ -6,7 +6,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   Dimensions,
   Switch,
   StatusBar,
@@ -14,6 +13,7 @@ import {
   FlatList,
   TouchableWithoutFeedback,
 } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 import { useState, useEffect, useRef } from "react";
 import { useNavigation } from "expo-router";
 import { useRoute } from "@react-navigation/native";
@@ -65,25 +65,6 @@ export default function RecipeCard() {
   const BACKEND_URL = "http://192.168.1.34:3000";
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
-
-  // useEffect(() => {
-  //   const fetchRecipeData = async () => {
-  //     try {
-  //       const recipeData = await fetchRecipeInformation(recipeId);
-  //       const instructions = await fetchAnalyzedInstructions(recipeId);
-  //       if (recipeData && instructions) {
-  //         setRecipe({ ...recipeData, analyzedInstructions: instructions });
-  //         setServings(recipeData.servings);
-
-  //         console.log("recipe data", recipeData);
-  //         console.log("intruction data", instructions);
-  //       }
-  //     } catch (err) {
-  //       console.log(err);
-  //     }
-  //   };
-  //   fetchRecipeData();
-  // }, [recipeId]);
 
   // Fetch full recipe data
   const cachedRecipe = useRef<any>(null);
@@ -286,6 +267,23 @@ export default function RecipeCard() {
     }
   };
 
+  const dietImages = {
+    "fodmap friendly": require("../../assets/images/diets/fodmap.png"),
+    paleo: require("../../assets/images/diets/paleo.png"),
+    paleolithic: require("../../assets/images/diets/paleo.png"),
+    "whole 30": require("../../assets/images/diets/whole30.png"),
+    vegan: require("../../assets/images/diets/vegan.png"),
+    vegetarian: require("../../assets/images/diets/vegetarian.png"),
+    "gluten free": require("../../assets/images/diets/glutenfree.png"),
+    ketogenic: require("../../assets/images/diets/keto.png"),
+    "lacto vegetarian": require("../../assets/images/diets/lacto.png"),
+    "ovo vegetarian": require("../../assets/images/diets/ovo.png"),
+    "lacto ovo vegetarian": require("../../assets/images/diets/lactoOvo.png"),
+    "dairy free": require("../../assets/images/diets/dairyfree.png"),
+    primal: require("../../assets/images/diets/primal.png"),
+    pescatarian: require("../../assets/images/diets/pescatarian.png"),
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
@@ -325,25 +323,18 @@ export default function RecipeCard() {
                   overflow: "hidden",
                 }}
               >
-                {recipe.image ? (
-                  <Image
-                    source={{ uri: recipe.image }}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      resizeMode: "cover",
-                    }}
-                  />
-                ) : (
-                  <Image
-                    source={require("../../assets/images/missingIng.png")}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      resizeMode: "contain",
-                    }}
-                  />
-                )}
+                <Image
+                  source={
+                    recipe.image
+                      ? { uri: recipe.image }
+                      : require("../../assets/images/missingIng.png")
+                  }
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    resizeMode: recipe.image ? "cover" : "contain",
+                  }}
+                />
               </View>
             </View>
 
@@ -379,6 +370,7 @@ export default function RecipeCard() {
                 />
               </TouchableOpacity>
             )}
+
             {/* Recipe Title */}
             <Text style={styles.title}>{recipe.title}</Text>
 
@@ -404,85 +396,22 @@ export default function RecipeCard() {
             {/* Diets */}
             <ScrollView>
               <View className="flex flex-row m-2 flex-wrap justify-center items-center">
-                {recipe.diets.includes("fodmap friendly") && (
-                  <Image
-                    source={require("../../assets/images/diets/fodmap.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {(recipe.diets.includes("paleo") ||
-                  recipe.diets.includes("paleolithic")) && (
-                  <Image
-                    source={require("../../assets/images/diets/paleo.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("whole 30") && (
-                  <Image
-                    source={require("../../assets/images/diets/whole30.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("vegan") && (
-                  <Image
-                    source={require("../../assets/images/diets/vegan.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("vegetarian") && (
-                  <Image
-                    source={require("../../assets/images/diets/vegetarian.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("gluten free") && (
-                  <Image
-                    source={require("../../assets/images/diets/glutenfree.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("ketogenic") && (
-                  <Image
-                    source={require("../../assets/images/diets/keto.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("lacto vegetarian") && (
-                  <Image
-                    source={require("../../assets/images/diets/lacto.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("ovo vegetarian") && (
-                  <Image
-                    source={require("../../assets/images/diets/ovo.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("lacto ovo vegetarian") && (
-                  <Image
-                    source={require("../../assets/images/diets/lactoOvo.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("dairy free") && (
-                  <Image
-                    source={require("../../assets/images/diets/dairyfree.png")}
-                    className="w-16 h-16"
-                  />
-                )}
-                {recipe.diets.includes("primal") && (
-                  <Image
-                    source={require("../../assets/images/diets/primal.png")}
-                    className="w-20 h-20"
-                  />
-                )}
-                {recipe.diets.includes("pescatarian") && (
-                  <Image
-                    source={require("../../assets/images/diets/pescatarian.png")}
-                    className="w-20 h-20"
-                  />
-                )}
+                {recipe.diets.map((diet) => {
+                  const imageSource = dietImages[diet.toLowerCase()];
+                  if (imageSource) {
+                    const imageStyle =
+                      screenWidth > 320 ? "w-14 h-14 m-1" : "w-12 h-12 m-1";
+
+                    return (
+                      <Image
+                        key={diet}
+                        source={imageSource}
+                        className={imageStyle}
+                      />
+                    );
+                  }
+                  return null;
+                })}
               </View>
             </ScrollView>
 
@@ -675,7 +604,7 @@ export default function RecipeCard() {
                   className="absolute bg-[#64E6A6] rounded-2xl right-0.5 bottom-0.5"
                   style={{
                     width: screenWidth - 45,
-                    minHeight: 70,
+                    minHeight: 90,
                     shadowColor: "#000",
                     shadowOffset: {
                       width: 2,
@@ -691,10 +620,10 @@ export default function RecipeCard() {
                   className="flex flex-row justify-between items-center bg-white rounded-2xl m-2 p-2"
                   style={{
                     width: screenWidth - 40,
-                    minHeight: 80,
+                    minHeight: 100,
                   }}
                 >
-                  <View className="flex flex-row justify-center items-center mx-2 w-[260]">
+                  <View className="flex flex-row justify-center items-center mx-2 ">
                     {/* w-[260] */}
 
                     <TouchableOpacity
@@ -714,8 +643,8 @@ export default function RecipeCard() {
                       )}
                     </TouchableOpacity>
 
-                    <ScrollView>
-                      <View className="flex flex-row items-center mx-2 flex-wrap">
+                    <View className="flex justify-center items-center">
+                      <View className="flex items-center mx-2 flex-wrap max-w-[200]">
                         <Text
                           style={{
                             fontFamily: "SpaceMono",
@@ -754,24 +683,11 @@ export default function RecipeCard() {
                           )}
                         </View>
                       )}
-                    </ScrollView>
+                    </View>
                   </View>
 
-                  <View className="flex flex-row items-center justify-center mr-3">
-                    <AntDesign
-                      name="swap"
-                      size={30}
-                      style={{ color: "#f94a00" }}
-                      onPress={() => {
-                        fetchIngredientSubstitution(ingredient.id);
-                        if (activeIngredientId === ingredient.id) {
-                          setActiveIngredientId(null);
-                        } else {
-                          setActiveIngredientId(ingredient.id);
-                        }
-                      }}
-                    />
-                    <View className="flex justify-center items-center">
+                  <View className="flex flex-row items-center justify-center mr-1">
+                    <View className="flex justify-center items-center ml-2">
                       <Text
                         style={{
                           fontFamily: "SpaceMono",
@@ -800,6 +716,24 @@ export default function RecipeCard() {
                       </Text>
                     </View>
                   </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      fetchIngredientSubstitution(ingredient.id);
+                      if (activeIngredientId === ingredient.id) {
+                        setActiveIngredientId(null);
+                      } else {
+                        setActiveIngredientId(ingredient.id);
+                      }
+                    }}
+                  >
+                    <Image
+                      source={require("../../assets/images/foodSubs.png")}
+                      className="w-14 h-10"
+                      name="swap"
+                      size={30}
+                      style={{ color: "#f94a00" }}
+                    />
+                  </TouchableOpacity>
                 </View>
               </View>
             ))}
