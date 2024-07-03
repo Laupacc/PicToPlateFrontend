@@ -216,12 +216,12 @@ export default function Search() {
 
   const randomRecipeIcon = () => {
     const icons = [
-      require("../../assets/images/recipe1.png"),
-      require("../../assets/images/recipe2.png"),
-      require("../../assets/images/recipe3.png"),
-      require("../../assets/images/recipe4.png"),
-      require("../../assets/images/recipe5.png"),
-      require("../../assets/images/recipe6.png"),
+      require("../../assets/images/recipeMissing/recipe1.png"),
+      require("../../assets/images/recipeMissing/recipe2.png"),
+      require("../../assets/images/recipeMissing/recipe3.png"),
+      require("../../assets/images/recipeMissing/recipe4.png"),
+      require("../../assets/images/recipeMissing/recipe5.png"),
+      require("../../assets/images/recipeMissing/recipe6.png"),
     ];
     return icons[Math.floor(Math.random() * icons.length)];
   };

@@ -21,6 +21,8 @@ import { useEffect, useState } from "react";
 import { TextInput, ScrollView } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { FontAwesome6 } from "@expo/vector-icons";
+import { logout } from "@/store/user";
+import * as SecureStore from "expo-secure-store";
 import {
   addIngredient,
   removeIngredient,
@@ -41,6 +43,16 @@ export default function Fridge() {
   const [searchResults, setSearchResults] = useState([]);
   const [selectedFromSearch, setSelectedFromSearch] = useState([]);
   const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
+
+  const handleLogout = async () => {
+    if (!user.token) {
+      return;
+    }
+    await SecureStore.deleteItemAsync("token");
+    dispatch(logout());
+    alert("Logged out");
+    console.log(user);
+  };
 
   useEffect(() => {
     const fetchFridgeItems = async () => {
@@ -199,21 +211,30 @@ export default function Fridge() {
     <SafeAreaView className="flex-1 justify-center items-center">
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
-      {/* <ImageBackground
-        source={require("@/assets/images/fridge/fridge8.png")}
-        className="absolute w-full h-full"
-        resizeMode="contain"
-        style={{
-          shadowColor: "#000",
-          shadowOffset: {
-            width: 4,
-            height: 4,
-          },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-          elevation: 8,
-        }}
-      /> */}
+
+      <View className="flex justify-center items-center mb-2">
+        <Image
+          source={require("../../assets/images/logo8.png")}
+          className="w-60 h-14"
+        />
+      </View>
+
+      <View className="flex justify-center items-center">
+        {user.token && (
+          <Text className="text-xl text-cyan-600">
+            Welcome back {user.username}
+          </Text>
+        )}
+        {!user.token ? (
+          <Link href="/authentication">
+            <Text>Please Log in</Text>
+          </Link>
+        ) : (
+          <TouchableOpacity onPress={handleLogout}>
+            <Text>Logout</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View className="relative flex justify-center items-center">
         <Image

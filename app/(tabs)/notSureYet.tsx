@@ -15,7 +15,7 @@ import { logout } from "@/store/user";
 import * as SecureStore from "expo-secure-store";
 import Background from "@/components/Background";
 
-export default function Profile() {
+export default function NotSureYet() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.value);
@@ -27,8 +27,9 @@ export default function Profile() {
     await SecureStore.deleteItemAsync("token");
     dispatch(logout());
     alert("Logged out");
+    console.log(user);
   };
-  console.log(user);
+
   return (
     <SafeAreaView style={styles.container}>
       <Background cellSize={25} />
@@ -41,7 +42,6 @@ export default function Profile() {
       </View>
 
       <View className="flex justify-center items-center">
-        <Text className="text-cyan-800">Profile</Text>
         <Link href="/">Got to home</Link>
         <Link href="/recipesFromFridge">Got to recipes from fridge</Link>
         <Link href="/recipesCard">Got to recipes card</Link>

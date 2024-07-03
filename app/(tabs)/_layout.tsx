@@ -6,6 +6,7 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import { Colors } from "@/constants/Colors";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
@@ -21,21 +22,23 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: false,
         tabBarLabelStyle: {
-          backgroundColor: Colors[colorScheme ?? "light"].background,
           fontSize: 14,
           fontWeight: "500",
         },
         tabBarIconStyle: {
-          marginBottom: -3,
-          marginTop: 3,
+          // marginBottom: -3,
+          // marginTop: 3,
         },
         tabBarStyle: {
           position: "absolute",
-          bottom: 25,
-          left: 20,
-          right: 20,
-          borderRadius: 20,
-          backgroundColor: "#e2e8f0",
+          height: Platform.OS === "ios" ? 90 : 60,
+          // bottom: 15,
+          left: 10,
+          right: 10,
+          // borderRadius: 20,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          backgroundColor: "#cbd5e1", // light grey
           ...styles.shadow,
         },
         tabBarShowLabel: false,
@@ -48,10 +51,16 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => {
             return (
               <View>
-                <Ionicons
-                  name={focused ? "restaurant" : "restaurant-outline"}
-                  color={color}
-                  size={28}
+                <Image
+                  source={
+                    focused
+                      ? require("../../assets/images/tabBarIcons/searchRamen.png")
+                      : require("../../assets/images/tabBarIcons/searchRamen_outline.png")
+                  }
+                  style={{
+                    width: 45,
+                    height: 45,
+                  }}
                 />
               </View>
             );
@@ -66,10 +75,16 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => {
             return (
               <View>
-                <MaterialCommunityIcons
-                  name={focused ? "heart" : "heart-outline"}
-                  color={color}
-                  size={28}
+                <Image
+                  source={
+                    focused
+                      ? require("../../assets/images/tabBarIcons/heartInPlate.png")
+                      : require("../../assets/images/tabBarIcons/heartInPlate_outline.png")
+                  }
+                  style={{
+                    width: 45,
+                    height: 45,
+                  }}
                 />
               </View>
             );
@@ -84,20 +99,26 @@ export default function TabLayout() {
             return (
               <View
                 style={{
-                  top: Platform.OS === "ios" ? -10 : -20,
-                  width: Platform.OS === "ios" ? 50 : 60,
-                  height: Platform.OS === "ios" ? 50 : 60,
-                  borderRadius: Platform.OS === "ios" ? 25 : 30,
+                  top: -15,
+                  width: 60,
+                  height: 60,
+                  borderRadius: 30,
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: Colors[colorScheme ?? "light"].tint,
+                  backgroundColor: "#85c3e7", // blue
                   ...styles.shadow,
                 }}
               >
-                <FontAwesome
-                  name={focused ? "camera-retro" : "camera-retro"}
-                  color={Colors[colorScheme ?? "light"].background}
-                  size={40}
+                <Image
+                  source={
+                    focused
+                      ? require("../../assets/images/tabBarIcons/camera1.png")
+                      : require("../../assets/images/tabBarIcons/camera1_outline.png")
+                  }
+                  style={{
+                    width: 45,
+                    height: 45,
+                  }}
                 />
               </View>
             );
@@ -105,6 +126,29 @@ export default function TabLayout() {
         }}
       />
 
+      <Tabs.Screen
+        name="notSureYet"
+        options={{
+          title: "notSureYet",
+          tabBarIcon: ({ color, focused }) => {
+            return (
+              <View>
+                <Image
+                  source={
+                    focused
+                      ? require("../../assets/images/tabBarIcons/shrug.png")
+                      : require("../../assets/images/tabBarIcons/shrug_outline.png")
+                  }
+                  style={{
+                    width: 45,
+                    height: 45,
+                  }}
+                />
+              </View>
+            );
+          },
+        }}
+      />
       <Tabs.Screen
         name="fridge"
         options={{
@@ -112,25 +156,17 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => {
             return (
               <View>
-                <MaterialCommunityIcons
-                  name={focused ? "fridge" : "fridge-outline"}
-                  color={color}
-                  size={28}
+                <Image
+                  source={
+                    focused
+                      ? require("../../assets/images/tabBarIcons/pantry.png")
+                      : require("../../assets/images/tabBarIcons/pantry_outline.png")
+                  }
+                  style={{
+                    width: 45,
+                    height: 45,
+                  }}
                 />
-              </View>
-            );
-          },
-        }}
-      />
-
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color, focused }) => {
-            return (
-              <View>
-                <FontAwesome name={"user-secret"} color={color} size={28} />
               </View>
             );
           },
@@ -146,13 +182,6 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="recipesFromFridge"
-        options={{
-          tabBarButton: () => null,
-          tabBarIcon: () => null,
-        }}
-      />
-      <Tabs.Screen
-        name="addItemsFridge"
         options={{
           tabBarButton: () => null,
           tabBarIcon: () => null,
