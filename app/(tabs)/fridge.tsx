@@ -208,7 +208,7 @@ export default function Fridge() {
   };
 
   return (
-    <SafeAreaView className="flex-1 justify-center items-center">
+    <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
 

@@ -13,6 +13,7 @@ import {
   FlatList,
   TouchableWithoutFeedback,
 } from "react-native";
+import { DataTable } from "react-native-paper";
 import { ScrollView } from "react-native-gesture-handler";
 import { useState, useEffect, useRef } from "react";
 import { useNavigation } from "expo-router";
@@ -137,8 +138,10 @@ export default function RecipeCard() {
   };
 
   const constructImageUrl = (imageFileName: string) => {
-    return `https://spoonacular.com/cdn/ingredients_100x100/${imageFileName}`;
+    return `https://img.spoonacular.com/ingredients_100x100/${imageFileName}`;
   };
+
+  // `https://spoonacular.com/cdn/ingredients_100x100/${imageFileName}`
 
   const incrementServings = () => {
     setServings(servings + 1);
@@ -284,8 +287,18 @@ export default function RecipeCard() {
     pescatarian: require("../../assets/images/diets/pescatarian.png"),
   };
 
+  const randomMissingMainImage = () => {
+    const images = [
+      require("../../assets/images/waiterTray/waiterTray1.png"),
+      require("../../assets/images/waiterTray/waiterTray2.png"),
+      require("../../assets/images/waiterTray/waiterTray3.png"),
+      require("../../assets/images/waiterTray/waiterTray4.png"),
+    ];
+    return images[Math.floor(Math.random() * images.length)];
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
       <ScrollView>
@@ -327,12 +340,11 @@ export default function RecipeCard() {
                   source={
                     recipe.image
                       ? { uri: recipe.image }
-                      : require("../../assets/images/missingIng.png")
+                      : randomMissingMainImage()
                   }
                   style={{
                     width: "100%",
                     height: "100%",
-                    resizeMode: recipe.image ? "cover" : "contain",
                   }}
                 />
               </View>
@@ -509,7 +521,7 @@ export default function RecipeCard() {
                   <Text
                     style={{
                       fontFamily: "SpaceMono",
-                      fontSize: 15,
+                      fontSize: 18,
                       color: "#7a1b0e",
                       textAlign: "center",
                     }}
@@ -533,7 +545,7 @@ export default function RecipeCard() {
                 <View
                   style={{
                     width: "80%",
-                    maxHeight: "60%",
+                    maxHeight: "70%",
                     shadowColor: "#000",
                     shadowOffset: {
                       width: 2,
@@ -545,53 +557,68 @@ export default function RecipeCard() {
                     borderRadius: 20,
                     marginHorizontal: "10%",
                   }}
-                  className="bg-slate-300 rounded-2xl p-4 flex justify-center items-center"
+                  className="bg-slate-300 rounded-2xl p-2"
                 >
                   <ScrollView>
-                    <TouchableOpacity onPress={() => setShowNutrition(false)}>
+                    <TouchableOpacity
+                      onPress={() => setShowNutrition(false)}
+                      className="items-end"
+                    >
+                      <AntDesign name="close" size={30} color={"#64748b"} />
+                    </TouchableOpacity>
+                    <View className="items-center">
                       <Text
                         style={{
                           fontFamily: "SpaceMono",
-                          fontSize: 20,
+                          fontSize: 18,
                           textAlign: "center",
                         }}
                       >
-                        Close
+                        Nutritional Values for {recipe.title} recipe
                       </Text>
-                    </TouchableOpacity>
-                    {showNutrition &&
-                      recipe.nutrition.nutrients &&
-                      recipe.nutrition.nutrients.map((nutrient, index) => (
-                        <View
-                          style={{
-                            backgroundColor: "#f5f5f5",
-                            borderRadius: 10,
-                            padding: 5,
-                            margin: 5,
-                            shadowColor: "#000",
-                            shadowOffset: {
-                              width: 2,
-                              height: 2,
-                            },
-                            shadowOpacity: 0.25,
-                            shadowRadius: 4,
-                            elevation: 4,
-                          }}
-                          key={index}
-                        >
-                          <Text
-                            style={{
-                              fontFamily: "SpaceMono",
-                              fontSize: 15,
-                              textAlign: "center",
-                            }}
+                    </View>
+
+                    <DataTable className="w-max">
+                      <DataTable.Header>
+                        <DataTable.Title className="justify-center">
+                          <Text>Nutrient</Text>
+                        </DataTable.Title>
+                        <DataTable.Title className="justify-center">
+                          Amount
+                        </DataTable.Title>
+                        <DataTable.Title className="justify-center">
+                          % of daily needs
+                        </DataTable.Title>
+                      </DataTable.Header>
+
+                      {recipe.nutrition.nutrients &&
+                        recipe.nutrition.nutrients.map((nutrient, index) => (
+                          <DataTable.Row
+                            key={index}
+                            style={
+                              index % 2 === 0
+                                ? { backgroundColor: "#f1f5f9" }
+                                : { backgroundColor: "#e2e8f0" }
+                            }
                           >
-                            {nutrient.name}: {nutrient.amount} {nutrient.unit}
-                            {"  "} {nutrient.percentOfDailyNeeds}% of daily
-                            needs
-                          </Text>
-                        </View>
-                      ))}
+                            <DataTable.Cell className="justify-center">
+                              <Text numberOfLines={2} className="text-center">
+                                {nutrient.name}
+                              </Text>
+                            </DataTable.Cell>
+                            <DataTable.Cell className="justify-center">
+                              <Text numberOfLines={1}>
+                                {nutrient.amount} {nutrient.unit}
+                              </Text>
+                            </DataTable.Cell>
+                            <DataTable.Cell className="justify-center">
+                              <Text numberOfLines={1}>
+                                {nutrient.percentOfDailyNeeds}
+                              </Text>
+                            </DataTable.Cell>
+                          </DataTable.Row>
+                        ))}
+                    </DataTable>
                   </ScrollView>
                 </View>
               </View>
@@ -623,7 +650,7 @@ export default function RecipeCard() {
                     minHeight: 100,
                   }}
                 >
-                  <View className="flex flex-row justify-center items-center mx-2 ">
+                  <View className="flex flex-row justify-center items-center mx-2">
                     {/* w-[260] */}
 
                     <TouchableOpacity
@@ -636,19 +663,22 @@ export default function RecipeCard() {
                           source={{
                             uri: constructImageUrl(ingredient.image),
                           }}
-                          className="w-12 h-12"
+                          className="w-14 h-14"
                         />
                       ) : (
-                        <MaterialCommunityIcons name="food-variant" size={25} />
+                        <Image
+                          source={require("../../assets/images/missingIng.png")}
+                          className="w-14 h-14"
+                        />
                       )}
                     </TouchableOpacity>
 
-                    <View className="flex justify-center items-center">
-                      <View className="flex items-center mx-2 flex-wrap max-w-[200]">
+                    <View className="flex justify-center">
+                      <View className="flex items-center mx-2 flex-wrap max-w-[190]">
                         <Text
                           style={{
                             fontFamily: "SpaceMono",
-                            fontSize: 15,
+                            fontSize: 16,
                           }}
                         >
                           {ingredient.originalName.charAt(0).toUpperCase() +
@@ -661,7 +691,7 @@ export default function RecipeCard() {
                             ingredientSubstitutes.map((substitute, index) => (
                               <Text
                                 key={index}
-                                className="mx-2 flex flex-wrap"
+                                className="flex items-center mx-2 flex-wrap max-w-[190]"
                                 style={{
                                   fontFamily: "SpaceMono",
                                   fontSize: 15,
@@ -672,7 +702,7 @@ export default function RecipeCard() {
                             ))
                           ) : (
                             <Text
-                              className="mx-2 flex flex-wrap"
+                              className="flex items-center mx-2 flex-wrap max-w-[190]"
                               style={{
                                 fontFamily: "SpaceMono",
                                 fontSize: 15,
@@ -686,12 +716,12 @@ export default function RecipeCard() {
                     </View>
                   </View>
 
-                  <View className="flex flex-row items-center justify-center mr-1">
-                    <View className="flex justify-center items-center ml-2">
+                  <View className="flex flex-row justify-center items-center mx-2">
+                    <View className="flex justify-center items-center">
                       <Text
                         style={{
                           fontFamily: "SpaceMono",
-                          fontSize: 15,
+                          fontSize: 17,
                         }}
                       >
                         {unitSystem === "metric"
@@ -707,7 +737,7 @@ export default function RecipeCard() {
                       <Text
                         style={{
                           fontFamily: "SpaceMono",
-                          fontSize: 15,
+                          fontSize: 14,
                         }}
                       >
                         {unitSystem === "metric"
@@ -715,31 +745,27 @@ export default function RecipeCard() {
                           : ingredient.measures.metric.unitShort}
                       </Text>
                     </View>
+                    <TouchableOpacity
+                      onPress={() => {
+                        fetchIngredientSubstitution(ingredient.id);
+                        if (activeIngredientId === ingredient.id) {
+                          setActiveIngredientId(null);
+                        } else {
+                          setActiveIngredientId(ingredient.id);
+                        }
+                      }}
+                    >
+                      <Image
+                        source={require("../../assets/images/foodSubs1.png")}
+                        className="w-7 h-16 ml-1"
+                      />
+                    </TouchableOpacity>
                   </View>
-                  <TouchableOpacity
-                    onPress={() => {
-                      fetchIngredientSubstitution(ingredient.id);
-                      if (activeIngredientId === ingredient.id) {
-                        setActiveIngredientId(null);
-                      } else {
-                        setActiveIngredientId(ingredient.id);
-                      }
-                    }}
-                  >
-                    <Image
-                      source={require("../../assets/images/foodSubs.png")}
-                      className="w-14 h-10"
-                      name="swap"
-                      size={30}
-                      style={{ color: "#f94a00" }}
-                    />
-                  </TouchableOpacity>
                 </View>
               </View>
             ))}
 
             {/* Nutrition per Ingredient */}
-
             <Modal
               animationType="slide"
               transparent={true}
@@ -752,7 +778,7 @@ export default function RecipeCard() {
                 <View
                   style={{
                     width: "80%",
-                    maxHeight: "60%",
+                    maxHeight: "70%",
                     shadowColor: "#000",
                     shadowOffset: {
                       width: 2,
@@ -764,24 +790,16 @@ export default function RecipeCard() {
                     borderRadius: 20,
                     marginHorizontal: "10%",
                   }}
-                  className="bg-slate-300 rounded-2xl p-4 flex justify-center items-center"
+                  className="bg-slate-300 rounded-2xl p-2"
                 >
                   <ScrollView>
                     <TouchableOpacity
-                      onPress={() => {
-                        setIngredientModalVisible(false);
-                      }}
+                      onPress={() => setIngredientModalVisible(false)}
+                      className="items-end"
                     >
-                      <Text
-                        style={{
-                          fontFamily: "SpaceMono",
-                          fontSize: 20,
-                          textAlign: "center",
-                        }}
-                      >
-                        Close
-                      </Text>
+                      <AntDesign name="close" size={30} color={"#64748b"} />
                     </TouchableOpacity>
+
                     {selectedIngredientNutrition && (
                       <View>
                         <View>
@@ -792,55 +810,70 @@ export default function RecipeCard() {
                               textAlign: "center",
                             }}
                           >
-                            {selectedIngredientNutrition.name}
+                            Nutritional Values for{" "}
+                            {selectedIngredientNutrition.amount}{" "}
+                            {selectedIngredientNutrition.unit}
                           </Text>
                           <Text
                             style={{
                               fontFamily: "SpaceMono",
-                              fontSize: 20,
+                              fontSize: 18,
                               textAlign: "center",
                             }}
                           >
-                            {selectedIngredientNutrition.amount}{" "}
-                            {selectedIngredientNutrition.unit}
+                            of{" "}
+                            {selectedIngredientNutrition.name
+                              .charAt(0)
+                              .toUpperCase() +
+                              selectedIngredientNutrition.name.slice(1)}
                           </Text>
                         </View>
 
-                        <View>
+                        <DataTable className="w-max">
+                          <DataTable.Header>
+                            <DataTable.Title className="justify-center">
+                              <Text>Nutrient</Text>
+                            </DataTable.Title>
+                            <DataTable.Title className="justify-center">
+                              Amount
+                            </DataTable.Title>
+                            <DataTable.Title className="justify-center">
+                              % of daily needs
+                            </DataTable.Title>
+                          </DataTable.Header>
+
                           {selectedIngredientNutrition.nutrients.map(
                             (nutrient, index) => (
-                              <View
+                              <DataTable.Row
                                 key={index}
-                                style={{
-                                  backgroundColor: "#f5f5f5",
-                                  borderRadius: 10,
-                                  padding: 5,
-                                  margin: 5,
-                                  shadowColor: "#000",
-                                  shadowOffset: {
-                                    width: 2,
-                                    height: 2,
-                                  },
-                                  shadowOpacity: 0.25,
-                                  shadowRadius: 4,
-                                  elevation: 4,
-                                }}
+                                style={
+                                  index % 2 === 0
+                                    ? { backgroundColor: "#f1f5f9" }
+                                    : { backgroundColor: "#e2e8f0" }
+                                }
                               >
-                                <Text
-                                  style={{
-                                    fontFamily: "SpaceMono",
-                                    fontSize: 15,
-                                    textAlign: "center",
-                                  }}
-                                >
-                                  {nutrient.name}: {nutrient.amount}{" "}
-                                  {nutrient.unit} {nutrient.percentOfDailyNeeds}
-                                  % of daily needs
-                                </Text>
-                              </View>
+                                <DataTable.Cell className="justify-center">
+                                  <Text
+                                    numberOfLines={2}
+                                    className="text-center"
+                                  >
+                                    {nutrient.name}
+                                  </Text>
+                                </DataTable.Cell>
+                                <DataTable.Cell className="justify-center">
+                                  <Text numberOfLines={1}>
+                                    {nutrient.amount} {nutrient.unit}
+                                  </Text>
+                                </DataTable.Cell>
+                                <DataTable.Cell className="justify-center">
+                                  <Text numberOfLines={1}>
+                                    {nutrient.percentOfDailyNeeds}
+                                  </Text>
+                                </DataTable.Cell>
+                              </DataTable.Row>
                             )
                           )}
-                        </View>
+                        </DataTable>
                       </View>
                     )}
                   </ScrollView>
@@ -875,7 +908,7 @@ export default function RecipeCard() {
                     textAlign: "center",
                   }}
                 >
-                  Wine Paring?
+                  Wine Pairing
                 </Text>
               </View>
             </TouchableOpacity>

@@ -46,8 +46,8 @@ export default function Authentication() {
         const token = await SecureStore.getItemAsync("token");
         if (token) {
           dispatch(login({ token }));
-          console.log("Token found, navigating to profile");
-          navigation.navigate("(tabs)", { screen: "profile" });
+          console.log("Token found, navigating to search screen");
+          navigation.navigate("(tabs)", { screen: "search" });
         } else {
           console.log("No token found");
         }
@@ -143,7 +143,7 @@ export default function Authentication() {
         await SecureStore.setItemAsync("token", data.token);
         console.log("Token stored successfully");
 
-        navigation.navigate("(tabs)", { screen: "profile" });
+        navigation.navigate("(tabs)", { screen: "search" });
         setLoginUsername("");
         setLoginPassword("");
         alert("Signed in successfully");

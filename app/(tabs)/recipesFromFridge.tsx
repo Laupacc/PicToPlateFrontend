@@ -86,7 +86,7 @@ export default function recipesFromFridge() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <Background cellSize={25} />
       <Text
         style={{
@@ -167,11 +167,3 @@ export default function recipesFromFridge() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

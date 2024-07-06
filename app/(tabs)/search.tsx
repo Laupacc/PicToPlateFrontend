@@ -314,7 +314,7 @@ export default function Search() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 items-center justify-center">
+    <SafeAreaView className="flex-1 items-center justify-center pb-16">
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
       <View className="flex justify-center items-center mb-2">

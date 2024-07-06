@@ -18,6 +18,7 @@ import RNBounceable from "@freakycoder/react-native-bounceable";
 import { useDispatch, useSelector } from "react-redux";
 import { useRoute } from "@react-navigation/native";
 import { addIngredient, updateIngredients } from "@/store/fridge";
+import LottieView from "lottie-react-native";
 import {
   StyleSheet,
   Text,
@@ -29,6 +30,7 @@ import {
   Platform,
   ImageBackground,
 } from "react-native";
+import { InputMode } from "react-native-paper/lib/typescript/components/TextInput/Adornment/enums";
 
 const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
 const USER_ID = "clarifai";
@@ -248,35 +250,87 @@ export default function Camera() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-cyan-800 items-center justify-center ">
+    <SafeAreaView className="flex-1 bg-cyan-800 items-center justify-center pb-16">
       <StatusBar barStyle="light-content" />
       <Background cellSize={25} />
+
+      {/* <View className="flex justify-center items-center">
+        <Text
+          className="text-white text-2xl text-center"
+          style={{
+            fontFamily: "Nobile",
+          }}
+        >
+          Upload or take a picture of your ingredients to add them to your
+          pantry.
+        </Text>
+      </View> */}
+
       <View className="flex justify-center items-center m-4">
         {!cameraOpen && (
           <View className="flex justify-center items-center">
             <View className="m-4 flex flex-row justify-center items-center">
-              <TouchableOpacity
-                onPress={selectImage}
-                className="p-2 m-2 bg-white rounded-xl"
-              >
-                <Entypo name="upload" size={34} color="black" />
-              </TouchableOpacity>
+              <View className="flex flex-row items-start">
+                <View className="flex justify-center items-end">
+                  <Text
+                    className="text-white text-2xl text-center"
+                    style={{
+                      fontFamily: "CreamyCookies",
+                    }}
+                  >
+                    Upload
+                  </Text>
+                  <Image
+                    source={require("../../assets/images/curvedArrowDown.png")}
+                    className="w-10 h-10"
+                  />
+                </View>
 
-              <TouchableOpacity
-                onPress={openCamera}
-                className="p-2 m-2 bg-white rounded-xl"
-              >
-                <Entypo name="video-camera" size={34} color="black" />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={selectImage}
+                  className="p-2 m-4 bg-white rounded-xl flex justify-center items-center "
+                >
+                  <Image
+                    source={require("../../assets/images/uploadPhoto2.png")}
+                    className="w-14 h-14"
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View className="flex flex-row items-end">
+                <TouchableOpacity
+                  onPress={openCamera}
+                  className="p-2 m-4 bg-white rounded-xl flex justify-center items-center"
+                >
+                  <Image
+                    source={require("../../assets/images/takeaphoto.png")}
+                    className="w-14 h-14"
+                  />
+                </TouchableOpacity>
+                <View className="flex justify-center items-start">
+                  <Image
+                    source={require("../../assets/images/curvedArrowUp.png")}
+                    className="w-10 h-10"
+                  />
+                  <Text
+                    className="text-white text-2xl text-center"
+                    style={{
+                      fontFamily: "CreamyCookies",
+                    }}
+                  >
+                    Camera
+                  </Text>
+                </View>
+              </View>
             </View>
 
-            <TouchableOpacity
-              className="w-72 h-72 p-2 relative justify-center items-center"
-              onPress={selectImage}
+            <View
+              className="flex justify-center items-center"
+              // onPress={selectImage}
             >
               {image ? (
                 <View
-                  className="border-4 border-slate-400 rounded-2xl w-72 h-72 relative flex justify-center items-center"
+                  className="border-4 border-[#E56363] rounded-2xl w-64 h-64 relative flex justify-center items-center"
                   style={{
                     shadowColor: "#000",
                     shadowOffset: {
@@ -290,98 +344,154 @@ export default function Camera() {
                 >
                   <Image
                     source={{ uri: image }}
-                    className="w-64 h-64 absolute justify-center items-center rounded-2xl"
+                    className="w-56 h-56 absolute justify-center items-center rounded-2xl"
                   />
                 </View>
               ) : (
-                <Image
-                  source={require("../../assets/images/fridge/fridge5.png")}
-                  className="w-64 h-64 absolute justify-center items-center"
-                  style={{
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 4,
-                      height: 4,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 8,
-                  }}
-                />
+                <View className="relative">
+                  <View
+                    className="absolute bg-[#E56363] rounded-2xl right-0.5 bottom-0.5 w-64 h-64"
+                    style={{
+                      shadowColor: "#000",
+                      shadowOffset: {
+                        width: 2,
+                        height: 2,
+                      },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 4,
+                      elevation: 6,
+                    }}
+                  ></View>
+                  <View className="flex justify-center items-center bg-white rounded-2xl m-2 p-2 w-64 h-64">
+                    <Image
+                      source={require("../../assets/images/uploadPhoto1.png")}
+                      className="w-52 h-52 justify-center items-center"
+                    />
+                  </View>
+                </View>
               )}
-            </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
 
-      <View className="flex justify-center items-center m-4">
-        {image && !cameraOpen && (
-          <Text className="text-white text-lg">
-            Predictions:{" "}
-            {isPredictionLoading ? <ActivityIndicator size="small" /> : ""}
-          </Text>
-        )}
-        {!cameraOpen &&
-          image &&
-          predictions &&
-          predictions.slice(0, 5).map((prediction, index) => (
-            <View key={index} className="w-[200] p-2">
-              <BouncyCheckbox
-                onPress={() => toggleIngredient(prediction)}
-                isChecked={selectedIngredients.includes(prediction)}
-                text={
-                  (
-                    prediction.name +
-                    " (" +
-                    (prediction.value * 100).toFixed(2) +
-                    "%)"
-                  )
-                    .charAt(0)
-                    .toUpperCase() +
-                  (
-                    prediction.name +
-                    " (" +
-                    (prediction.value * 100).toFixed(2) +
-                    "%)"
-                  ).slice(1)
-                }
-                textStyle={{
-                  color: "white",
-                  fontFamily: "Nobile",
-                  textDecorationLine: "none",
-                }}
-                fillColor="#FED400"
-                unFillColor={"transparent"}
-                innerIconStyle={{ borderColor: "white" }}
-                bounceEffectIn={0.6}
-              />
-              <RNBounceable
-                onPress={() => console.log("Pressed")}
-              ></RNBounceable>
-            </View>
-          ))}
-      </View>
+      {/* {isPredictionLoading && (
+        <ActivityIndicator size="large" color="#FED400" />
+      )} */}
 
-      {selectedIngredients.length > 0 && (
-        <TouchableOpacity
-          onPress={addIngredients}
-          className="relative flex justify-center items-center top-4"
-        >
-          <Image
-            source={require("../../assets/images/button/button8.png")}
-            alt="button"
-            className="w-48 h-12"
-          />
-          <Text
-            className="text-lg text-slate-700 absolute"
-            style={{
-              fontFamily: "Nobile",
-            }}
-          >
-            Add Ingredient(s)
-          </Text>
-        </TouchableOpacity>
+      {isPredictionLoading && (
+        <LottieView
+          source={require("../../assets/images/animations/Animation1720193319067.json")}
+          autoPlay
+          loop
+          style={{
+            width: "60%",
+            height: "40%",
+            // position: "absolute",
+            // top: "55%",
+          }}
+        />
       )}
+
+      {/* <View className="flex justify-center items-center m-4">
+        {!cameraOpen && !isPredictionLoading && !image && (
+          <View className="flex justify-center items-center">
+            <Text className="text-white text-lg text-center">
+              Upload an image or take a picture to get started!
+            </Text>
+            <Image
+              source={require("../../assets/images/missingIng.png")}
+              className="w-64 h-64"
+              style={{
+                shadowColor: "#000",
+                shadowOffset: {
+                  width: 4,
+                  height: 4,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 4,
+              }}
+            />
+          </View>
+        )}
+      </View> */}
+
+      {!cameraOpen && image && !isPredictionLoading && predictions && (
+        <View className="flex justify-center items-center relative">
+          <Image
+            source={require("../../assets/images/recipeBack/recipeBack10.png")}
+            className="w-[410] h-[325]"
+          />
+          <View className="flex justify-center items-center absolute">
+            <View className="flex justify-center items-center">
+              <>
+                <Text
+                  className="text-base text-center mb-1"
+                  style={{ fontFamily: "Nobile" }}
+                >
+                  AI Predictions
+                </Text>
+                {predictions.slice(0, 5).map((prediction, index) => (
+                  <View key={index} className="w-[220] p-1.5">
+                    <BouncyCheckbox
+                      onPress={() => toggleIngredient(prediction)}
+                      isChecked={selectedIngredients.includes(prediction)}
+                      text={
+                        (
+                          prediction.name +
+                          " (" +
+                          (prediction.value * 100).toFixed(2) +
+                          "%)"
+                        )
+                          .charAt(0)
+                          .toUpperCase() +
+                        (
+                          prediction.name +
+                          " (" +
+                          (prediction.value * 100).toFixed(2) +
+                          "%)"
+                        ).slice(1)
+                      }
+                      textStyle={{
+                        fontFamily: "Nobile",
+                        textDecorationLine: "none",
+                      }}
+                      fillColor="#FED400"
+                      // unFillColor="#e2e8f0"
+                      innerIconStyle={{ borderColor: "grey" }}
+                      bounceEffectIn={0.6}
+                    />
+                    {/* <RNBounceable
+                      onPress={() => console.log("Pressed")}
+                    ></RNBounceable> */}
+                  </View>
+                ))}
+              </>
+            </View>
+            {selectedIngredients.length > 0 && (
+              <TouchableOpacity
+                onPress={addIngredients}
+                className="relative flex justify-center items-center top-4"
+              >
+                <Image
+                  source={require("../../assets/images/button/button8.png")}
+                  alt="button"
+                  className="w-44 h-12"
+                />
+                <Text
+                  className="text-base text-slate-700 absolute"
+                  style={{
+                    fontFamily: "Nobile",
+                  }}
+                >
+                  Add Ingredient(s)
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+
       {cameraOpen && (
         <PinchGestureHandler
           ref={pinchRef}
