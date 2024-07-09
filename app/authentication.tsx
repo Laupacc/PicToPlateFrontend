@@ -38,7 +38,7 @@ export default function Authentication() {
   const [loginUsernameEmpty, setLoginUsernameEmpty] = useState(false);
   const [loginPasswordEmpty, setLoginPasswordEmpty] = useState(false);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.201.158:3000";
 
   useEffect(() => {
     const checkToken = async () => {

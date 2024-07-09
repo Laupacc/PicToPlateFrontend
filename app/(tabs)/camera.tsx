@@ -55,7 +55,7 @@ export default function Camera() {
   const route = useRoute();
   const user = useSelector((state) => state.user.value);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.1.24:3000";
 
   // useEffect to get the camera permissions
   useEffect(() => {
@@ -221,10 +221,11 @@ export default function Camera() {
   // Add the selected ingredients to the user.ingredients array
   const addIngredients = async () => {
     try {
-      const ingredientNames = selectedIngredients.map(
-        (ingredient) => ingredient.name
-      );
-      console.log("ingredientNames:", ingredientNames);
+      const ingredients = selectedIngredients.map((ingredient) => ({
+        name: ingredient.name,
+        dateAdded: ingredient.dateAdded || new Date().toISOString(),
+      }));
+      console.log("ingredients:", ingredients);
 
       const response = await fetch(
         `${BACKEND_URL}/users/addIngredient/${user.token}`,
@@ -233,7 +234,7 @@ export default function Camera() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ ingredients: ingredientNames }),
+          body: JSON.stringify({ ingredients }),
         }
       );
       if (!response.ok) {
@@ -243,7 +244,7 @@ export default function Camera() {
       console.log("Added ingredients:", data);
       alert("Ingredients added successfully");
 
-      dispatch(addIngredient(ingredientNames));
+      dispatch(addIngredient(ingredients));
     } catch (error) {
       console.error(error);
     }

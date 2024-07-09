@@ -63,7 +63,8 @@ export default function RecipeCard() {
   const [showNutrition, setShowNutrition] = useState(false);
   const [isFavourite, setIsFavourite] = useState(false);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.201.158:3000";
+
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
@@ -87,6 +88,7 @@ export default function RecipeCard() {
           };
           setRecipe(fullRecipeData);
           setServings(recipeData.servings);
+
           cachedRecipe.current = fullRecipeData;
 
           console.log("recipe data", recipeData);
@@ -502,6 +504,14 @@ export default function RecipeCard() {
                 </View>
               </View>
 
+              <View>
+                <Text>
+                  {recipe.nutrition.caloricBreakdown.percentProtein}% Protein -
+                  {recipe.nutrition.caloricBreakdown.percentFat}% Fat -
+                  {recipe.nutrition.caloricBreakdown.percentCarbs}% Carbs
+                </Text>
+              </View>
+
               <TouchableOpacity
                 onPress={() => setShowNutrition(!showNutrition)}
                 className="flex justify-center items-center m-2"
@@ -725,14 +735,18 @@ export default function RecipeCard() {
                         }}
                       >
                         {unitSystem === "metric"
-                          ? Math.round(
-                              ingredient.measures.us.amount *
+                          ? parseFloat(
+                              (
+                                ingredient.measures.us.amount *
                                 (servings / recipe.servings)
+                              ).toFixed(2)
                             )
-                          : Math.round(
-                              ingredient.measures.metric.amount *
+                          : parseFloat(
+                              (
+                                ingredient.measures.metric.amount *
                                 (servings / recipe.servings)
-                            )}{" "}
+                              ).toFixed(2)
+                            )}
                       </Text>
                       <Text
                         style={{

@@ -52,6 +52,7 @@
     "jpeg-js": "^0.4.4",
     "lottie-react-native": "^6.7.2",
     "material-symbols": "^0.20.0",
+    "moment": "^2.30.1",
     "native-base": "^3.4.28",
     "nativewind": "^2.0.11",
     "postcss-loader": "4.2.0",

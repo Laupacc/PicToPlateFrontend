@@ -34,17 +34,17 @@ export default function Favourites() {
 
   const [favouriteRecipes, setFavouriteRecipes] = useState([]);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.201.158:3000";
 
   const cachedFavorites = useRef<any[]>([]);
   useEffect(() => {
     const fetchFavouriteRecipes = async () => {
       try {
         // Check if favorites are already cached
-        if (cachedFavorites.current.length > 0) {
-          setFavouriteRecipes(cachedFavorites.current);
-          return;
-        }
+        // if (cachedFavorites.current.length > 0) {
+        //   setFavouriteRecipes(cachedFavorites.current);
+        //   return;
+        // }
 
         const response = await fetch(
           `${BACKEND_URL}/users/fetchFavourites/${user.token}`

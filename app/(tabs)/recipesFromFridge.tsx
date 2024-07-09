@@ -26,17 +26,17 @@ export default function recipesFromFridge() {
   const [recipes, setRecipes] = useState([]);
   const [isFavourite, setIsFavourite] = useState(false);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.201.158:3000";
 
   const cachedRecipes = useRef<any[]>([]);
 
   useEffect(() => {
     const searchRecipesFromFridge = async () => {
       try {
-        // if (cachedRecipes.current.length > 0) {
-        //   setRecipes(cachedRecipes.current);
-        //   return;
-        // }
+        if (cachedRecipes.current.length > 0) {
+          setRecipes(cachedRecipes.current);
+          return;
+        }
 
         const search = searchQuery
           .toLowerCase()
@@ -103,6 +103,20 @@ export default function recipesFromFridge() {
       </TouchableOpacity>
 
       <ScrollView className="flex-1">
+        {recipes.length === 0 && (
+          <View className="flex items-center justify-center">
+            <Text
+              style={{
+                fontFamily: "Flux",
+                fontSize: 20,
+                textAlign: "center",
+              }}
+            >
+              No recipes found with these ingredients
+            </Text>
+          </View>
+        )}
+
         {recipes &&
           recipes.map((recipe) => (
             <View

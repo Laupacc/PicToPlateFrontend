@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React from "react";
+import { useEffect, useState } from "react";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
@@ -14,11 +15,18 @@ import { useDispatch, useSelector } from "react-redux";
 import { logout } from "@/store/user";
 import * as SecureStore from "expo-secure-store";
 import Background from "@/components/Background";
+import moment from "moment";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function NotSureYet() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.value);
+
+  const [userInfo, setUserInfo] = useState({});
+  const [oldIngredients, setOldIngredients] = useState([{}]);
+
+  const BACKEND_URL = "http://192.168.201.158:3000";
 
   const handleLogout = async () => {
     if (!user.token) {
@@ -30,9 +38,49 @@ export default function NotSureYet() {
     console.log(user);
   };
 
+  // fetch user info
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (user.token) {
+        const response = await fetch(
+          `${BACKEND_URL}/users/userInformation/${user.token}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
+        const data = await response.json();
+        setUserInfo(data);
+      }
+    };
+    fetchUser();
+  }, [user.token]);
+  // userInfo
+
+  //get favourite ingredients older than 7 days from today
+  useEffect(() => {
+    if (userInfo.ingredients) {
+      const today = new Date();
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(today.getDate() - 7);
+      const oldIngredients = userInfo.ingredients.filter(
+        (item: any) => new Date(item.dateAdded) < sevenDaysAgo
+      );
+      console.log(oldIngredients);
+      setOldIngredients(oldIngredients);
+    }
+  }, [userInfo.ingredients]);
+
   return (
     <SafeAreaView style={styles.container}>
       <Background cellSize={25} />
+      {/* <LinearGradient
+        colors={["blue", "transparent", "purple", "black"]}
+        className="absolute w-full h-full"
+      /> */}
 
       <View className="flex justify-center items-center mb-2 absolute top-16">
         <Image
@@ -42,24 +90,49 @@ export default function NotSureYet() {
       </View>
 
       <View className="flex justify-center items-center">
-        <Link href="/">Got to home</Link>
-        <Link href="/recipesFromFridge">Got to recipes from fridge</Link>
-        <Link href="/recipesCard">Got to recipes card</Link>
-        <Link href="/authentication">Got to authentication</Link>
-        {user.token && (
-          <Text className="text-xl text-cyan-600">
-            Welcome back {user.username}
+        <View className="flex justify-center items-center m-4">
+          <Link href="/">Got to home</Link>
+          <Link href="/recipesFromFridge">Got to recipes from fridge</Link>
+          <Link href="/recipesCard">Got to recipes card</Link>
+          <Link href="/authentication">Got to authentication</Link>
+        </View>
+        <View className="flex justify-center items-center m-4">
+          {user.token && (
+            <Text className="text-xl text-cyan-600">
+              Welcome back {userInfo.username}
+            </Text>
+          )}
+          {!user.token ? (
+            <Link href="/authentication">
+              <Text>Please Log in</Text>
+            </Link>
+          ) : (
+            <TouchableOpacity onPress={handleLogout}>
+              <Text>Logout</Text>
+            </TouchableOpacity>
+          )}
+
+          <Text>
+            You have {userInfo.favourites?.length} recipes in your favourites
           </Text>
-        )}
-        {!user.token ? (
-          <Link href="/authentication">
-            <Text>Please Log in</Text>
-          </Link>
-        ) : (
-          <TouchableOpacity onPress={handleLogout}>
-            <Text>Logout</Text>
-          </TouchableOpacity>
-        )}
+          <Text>
+            You have {userInfo.ingredients?.length} ingredients in your fridge.
+          </Text>
+          <View>
+            <Text>
+              You have {oldIngredients.length} ingredient(s) older than a week
+              in your fridge. You should use them up soon! The ingredients are:
+              {oldIngredients
+                ? oldIngredients.map((item: any) => (
+                    <Text key={item.name}>
+                      {item.name} added on{" "}
+                      {moment(item.dateAdded).format("MMM Do YY")}
+                    </Text>
+                  ))
+                : null}
+            </Text>
+          </View>
+        </View>
       </View>
     </SafeAreaView>
   );

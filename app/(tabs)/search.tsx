@@ -64,7 +64,7 @@ export default function Search() {
   const calculatedHeight = screenWidth * (9 / 16);
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.201.158:3000";
 
   // const fetchTrivia = async () => {
   //   const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
