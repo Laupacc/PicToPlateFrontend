@@ -19,6 +19,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useRoute } from "@react-navigation/native";
 import { addIngredient, updateIngredients } from "@/store/fridge";
 import LottieView from "lottie-react-native";
+import { useToast } from "react-native-toast-notifications";
 import {
   StyleSheet,
   Text,
@@ -30,7 +31,6 @@ import {
   Platform,
   ImageBackground,
 } from "react-native";
-import { InputMode } from "react-native-paper/lib/typescript/components/TextInput/Adornment/enums";
 
 const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
 const USER_ID = "clarifai";
@@ -53,9 +53,10 @@ export default function Camera() {
 
   const dispatch = useDispatch();
   const route = useRoute();
+  const toast = useToast();
   const user = useSelector((state) => state.user.value);
 
-  const BACKEND_URL = "http://192.168.1.24:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   // useEffect to get the camera permissions
   useEffect(() => {
@@ -242,7 +243,14 @@ export default function Camera() {
       }
       const data = await response.json();
       console.log("Added ingredients:", data);
-      alert("Ingredients added successfully");
+      toast.show(`${ingredients} added successfully`, {
+        type: "success",
+        placement: "center",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+      });
 
       dispatch(addIngredient(ingredients));
     } catch (error) {
@@ -273,12 +281,7 @@ export default function Camera() {
             <View className="m-4 flex flex-row justify-center items-center">
               <View className="flex flex-row items-start">
                 <View className="flex justify-center items-end">
-                  <Text
-                    className="text-white text-2xl text-center"
-                    style={{
-                      fontFamily: "CreamyCookies",
-                    }}
-                  >
+                  <Text className="text-white text-2xl text-center font-CreamyCookies">
                     Upload
                   </Text>
                   <Image
@@ -313,12 +316,7 @@ export default function Camera() {
                     source={require("../../assets/images/curvedArrowUp.png")}
                     className="w-10 h-10"
                   />
-                  <Text
-                    className="text-white text-2xl text-center"
-                    style={{
-                      fontFamily: "CreamyCookies",
-                    }}
-                  >
+                  <Text className="text-white text-2xl text-center font-CreamyCookies">
                     Camera
                   </Text>
                 </View>
@@ -332,16 +330,7 @@ export default function Camera() {
               {image ? (
                 <View
                   className="border-4 border-[#E56363] rounded-2xl w-64 h-64 relative flex justify-center items-center"
-                  style={{
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 4,
-                      height: 4,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 8,
-                  }}
+                  style={styles.shadow}
                 >
                   <Image
                     source={{ uri: image }}
@@ -352,16 +341,7 @@ export default function Camera() {
                 <View className="relative">
                   <View
                     className="absolute bg-[#E56363] rounded-2xl right-0.5 bottom-0.5 w-64 h-64"
-                    style={{
-                      shadowColor: "#000",
-                      shadowOffset: {
-                        width: 2,
-                        height: 2,
-                      },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 4,
-                      elevation: 6,
-                    }}
+                    style={styles.shadow}
                   ></View>
                   <View className="flex justify-center items-center bg-white rounded-2xl m-2 p-2 w-64 h-64">
                     <Image
@@ -426,10 +406,7 @@ export default function Camera() {
           <View className="flex justify-center items-center absolute">
             <View className="flex justify-center items-center">
               <>
-                <Text
-                  className="text-base text-center mb-1"
-                  style={{ fontFamily: "Nobile" }}
-                >
+                <Text className="text-base text-center mb-1 font-Nobile">
                   AI Predictions
                 </Text>
                 {predictions.slice(0, 5).map((prediction, index) => (
@@ -479,12 +456,7 @@ export default function Camera() {
                   alt="button"
                   className="w-44 h-12"
                 />
-                <Text
-                  className="text-base text-slate-700 absolute"
-                  style={{
-                    fontFamily: "Nobile",
-                  }}
-                >
+                <Text className="text-base text-slate-700 absolute font-Nobile">
                   Add Ingredient(s)
                 </Text>
               </TouchableOpacity>
@@ -562,3 +534,16 @@ export default function Camera() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  shadow: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 2,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+});

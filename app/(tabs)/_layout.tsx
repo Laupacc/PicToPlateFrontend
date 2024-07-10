@@ -5,13 +5,9 @@ import {
   useColorScheme,
   View,
   StyleSheet,
-  TouchableOpacity,
   Image,
 } from "react-native";
 import { Colors } from "@/constants/Colors";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import Ionicons from "react-native-vector-icons/Ionicons";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -25,10 +21,10 @@ export default function TabLayout() {
           fontSize: 14,
           fontWeight: "500",
         },
-        tabBarIconStyle: {
-          // marginBottom: -3,
-          // marginTop: 3,
-        },
+        // tabBarIconStyle: {
+        //   marginBottom: -3,
+        //   marginTop: 3,
+        // },
         tabBarStyle: {
           position: "absolute",
           height: Platform.OS === "ios" ? 80 : 70,
@@ -127,17 +123,17 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="notSureYet"
+        name="fridge"
         options={{
-          title: "notSureYet",
+          title: "Fridge",
           tabBarIcon: ({ color, focused }) => {
             return (
               <View>
                 <Image
                   source={
                     focused
-                      ? require("../../assets/images/tabBarIcons/shrug.png")
-                      : require("../../assets/images/tabBarIcons/shrug_outline.png")
+                      ? require("../../assets/images/tabBarIcons/pantry.png")
+                      : require("../../assets/images/tabBarIcons/pantry_outline.png")
                   }
                   style={{
                     width: 45,
@@ -150,17 +146,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="fridge"
+        name="profile"
         options={{
-          title: "Fridge",
+          title: "Profile",
           tabBarIcon: ({ color, focused }) => {
             return (
               <View>
                 <Image
                   source={
                     focused
-                      ? require("../../assets/images/tabBarIcons/pantry.png")
-                      : require("../../assets/images/tabBarIcons/pantry_outline.png")
+                      ? require("../../assets/images/tabBarIcons/chef.png")
+                      : require("../../assets/images/tabBarIcons/chef_outline.png")
                   }
                   style={{
                     width: 45,

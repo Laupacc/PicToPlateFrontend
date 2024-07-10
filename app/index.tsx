@@ -71,10 +71,7 @@ export default function Index() {
         />
 
         <View className="absolute">
-          <Text
-            className="text-5xl text-slate-300 text-center m-3 top-40"
-            style={{ fontFamily: "CreamyCookies" }}
-          >
+          <Text className="text-5xl text-slate-300 text-center m-3 top-40 font-CreamyCookies">
             {randomCatchPhrases()}
           </Text>
         </View>
@@ -82,10 +79,7 @@ export default function Index() {
         <View className="absolute bottom-32">
           <TouchableOpacity className="border-2 border-sky-700 p-4 rounded-xl">
             <Link href="/authentication">
-              <Text
-                className="text-3xl text-sky-700 text-center"
-                style={{ fontFamily: "Nobile" }}
-              >
+              <Text className="text-3xl text-sky-700 text-center font-Nobile">
                 {randomEnterPhrases()}
               </Text>
             </Link>

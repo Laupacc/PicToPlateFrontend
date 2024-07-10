@@ -15,18 +15,20 @@ import Background from "@/components/Background";
 import { useDispatch, useSelector } from "react-redux";
 import { addToFavouriteRecipes } from "@/store/recipes";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useToast } from "react-native-toast-notifications";
 
 export default function recipesFromFridge() {
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
+  const toast = useToast();
   const user = useSelector((state) => state.user.value);
 
   const { searchQuery } = route.params as { searchQuery: string };
   const [recipes, setRecipes] = useState([]);
   const [isFavourite, setIsFavourite] = useState(false);
 
-  const BACKEND_URL = "http://192.168.201.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   const cachedRecipes = useRef<any[]>([]);
 
@@ -79,7 +81,15 @@ export default function recipesFromFridge() {
       dispatch(addToFavouriteRecipes(recipes));
       setIsFavourite(true);
       console.log("Recipe added to favourites:", recipes.id);
-      alert("Recipe added to favourites");
+      // alert("Recipe added to favourites");
+      toast.show("Recipe added to favourites", {
+        type: "success",
+        placement: "center",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+      });
     } catch (error) {
       console.error(error);
     }
@@ -88,14 +98,7 @@ export default function recipesFromFridge() {
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <Background cellSize={25} />
-      <Text
-        style={{
-          fontFamily: "Flux",
-          fontSize: 24,
-          textAlign: "center",
-          margin: 20,
-        }}
-      >
+      <Text className="text-center font-Flux text-[24px] m-5">
         Recipes From my ingredients
       </Text>
       <TouchableOpacity onPress={() => navigation.navigate("fridge")}>
@@ -105,13 +108,7 @@ export default function recipesFromFridge() {
       <ScrollView className="flex-1">
         {recipes.length === 0 && (
           <View className="flex items-center justify-center">
-            <Text
-              style={{
-                fontFamily: "Flux",
-                fontSize: 20,
-                textAlign: "center",
-              }}
-            >
+            <Text className="text-center font-Flux text-[20px]">
               No recipes found with these ingredients
             </Text>
           </View>
@@ -126,16 +123,7 @@ export default function recipesFromFridge() {
               <Image
                 source={require("../../assets/images/recipeBack/recipeBack4.png")}
                 className="absolute inset-0 w-full h-full"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 6,
-                    height: 6,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 8,
-                }}
+                style={styles.shadow}
               />
 
               <TouchableOpacity
@@ -163,13 +151,7 @@ export default function recipesFromFridge() {
                   />
 
                   <View className="flex items-center justify-center max-w-[200] mt-4">
-                    <Text
-                      style={{
-                        fontFamily: "Flux",
-                        textAlign: "center",
-                        fontSize: 15,
-                      }}
-                    >
+                    <Text className="text-center font-Flux text-[15px]">
                       {recipe.title}
                     </Text>
                   </View>
@@ -181,3 +163,16 @@ export default function recipesFromFridge() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  shadow: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 6,
+      height: 6,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+});

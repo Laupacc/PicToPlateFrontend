@@ -27,11 +27,13 @@ import { fetchRandomRecipe, randomStickerImage } from "@/apiFunctions";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
 import RNPickerSelect from "react-native-picker-select";
+import { useToast } from "react-native-toast-notifications";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function Search() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const toast = useToast();
   const user = useSelector((state) => state.user.value);
 
   const [trivia, setTrivia] = useState("");
@@ -64,7 +66,7 @@ export default function Search() {
   const calculatedHeight = screenWidth * (9 / 16);
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
-  const BACKEND_URL = "http://192.168.201.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   // const fetchTrivia = async () => {
   //   const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
@@ -126,6 +128,14 @@ export default function Search() {
       setRecipesFromIngredients(recipe.results);
     } catch (error) {
       console.error("Error fetching recipes:", error);
+      toast.show("Error fetching recipes", {
+        type: "warning",
+        placement: "center",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
     }
   };
 
@@ -139,12 +149,28 @@ export default function Search() {
 
       if (!response.ok) {
         console.log("Error adding recipe to favourites");
+        toast.show("Error adding recipe to favourites", {
+          type: "danger",
+          placement: "center",
+          duration: 2000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="close-circle" size={24} color="white" />,
+        });
       }
 
       dispatch(addToFavouriteRecipes(recipe));
       setIsFavourite(true);
+
       console.log("Recipe added to favourites:", recipe.id);
-      alert("Recipe added to favourites");
+      toast.show("Recipe added to favourites", {
+        type: "success",
+        placement: "center",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+      });
     } catch (error) {
       console.error(error);
     }
@@ -325,16 +351,7 @@ export default function Search() {
         <View className="w-72 h-[1] bg-slate-400"></View>
       </View>
 
-      <Text
-        style={{
-          fontFamily: "CreamyCookies",
-          color: "#475569",
-          fontSize: 20,
-          textAlign: "center",
-          marginVertical: 10,
-          marginHorizontal: 35,
-        }}
-      >
+      <Text className="text-center font-CreamyCookies text-[20px] text-[#475569] my-6 mx-12">
         Turn your pantry into delicious meals!
       </Text>
 
@@ -359,19 +376,14 @@ export default function Search() {
                     maxReadyTime
                   )
                 }
-                className="border-2 border-gray-400 rounded-lg pl-4 w-60 h-12"
+                className="border-2 border-gray-400 rounded-lg pl-4 w-60 h-12 bg-[#e2e8f0]"
               />
               <FontAwesome6
                 name="circle-xmark"
                 size={25}
                 color={"#f87171"}
                 onPress={() => handleClearSearch()}
-                style={{
-                  position: "absolute",
-                  right: 10,
-                  top: "50%",
-                  transform: [{ translateY: -12.5 }],
-                }}
+                className="absolute right-2.5 top-3 -translate-y-3.125"
               />
             </View>
             <FontAwesome
@@ -387,12 +399,7 @@ export default function Search() {
               name="search"
               size={25}
               color={"#0891b2"}
-              style={{
-                position: "absolute",
-                right: 45,
-                top: "50%",
-                transform: [{ translateY: -12.5 }],
-              }}
+              className="absolute right-11 top-3 -translate-y-3.125"
             />
           </KeyboardAvoidingView>
         </View>
@@ -400,16 +407,7 @@ export default function Search() {
         {/* Radom Recipe Button */}
         <View
           className="flex justify-center items-center mx-2"
-          style={{
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 4,
-              height: 4,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 10,
-          }}
+          style={styles.shadow}
         >
           <View className="flex justify-center items-center">
             <TouchableOpacity
@@ -448,16 +446,7 @@ export default function Search() {
             setShowMaxReadyTime(false);
           }}
           className="flex justify-center items-center relative mx-2"
-          style={{
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 2,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 6,
-          }}
+          style={styles.shadow}
         >
           <Image
             source={require("@/assets/images/button/button9.png")}
@@ -465,18 +454,8 @@ export default function Search() {
             className="w-40 h-12"
           />
           <Text
-            className="text-lg text-white absolute text-center"
-            style={{
-              fontFamily: "Nobile",
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 4,
-                height: 4,
-              },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 8,
-            }}
+            className="text-lg text-white absolute text-center font-Nobile"
+            style={styles.shadow}
           >
             Filters
           </Text>
@@ -490,16 +469,7 @@ export default function Search() {
             setShowMaxReadyTime(false);
           }}
           className="flex justify-center items-center relative mx-2"
-          style={{
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 2,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 6,
-          }}
+          style={styles.shadow}
         >
           <Image
             source={require("@/assets/images/button/button4.png")}
@@ -507,18 +477,8 @@ export default function Search() {
             className="w-40 h-12"
           />
           <Text
-            className="text-lg text-white absolute text-center"
-            style={{
-              fontFamily: "Nobile",
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 4,
-                height: 4,
-              },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 8,
-            }}
+            className="text-lg text-white absolute text-center font-Nobile"
+            style={styles.shadow}
           >
             Convert Units
           </Text>
@@ -548,37 +508,7 @@ export default function Search() {
               <RNPickerSelect
                 onValueChange={(value) => setSourceUnit(value)}
                 items={conversionAmounts}
-                style={{
-                  inputAndroid: {
-                    color: "black",
-                    fontFamily: "Nobile",
-                    fontSize: 16,
-                    paddingVertical: 12,
-                    paddingHorizontal: 10,
-                    borderWidth: 1,
-                    borderColor: "gray",
-                    borderRadius: 4,
-                    paddingRight: 30,
-                    marginHorizontal: 20,
-                  },
-                  inputIOS: {
-                    color: "black",
-                    fontFamily: "Nobile",
-                    fontSize: 16,
-                    paddingVertical: 12,
-                    paddingHorizontal: 10,
-                    borderWidth: 1,
-                    borderColor: "gray",
-                    borderRadius: 4,
-                    paddingRight: 30,
-                    marginHorizontal: 20,
-                  },
-                  iconContainer: {
-                    position: "absolute",
-                    top: "50%",
-                    left: "60%",
-                  },
-                }}
+                style={pickerSelectStyles}
                 value={sourceUnit}
                 useNativeAndroidPickerStyle={false}
                 placeholder={{ label: "Unit", value: null }}
@@ -591,35 +521,7 @@ export default function Search() {
               <RNPickerSelect
                 onValueChange={(value) => setTargetUnit(value)}
                 items={conversionAmounts}
-                style={{
-                  inputAndroid: {
-                    color: "black",
-                    fontFamily: "Nobile",
-                    fontSize: 16,
-                    paddingVertical: 12,
-                    paddingHorizontal: 10,
-                    borderWidth: 1,
-                    borderColor: "gray",
-                    borderRadius: 4,
-                    paddingRight: 30,
-                  },
-                  inputIOS: {
-                    color: "black",
-                    fontFamily: "Nobile",
-                    fontSize: 16,
-                    paddingVertical: 12,
-                    paddingHorizontal: 10,
-                    borderWidth: 1,
-                    borderColor: "gray",
-                    borderRadius: 4,
-                    paddingRight: 30,
-                  },
-                  iconContainer: {
-                    position: "absolute",
-                    top: "50%",
-                    left: "60%",
-                  },
-                }}
+                style={pickerSelectStyles}
                 value={targetUnit}
                 useNativeAndroidPickerStyle={false}
                 placeholder={{ label: "Unit", value: null }}
@@ -641,16 +543,7 @@ export default function Search() {
                 setShowConversionResult(true);
               }}
               className="flex justify-center items-center relative mx-2"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 2,
-                  height: 2,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 6,
-              }}
+              style={styles.shadow}
             >
               <Image
                 source={require("@/assets/images/button/button1.png")}
@@ -658,18 +551,8 @@ export default function Search() {
                 className="w-36 h-12"
               />
               <Text
-                className="text-lg text-white absolute text-center"
-                style={{
-                  fontFamily: "Nobile",
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 4,
-                    height: 4,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 8,
-                }}
+                className="text-lg text-white absolute text-center font-Nobile"
+                style={styles.shadow}
               >
                 Convert
               </Text>
@@ -684,16 +567,7 @@ export default function Search() {
                 setShowConversionResult(false);
               }}
               className="flex justify-center items-center relative mx-2"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 2,
-                  height: 2,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 6,
-              }}
+              style={styles.shadow}
             >
               <Image
                 source={require("@/assets/images/button/button12.png")}
@@ -701,18 +575,8 @@ export default function Search() {
                 className="w-28 h-10"
               />
               <Text
-                className="text-lg text-white absolute text-center"
-                style={{
-                  fontFamily: "Nobile",
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 4,
-                    height: 4,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 8,
-                }}
+                className="text-lg text-white absolute text-center font-Nobile"
+                style={styles.shadow}
               >
                 Clear
               </Text>
@@ -721,14 +585,7 @@ export default function Search() {
 
           {errorMessage !== "" && (
             <View className="flex justify-center items-center">
-              <Text
-                style={{
-                  fontFamily: "Nobile",
-                  color: "red",
-                  fontSize: 16,
-                  textAlign: "center",
-                }}
-              >
+              <Text className="text-center font-Nobile text-red-500 text-[16px]">
                 {errorMessage}
               </Text>
             </View>
@@ -737,35 +594,11 @@ export default function Search() {
           {showConversionResult && !errorMessage && (
             <View className="relative">
               <View
-                className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1"
-                style={{
-                  width: 350,
-                  height: 50,
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 2,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 6,
-                }}
+                className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1 w-[350px] h-[50px]"
+                style={styles.shadow}
               ></View>
-              <View
-                className="flex justify-center items-center bg-white rounded-2xl"
-                style={{
-                  width: 350,
-                  height: 50,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: "Nobile",
-                    color: "#475569",
-                    fontSize: 16,
-                    textAlign: "center",
-                  }}
-                >
+              <View className="flex justify-center items-center bg-white rounded-2xl w-[350px] h-[50px]">
+                <Text className="text-center font-Nobile text-[16px] text-[#475569]">
                   {convertedAmount !== "" && `${convertedAmount}`}
                 </Text>
               </View>
@@ -784,24 +617,13 @@ export default function Search() {
               setShowMaxReadyTime(false);
             }}
             className="flex justify-center items-center relative w-20 h-10 mx-2"
-            style={{
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 2,
-                height: 2,
-              },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 6,
-            }}
+            style={styles.shadow}
           >
             <Image
               source={require("../../assets/images/stickers/yellowTape2.png")}
               className="absolute inset-0 w-full h-full"
             ></Image>
-            <Text style={{ fontFamily: "Nobile" }} className="text-center">
-              Diet
-            </Text>
+            <Text className="text-center font-Nobile">Diet</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
@@ -810,24 +632,13 @@ export default function Search() {
               setShowMaxReadyTime(false);
             }}
             className="flex justify-center items-center relative w-32 h-10 mx-2"
-            style={{
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 2,
-                height: 2,
-              },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 6,
-            }}
+            style={styles.shadow}
           >
             <Image
               source={require("../../assets/images/stickers/yellowTape1.png")}
               className="absolute inset-0 w-full h-full"
             ></Image>
-            <Text style={{ fontFamily: "Nobile" }} className="text-center">
-              Intolerances
-            </Text>
+            <Text className="text-center font-Nobile">Intolerances</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => {
@@ -836,24 +647,13 @@ export default function Search() {
               setShowIntolerances(false);
             }}
             className="flex justify-center items-center relative w-28 h-10 mx-2"
-            style={{
-              shadowColor: "#000",
-              shadowOffset: {
-                width: 2,
-                height: 2,
-              },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 6,
-            }}
+            style={styles.shadow}
           >
             <Image
               source={require("../../assets/images/stickers/yellowTape1.png")}
               className="absolute inset-0 w-full h-full"
             />
-            <Text style={{ fontFamily: "Nobile" }} className="text-center">
-              Max Time
-            </Text>
+            <Text className="text-center font-Nobile">Max Time</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -864,16 +664,7 @@ export default function Search() {
           <View className="relative mx-3">
             <View
               className="absolute bg-[#64E6A6] rounded-2xl -right-2 -bottom-2 w-[200] h-[330]"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 2,
-                  height: 2,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 6,
-              }}
+              style={styles.shadow}
             ></View>
             <View className="bg-white w-[200] p-2 rounded-lg">
               {dietOptions.map((option) => (
@@ -909,16 +700,7 @@ export default function Search() {
           <View className="relative mx-3">
             <View
               className="absolute bg-[#FF9B50] rounded-2xl -right-2 -bottom-2 w-[140] h-[360]"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 2,
-                  height: 2,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 6,
-              }}
+              style={styles.shadow}
             ></View>
             <View className="bg-white w-[140] p-2 rounded-lg">
               {intolerancesOptions.map((option) => (
@@ -954,16 +736,7 @@ export default function Search() {
           <View className="relative mx-3">
             <View
               className="absolute bg-[#0098a3] rounded-2xl -right-2 -bottom-2 w-[140] h-[240]"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 2,
-                  height: 2,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 6,
-              }}
+              style={styles.shadow}
             ></View>
             <View className="bg-white w-[140] p-2 rounded-lg">
               {maxReadyTimeOptions.map((time) => (
@@ -1009,16 +782,7 @@ export default function Search() {
               <Image
                 source={require("../../assets/images/recipeBack/recipeBack4.png")}
                 className="absolute inset-0 w-full h-full"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 6,
-                    height: 6,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 8,
-                }}
+                style={styles.shadow}
               />
               <TouchableOpacity
                 className="absolute top-20 right-5"
@@ -1045,13 +809,7 @@ export default function Search() {
                   />
 
                   <View className="flex items-center justify-center max-w-[200] mt-4">
-                    <Text
-                      style={{
-                        fontFamily: "Flux",
-                        textAlign: "center",
-                        fontSize: 15,
-                      }}
-                    >
+                    <Text className="text-center font-Flux text-[15px]">
                       {recipe.title}
                     </Text>
                   </View>
@@ -1063,28 +821,10 @@ export default function Search() {
           <View className="flex items-center justify-center relative mt-4">
             <View
               className="absolute bg-[#FFBA00] rounded-2xl right-1 bottom-1 w-[300] h-[420]"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 4,
-                  height: 4,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 6,
-              }}
+              style={styles.shadow}
             ></View>
             <View className="bg-white w-[300] h-[420] m-4 items-center justify-center rounded-2xl">
-              <Text
-                style={{
-                  fontFamily: "Flux",
-                  color: "#475569",
-                  fontSize: 18,
-                  textAlign: "center",
-                  marginVertical: 10,
-                  marginHorizontal: 35,
-                }}
-              >
+              <Text className="font-Flux text-[18px] text-[#475569] text-center mx-6 my-4">
                 Use your available ingredients to unlock amazing recipe ideas!
               </Text>
               <Image source={randomRecipeIcon()} className="w-60 h-60" />
@@ -1116,3 +856,48 @@ export default function Search() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  shadow: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 6,
+      height: 6,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+});
+
+const pickerSelectStyles = StyleSheet.create({
+  inputAndroid: {
+    color: "black",
+    fontFamily: "Nobile",
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "gray",
+    borderRadius: 4,
+    paddingRight: 30,
+    marginHorizontal: 10,
+  },
+  inputIOS: {
+    color: "black",
+    fontFamily: "Nobile",
+    fontSize: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "gray",
+    borderRadius: 4,
+    paddingRight: 30,
+    marginHorizontal: 10,
+  },
+  iconContainer: {
+    position: "absolute",
+    top: "50%",
+    left: "60%",
+  },
+});

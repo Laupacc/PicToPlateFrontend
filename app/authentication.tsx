@@ -38,7 +38,7 @@ export default function Authentication() {
   const [loginUsernameEmpty, setLoginUsernameEmpty] = useState(false);
   const [loginPasswordEmpty, setLoginPasswordEmpty] = useState(false);
 
-  const BACKEND_URL = "http://192.168.201.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   useEffect(() => {
     const checkToken = async () => {
@@ -98,10 +98,11 @@ export default function Authentication() {
         navigation.navigate("(tabs)", { screen: "profile" });
         setSignUpUsername("");
         setSignUpPassword("");
-        alert("User signed up successfully");
+        alert("Signed up successfully");
       }
     } catch (error) {
       console.error("Error:", error);
+      alert("An error occured when signing up");
     }
   };
   const handleLogin = async () => {
@@ -137,7 +138,7 @@ export default function Authentication() {
       }
 
       if (data.result) {
-        console.log("User logged in successfully", data);
+        console.log("Logged in successfully", data);
         dispatch(login(data));
 
         await SecureStore.setItemAsync("token", data.token);
@@ -146,7 +147,7 @@ export default function Authentication() {
         navigation.navigate("(tabs)", { screen: "search" });
         setLoginUsername("");
         setLoginPassword("");
-        alert("Signed in successfully");
+        alert("Logged in successfully");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -185,16 +186,7 @@ export default function Authentication() {
       {!signUpVisible && (
         <View
           className="relative flex justify-center items-center"
-          style={{
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 2,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 6,
-          }}
+          style={styles.shadow}
         >
           <Image
             className="w-[330] h-[480]"
@@ -248,10 +240,7 @@ export default function Authentication() {
                 alt="button"
                 className="w-40 h-12"
               />
-              <Text
-                className="text-xl text-white absolute"
-                style={{ fontFamily: "Nobile" }}
-              >
+              <Text className="text-xl text-white absolute font-Nobile">
                 Login ✔︎
               </Text>
             </TouchableOpacity>
@@ -269,16 +258,7 @@ export default function Authentication() {
       {signUpVisible && (
         <View
           className="relative flex justify-center items-center"
-          style={{
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 2,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 4,
-            elevation: 6,
-          }}
+          style={styles.shadow}
         >
           <Image
             className="w-[330] h-[480]"
@@ -332,10 +312,7 @@ export default function Authentication() {
                 alt="button"
                 className="w-40 h-12"
               />
-              <Text
-                className="text-xl text-white absolute"
-                style={{ fontFamily: "Nobile" }}
-              >
+              <Text className="text-xl text-white absolute font-Nobile">
                 Sign Up ✔︎
               </Text>
             </TouchableOpacity>
@@ -356,3 +333,16 @@ export default function Authentication() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  shadow: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 2,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 8,
+  },
+});

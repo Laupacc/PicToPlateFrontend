@@ -16,6 +16,7 @@ import Background from "@/components/Background";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchRecipeInformation, randomStickerImage } from "@/apiFunctions";
 import { useRoute } from "@react-navigation/native";
+import { useToast } from "react-native-toast-notifications";
 import {
   removeFromFavouriteRecipes,
   updateFavouriteRecipes,
@@ -29,12 +30,13 @@ export default function Favourites() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const route = useRoute();
+  const toast = useToast();
   const user = useSelector((state) => state.user.value);
   const favourites = useSelector((state) => state.recipes.favourites);
 
   const [favouriteRecipes, setFavouriteRecipes] = useState([]);
 
-  const BACKEND_URL = "http://192.168.201.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   const cachedFavorites = useRef<any[]>([]);
   useEffect(() => {
@@ -81,12 +83,28 @@ export default function Favourites() {
 
       if (!response.ok) {
         console.log("Error removing recipe from favourites");
+        toast.show("Error removing recipe from favourites", {
+          type: "danger",
+          placement: "center",
+          duration: 2000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="close-circle" size={24} color="white" />,
+        });
       }
 
       dispatch(removeFromFavouriteRecipes(recipeId));
       setFavouriteRecipes(favouriteRecipes.filter((r) => r.id !== recipeId));
+
       console.log("Recipe removed from favourites:", recipeId);
-      alert("Recipe removed from favourites");
+      toast.show("Recipe removed from favourites", {
+        type: "success",
+        placement: "center",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+      });
     } catch (error) {
       console.error(error);
     }
@@ -99,28 +117,13 @@ export default function Favourites() {
 
       <View
         className="flex justify-center items-center relative m-2 w-[330] h-[60]"
-        style={{
-          shadowColor: "#000",
-          shadowOffset: {
-            width: 4,
-            height: 4,
-          },
-          shadowOpacity: 0.25,
-          shadowRadius: 4,
-          elevation: 15,
-        }}
+        style={styles.shadow}
       >
         <Image
           source={require("../../assets/images/stickers/redTape.png")}
           className="absolute inset-0 w-full h-full"
         />
-        <Text
-          style={{
-            fontFamily: "Flux",
-            fontSize: 20,
-            textAlign: "center",
-          }}
-        >
+        <Text className="font-Flux text-xl text-center">
           My favourite recipes
         </Text>
       </View>
@@ -135,16 +138,7 @@ export default function Favourites() {
               <Image
                 source={require("../../assets/images/recipeBack/recipeBack4.png")}
                 className="absolute inset-0 w-full h-full"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 6,
-                    height: 6,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 8,
-                }}
+                style={styles.shadow}
               />
 
               <TouchableOpacity
@@ -168,13 +162,7 @@ export default function Favourites() {
                   />
 
                   <View className="flex items-center justify-center max-w-[200] mt-4">
-                    <Text
-                      style={{
-                        fontFamily: "Flux",
-                        textAlign: "center",
-                        fontSize: 15,
-                      }}
-                    >
+                    <Text className="font-Flux text-center">
                       {recipe.title}
                     </Text>
                   </View>
@@ -186,3 +174,16 @@ export default function Favourites() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  shadow: {
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 2,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+});

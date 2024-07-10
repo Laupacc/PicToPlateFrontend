@@ -7,7 +7,16 @@ module.exports = {
     "./hooks/**/*.{js,jsx,ts,tsx}"
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        Nobile: ['Nobile'],
+        Flux: ['Flux'],
+        Maax: ['Maax'],
+        CreamyCookies: ['CreamyCookies'],
+        Sketch: ['Sketch'],
+        SpaceMono: ['SpaceMono'],
+      },
+    },
   },
   plugins: [],
 }

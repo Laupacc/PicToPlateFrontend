@@ -33,6 +33,7 @@ import {
   fetchAnalyzedInstructions,
 } from "@/apiFunctions";
 import { useDispatch, useSelector } from "react-redux";
+import { useToast } from "react-native-toast-notifications";
 import {
   addToFavouriteRecipes,
   removeFromFavouriteRecipes,
@@ -42,6 +43,7 @@ import {
 export default function RecipeCard() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const toast = useToast();
   const user = useSelector((state) => state.user.value);
   const token = useSelector((state) => state.user.value.token);
   const favourites = useSelector((state) => state.recipes.favourites);
@@ -63,7 +65,7 @@ export default function RecipeCard() {
   const [showNutrition, setShowNutrition] = useState(false);
   const [isFavourite, setIsFavourite] = useState(false);
 
-  const BACKEND_URL = "http://192.168.201.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -142,8 +144,6 @@ export default function RecipeCard() {
   const constructImageUrl = (imageFileName: string) => {
     return `https://img.spoonacular.com/ingredients_100x100/${imageFileName}`;
   };
-
-  // `https://spoonacular.com/cdn/ingredients_100x100/${imageFileName}`
 
   const incrementServings = () => {
     setServings(servings + 1);
@@ -237,13 +237,29 @@ export default function RecipeCard() {
 
       if (!response.ok) {
         console.log("Error adding recipe to favourites");
+        toast.show("Error adding recipe to favourites", {
+          type: "warning",
+          placement: "center",
+          duration: 2000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="warning" size={24} color="white" />,
+        });
       }
 
       const data = await response.json();
       console.log(data);
       dispatch(addToFavouriteRecipes(recipe));
       setIsFavourite(true);
-      alert("Recipe added to favourites");
+
+      toast.show("Recipe added to favourites", {
+        type: "success",
+        placement: "center",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+      });
     } catch (error) {
       console.error(error.message);
     }
@@ -259,6 +275,14 @@ export default function RecipeCard() {
       );
 
       if (!response.ok) {
+        toast.show("Error removing recipe from favourites", {
+          type: "warning",
+          placement: "center",
+          duration: 2000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="warning" size={24} color="white" />,
+        });
         console.log("Error removing recipe from favourites");
       }
 
@@ -266,7 +290,15 @@ export default function RecipeCard() {
       console.log(data);
       dispatch(removeFromFavouriteRecipes(recipe));
       setIsFavourite(false);
-      alert("Recipe removed from favourites");
+    
+      toast.show("Recipe removed from favourites", {
+        type: "success",
+        placement: "center",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+      });
     } catch (error) {
       console.error(error.message);
     }
@@ -305,36 +337,22 @@ export default function RecipeCard() {
       <Background cellSize={25} />
       <ScrollView>
         {recipe && (
-          <View style={styles.innerContainer}>
+          <View className="flex-1 justify-center items-center">
             {/* Recipe Image and box behind  */}
             <View className="relative">
               <View
+                className="absolute bg-[#B5A8FF] rounded-2xl -right-2 -bottom-2 rounded-br-[130px] rounded-tr-[130px]"
                 style={{
-                  position: "absolute",
-                  backgroundColor: "#B5A8FF",
-                  right: -8,
-                  bottom: -8,
                   width: screenWidth,
                   height: calculatedHeight,
-                  borderRadius: Math.min(screenWidth, calculatedHeight) / 2,
-                  overflow: "hidden",
-                  borderBottomRightRadius: 130,
-                  borderTopRightRadius: 130,
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 2,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 8,
+                  ...styles.shadow,
                 }}
               ></View>
               <View
                 style={{
                   width: Math.min(screenWidth, calculatedHeight),
                   height: Math.min(screenWidth, calculatedHeight),
-                  borderRadius: Math.min(screenWidth, calculatedHeight) / 2,
+                  borderRadius: 120,
                   overflow: "hidden",
                 }}
               >
@@ -344,10 +362,7 @@ export default function RecipeCard() {
                       ? { uri: recipe.image }
                       : randomMissingMainImage()
                   }
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                  }}
+                  className="w-full h-full"
                 />
               </View>
             </View>
@@ -386,23 +401,44 @@ export default function RecipeCard() {
             )}
 
             {/* Recipe Title */}
-            <Text style={styles.title}>{recipe.title}</Text>
+            <Text className="text-xl font-Flux text-center p-2 mx-2 mt-4">
+              {recipe.title}
+            </Text>
 
             {/* Recipe Attributes */}
             <ScrollView>
               <View className="flex flex-row m-1 flex-wrap justify-center items-center">
                 {recipe.veryHealthy && (
-                  <Text style={styles.attributes}>Very Healthy</Text>
+                  <Text
+                    className="text-center font-SpaceMono text-md bg-[#F4C653] rounded-2xl p-2 m-1"
+                    style={styles.shadow}
+                  >
+                    Very Healthy
+                  </Text>
                 )}
-                {recipe.cheap && <Text style={styles.attributes}>Cheap</Text>}
+                {recipe.cheap && (
+                  <Text
+                    className="text-center font-SpaceMono text-md bg-[#F4C653] rounded-2xl p-2 m-1"
+                    style={styles.shadow}
+                  >
+                    Cheap
+                  </Text>
+                )}
                 {recipe.veryPopular && (
-                  <Text style={styles.attributes}>Very Popular</Text>
+                  <Text
+                    className="text-center font-SpaceMono text-md bg-[#F4C653] rounded-2xl p-2 m-1"
+                    style={styles.shadow}
+                  >
+                    Very Popular
+                  </Text>
                 )}
                 {recipe.sustainable && (
-                  <Text style={styles.attributes}>Sustainable</Text>
-                )}
-                {recipe.veryHealthy && (
-                  <Text style={styles.attributes}>Very Healthy</Text>
+                  <Text
+                    className="text-center font-SpaceMono text-md bg-[#F4C653] rounded-2xl p-2 m-1"
+                    style={styles.shadow}
+                  >
+                    Sustainable
+                  </Text>
                 )}
               </View>
             </ScrollView>
@@ -429,19 +465,11 @@ export default function RecipeCard() {
               </View>
             </ScrollView>
 
-            {/* Switch , time and servings */}
+            {/* Switch, time and servings */}
             <View>
               <View className="flex flex-row justify-around items-center m-2">
                 <View className="flex flex-row justify-center items-center mr-4">
-                  <Text
-                    style={{
-                      fontFamily: "SpaceMono",
-                      fontSize: 15,
-                      marginRight: 2,
-                    }}
-                  >
-                    US
-                  </Text>
+                  <Text className="font-SpaceMono text-md m-2">US</Text>
                   <Switch
                     value={unitSystem === "us"}
                     onValueChange={(value) =>
@@ -450,24 +478,11 @@ export default function RecipeCard() {
                     trackColor={{ false: "#ffb600", true: "#ffb600" }}
                     thumbColor={"#f94a00"}
                   ></Switch>
-                  <Text
-                    style={{
-                      fontFamily: "SpaceMono",
-                      fontSize: 15,
-                      marginLeft: 2,
-                    }}
-                  >
-                    Metric
-                  </Text>
+                  <Text className="font-SpaceMono text-md m-2">Metric</Text>
                 </View>
                 <View className="flex justify-center items-center">
                   <Ionicons name="timer" size={40} color={"#149575"} />
-                  <Text
-                    style={{
-                      fontFamily: "SpaceMono",
-                      fontSize: 15,
-                    }}
-                  >
+                  <Text className="font-SpaceMono text-md">
                     {recipe.readyInMinutes} mins
                   </Text>
                 </View>
@@ -480,27 +495,14 @@ export default function RecipeCard() {
                         color={"#149575"}
                       />
                     </TouchableOpacity>
-                    <Text
-                      style={{
-                        fontFamily: "SpaceMono",
-                        fontSize: 15,
-                        marginHorizontal: 5,
-                      }}
-                    >
+                    <Text className="font-SpaceMono text-md mx-1">
                       {servings}
                     </Text>
                     <TouchableOpacity onPress={incrementServings}>
                       <Ionicons name="add-circle" size={40} color={"#149575"} />
                     </TouchableOpacity>
                   </View>
-                  <Text
-                    style={{
-                      fontFamily: "SpaceMono",
-                      fontSize: 15,
-                    }}
-                  >
-                    Servings
-                  </Text>
+                  <Text className="font-SpaceMono text-md">Servings</Text>
                 </View>
               </View>
 
@@ -515,27 +517,11 @@ export default function RecipeCard() {
               <TouchableOpacity
                 onPress={() => setShowNutrition(!showNutrition)}
                 className="flex justify-center items-center m-2"
-                style={{
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 6,
-                    height: 6,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 8,
-                }}
+                style={styles.shadow}
               >
                 <View className="flex justify-center items-center">
                   <Text style={{ fontSize: 40 }}>🍏</Text>
-                  <Text
-                    style={{
-                      fontFamily: "SpaceMono",
-                      fontSize: 18,
-                      color: "#7a1b0e",
-                      textAlign: "center",
-                    }}
-                  >
+                  <Text className="font-SpaceMono text-lg text-[#7a1b0e] text-center">
                     Nutritional Values
                   </Text>
                 </View>
@@ -544,30 +530,17 @@ export default function RecipeCard() {
 
             {/* Nutrition Modal */}
             <Modal
-              animationType="slide"
+              animationType="fade"
               transparent={true}
               visible={showNutrition}
               onRequestClose={() => {
                 setShowNutrition(false);
               }}
             >
-              <View className="flex-1 justify-center items-center">
+              <View className="flex-1 justify-center items-center bg-black/50">
                 <View
-                  style={{
-                    width: "80%",
-                    maxHeight: "70%",
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 2,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 8,
-                    borderRadius: 20,
-                    marginHorizontal: "10%",
-                  }}
-                  className="bg-slate-300 rounded-2xl p-2"
+                  style={styles.shadow}
+                  className="bg-slate-300 rounded-2xl p-2 w-[80%] max-h-[70%]"
                 >
                   <ScrollView>
                     <TouchableOpacity
@@ -577,13 +550,7 @@ export default function RecipeCard() {
                       <AntDesign name="close" size={30} color={"#64748b"} />
                     </TouchableOpacity>
                     <View className="items-center">
-                      <Text
-                        style={{
-                          fontFamily: "SpaceMono",
-                          fontSize: 18,
-                          textAlign: "center",
-                        }}
-                      >
+                      <Text className="font-SpaceMono text-lg text-center">
                         Nutritional Values for {recipe.title} recipe
                       </Text>
                     </View>
@@ -642,14 +609,7 @@ export default function RecipeCard() {
                   style={{
                     width: screenWidth - 45,
                     minHeight: 90,
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 2,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 6,
+                    ...styles.shadow,
                   }}
                 ></View>
                 <View
@@ -685,12 +645,7 @@ export default function RecipeCard() {
 
                     <View className="flex justify-center">
                       <View className="flex items-center mx-2 flex-wrap max-w-[190]">
-                        <Text
-                          style={{
-                            fontFamily: "SpaceMono",
-                            fontSize: 16,
-                          }}
-                        >
+                        <Text className="font-SpaceMono text-[16px]">
                           {ingredient.originalName.charAt(0).toUpperCase() +
                             ingredient.originalName.slice(1)}
                         </Text>
@@ -701,23 +656,13 @@ export default function RecipeCard() {
                             ingredientSubstitutes.map((substitute, index) => (
                               <Text
                                 key={index}
-                                className="flex items-center mx-2 flex-wrap max-w-[190]"
-                                style={{
-                                  fontFamily: "SpaceMono",
-                                  fontSize: 15,
-                                }}
+                                className="flex items-center mx-2 flex-wrap max-w-[190] font-SpaceMono text-[15px]"
                               >
                                 {substitute}
                               </Text>
                             ))
                           ) : (
-                            <Text
-                              className="flex items-center mx-2 flex-wrap max-w-[190]"
-                              style={{
-                                fontFamily: "SpaceMono",
-                                fontSize: 15,
-                              }}
-                            >
+                            <Text className="flex items-center mx-2 flex-wrap max-w-[190] font-SpaceMono text-[15px]">
                               No substitutes found
                             </Text>
                           )}
@@ -728,12 +673,7 @@ export default function RecipeCard() {
 
                   <View className="flex flex-row justify-center items-center mx-2">
                     <View className="flex justify-center items-center">
-                      <Text
-                        style={{
-                          fontFamily: "SpaceMono",
-                          fontSize: 17,
-                        }}
-                      >
+                      <Text className="font-SpaceMono text-[17px]">
                         {unitSystem === "metric"
                           ? parseFloat(
                               (
@@ -748,12 +688,7 @@ export default function RecipeCard() {
                               ).toFixed(2)
                             )}
                       </Text>
-                      <Text
-                        style={{
-                          fontFamily: "SpaceMono",
-                          fontSize: 14,
-                        }}
-                      >
+                      <Text className="font-SpaceMono text-[14px]">
                         {unitSystem === "metric"
                           ? ingredient.measures.us.unitShort
                           : ingredient.measures.metric.unitShort}
@@ -781,30 +716,17 @@ export default function RecipeCard() {
 
             {/* Nutrition per Ingredient */}
             <Modal
-              animationType="slide"
+              animationType="fade"
               transparent={true}
               visible={ingredientModalVisible}
               onRequestClose={() => {
                 setIngredientModalVisible(false);
               }}
             >
-              <View className="flex-1 justify-center items-center">
+              <View className="flex-1 justify-center items-center bg-black/50">
                 <View
-                  style={{
-                    width: "80%",
-                    maxHeight: "70%",
-                    shadowColor: "#000",
-                    shadowOffset: {
-                      width: 2,
-                      height: 2,
-                    },
-                    shadowOpacity: 0.25,
-                    shadowRadius: 4,
-                    elevation: 8,
-                    borderRadius: 20,
-                    marginHorizontal: "10%",
-                  }}
-                  className="bg-slate-300 rounded-2xl p-2"
+                  style={styles.shadow}
+                  className="bg-slate-300 rounded-2xl p-2 w-[80%] max-h-[70%]"
                 >
                   <ScrollView>
                     <TouchableOpacity
@@ -817,29 +739,16 @@ export default function RecipeCard() {
                     {selectedIngredientNutrition && (
                       <View>
                         <View>
-                          <Text
-                            style={{
-                              fontFamily: "SpaceMono",
-                              fontSize: 20,
-                              textAlign: "center",
-                            }}
-                          >
-                            Nutritional Values for{" "}
-                            {selectedIngredientNutrition.amount}{" "}
-                            {selectedIngredientNutrition.unit}
-                          </Text>
-                          <Text
-                            style={{
-                              fontFamily: "SpaceMono",
-                              fontSize: 18,
-                              textAlign: "center",
-                            }}
-                          >
-                            of{" "}
-                            {selectedIngredientNutrition.name
+                          <Text className="font-SpaceMono text-[20px] text-center">
+                            {`Nutritional Values for ${
+                              selectedIngredientNutrition.amount
+                            } ${
+                              selectedIngredientNutrition.unit
+                            } of ${selectedIngredientNutrition.name
                               .charAt(0)
-                              .toUpperCase() +
-                              selectedIngredientNutrition.name.slice(1)}
+                              .toUpperCase()}${selectedIngredientNutrition.name.slice(
+                              1
+                            )}`}
                           </Text>
                         </View>
 
@@ -901,27 +810,11 @@ export default function RecipeCard() {
                 // fetchWineDescription(recipe.winePairing.pairedWines);
               }}
               className="flex justify-center items-center m-2"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 6,
-                  height: 6,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-                elevation: 8,
-              }}
+              style={styles.shadow}
             >
               <View className="flex justify-center items-center">
-                <Text style={{ fontSize: 80 }}>🍷</Text>
-                <Text
-                  style={{
-                    fontFamily: "SpaceMono",
-                    fontSize: 20,
-                    color: "#7a1b0e",
-                    textAlign: "center",
-                  }}
-                >
+                <Text className="text-[80px]">🍷</Text>
+                <Text className="font-SpaceMono text-[20px] text-[#7a1b0e] text-center">
                   Wine Pairing
                 </Text>
               </View>
@@ -935,16 +828,9 @@ export default function RecipeCard() {
                   <View
                     className="absolute bg-[#0098a3] rounded-2xl right-0.5 bottom-0.5"
                     style={{
-                      shadowColor: "#000",
-                      shadowOffset: {
-                        width: 6,
-                        height: 6,
-                      },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 4,
-                      elevation: 8,
                       width: screenWidth - 40,
                       height: dynamicHeightWine,
+                      ...styles.shadow,
                     }}
                   ></View>
                   <View
@@ -973,19 +859,8 @@ export default function RecipeCard() {
                                 className="absolute inset-0 w-full h-full"
                               />
                               <Text
-                                style={{
-                                  fontFamily: "Nobile",
-                                  transform: [{ rotate: "-90deg" }],
-                                  shadowColor: "#000",
-                                  shadowOffset: {
-                                    width: 6,
-                                    height: 6,
-                                  },
-                                  shadowOpacity: 0.25,
-                                  shadowRadius: 4,
-                                  elevation: 8,
-                                }}
-                                className="text-2xl text-center text-red-600 w-48 top-10"
+                                style={styles.shadow}
+                                className="font-Nobile text-2xl text-center text-red-600 w-48 top-10 -rotate-90"
                               >
                                 {wine
                                   .split(" ")
@@ -1002,10 +877,7 @@ export default function RecipeCard() {
                         )}
                       </View>
                     </ScrollView>
-                    <Text
-                      className="text-lg my-2 mx-3 text-center"
-                      style={{ fontFamily: "SpaceMono" }}
-                    >
+                    <Text className="text-lg my-2 mx-3 text-center font-SpaceMono">
                       {recipe.winePairing.pairingText}
                     </Text>
                   </View>
@@ -1020,16 +892,9 @@ export default function RecipeCard() {
                   <View
                     className="absolute bg-[#0098a3] rounded-2xl right-0.5 bottom-0.5"
                     style={{
-                      shadowColor: "#000",
-                      shadowOffset: {
-                        width: 6,
-                        height: 6,
-                      },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 4,
-                      elevation: 8,
                       width: screenWidth - 40,
                       height: 100,
+                      ...styles.shadow,
                     }}
                   ></View>
                   <View
@@ -1039,10 +904,7 @@ export default function RecipeCard() {
                       height: 100,
                     }}
                   >
-                    <Text
-                      className="text-lg m-2 text-center"
-                      style={{ fontFamily: "SpaceMono" }}
-                    >
+                    <Text className="text-lg m-2 text-center font-SpaceMono">
                       There are no wine pairing suggestions for this recipe
                     </Text>
                   </View>
@@ -1056,14 +918,7 @@ export default function RecipeCard() {
                 style={{
                   width: screenWidth - 45,
                   height: dynamicHeight,
-                  shadowColor: "#000",
-                  shadowOffset: {
-                    width: 2,
-                    height: 2,
-                  },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 4,
-                  elevation: 6,
+                  ...styles.shadow,
                 }}
               ></View>
               <View
@@ -1090,43 +945,16 @@ export default function RecipeCard() {
                       >
                         <View
                           className="flex justify-center items-center w-20 h-20 relative mb-2"
-                          style={{
-                            shadowColor: "#000",
-                            shadowOffset: {
-                              width: 0,
-                              height: 2,
-                            },
-                            shadowOpacity: 0.25,
-                            shadowRadius: 3.84,
-                          }}
+                          style={styles.shadow}
                         >
                           <Image
                             source={randomPostitImage()}
                             className="absolute inset-0 w-full h-full"
                           />
-                          <Text
-                            style={{
-                              fontFamily: "SpaceMono",
-                              fontSize: 15,
-                            }}
-                            className="text-center"
-                          >
+                          <Text className="text-center text-[15px] font-SpaceMono">
                             Step {instruction.number}
                           </Text>
                         </View>
-                        {/* <View className="flex flex-row justify-center items-center m-1 flex-wrap">
-                          {instruction.ingredients &&
-                            instruction.ingredients.map((ingredient, index) => (
-                              <View key={index}>
-                                {ingredient.image && (
-                                  <Image
-                                    source={{ uri: ingredient.image }}
-                                    className="w-10 h-10 rounded-2xl m-1"
-                                  />
-                                )}
-                              </View>
-                            ))}
-                        </View> */}
                         <Text
                           className="text-justify p-1 mx-2"
                           style={{
@@ -1155,25 +983,7 @@ export default function RecipeCard() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 10,
-  },
-  innerContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  attributes: {
-    fontFamily: "SpaceMono",
-    fontSize: 15,
-    textAlign: "center",
-    backgroundColor: "#F4C653",
-    borderRadius: 10,
-    padding: 5,
-    margin: 5,
+  shadow: {
     shadowColor: "#000",
     shadowOffset: {
       width: 2,
@@ -1181,16 +991,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 4,
-  },
-  title: {
-    fontSize: 22,
-    fontFamily: "Flux",
-    textAlign: "center",
-    padding: 5,
-    marginTop: 20,
-    marginBottom: 5,
-    marginLeft: 10,
-    marginRight: 10,
+    elevation: 8,
   },
 });
