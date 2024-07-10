@@ -20,6 +20,7 @@ import { useRoute } from "@react-navigation/native";
 import { addIngredient, updateIngredients } from "@/store/fridge";
 import LottieView from "lottie-react-native";
 import { useToast } from "react-native-toast-notifications";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   StyleSheet,
   Text,
@@ -31,6 +32,7 @@ import {
   Platform,
   ImageBackground,
 } from "react-native";
+import { Line } from "react-native-svg";
 
 const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
 const USER_ID = "clarifai";
@@ -259,8 +261,12 @@ export default function Camera() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-cyan-800 items-center justify-center pb-16">
+    <SafeAreaView className="flex-1 items-center justify-center pb-16">
       <StatusBar barStyle="light-content" />
+      <LinearGradient
+        colors={["transparent", "#0891b2", "#0d6e8c", "#0a4f6c"]}
+            className="absolute top-0 left-0 right-0 bottom-0"
+      />
       <Background cellSize={25} />
 
       {/* <View className="flex justify-center items-center">

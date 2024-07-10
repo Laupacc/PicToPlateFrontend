@@ -290,7 +290,7 @@ export default function RecipeCard() {
       console.log(data);
       dispatch(removeFromFavouriteRecipes(recipe));
       setIsFavourite(false);
-    
+
       toast.show("Recipe removed from favourites", {
         type: "success",
         placement: "center",
@@ -372,14 +372,20 @@ export default function RecipeCard() {
               onPress={() => navigation.goBack()}
               className="absolute top-5 left-5"
             >
-              <Ionicons name="arrow-undo-sharp" size={30} />
+              <Image
+                source={require("../../assets/images/yellowArrow.png")}
+                className="w-10 h-10"
+              />
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={handleFetchRandomRecipe}
-              className="absolute top-5 right-5"
+              className="absolute top-4 right-2"
             >
-              <FontAwesome name="random" size={30} />
+              <Image
+                source={require("../../assets/images/surprise.png")}
+                className="w-11 h-11"
+              />
             </TouchableOpacity>
 
             {/* Favourite Button */}
@@ -390,12 +396,15 @@ export default function RecipeCard() {
                     ? removeRecipeFromFavourites
                     : addRecipeToFavourites
                 }
-                className="absolute top-5 right-14"
+                className="absolute top-4 right-16"
               >
-                <Ionicons
-                  name={isFavourite ? "heart" : "heart-outline"}
-                  size={30}
-                  color={"#ba0000"}
+                <Image
+                  source={
+                    isFavourite
+                      ? require("../../assets/images/heart1.png")
+                      : require("../../assets/images/heart3.png")
+                  }
+                  className="w-10 h-10"
                 />
               </TouchableOpacity>
             )}

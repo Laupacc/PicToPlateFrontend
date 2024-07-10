@@ -27,11 +27,11 @@ export default function TabLayout() {
         // },
         tabBarStyle: {
           position: "absolute",
-          height: Platform.OS === "ios" ? 80 : 70,
-          bottom: 15,
+          height: Platform.OS === "ios" ? 90 : 60,
+          // bottom: 15,
           left: 10,
           right: 10,
-          borderRadius: 20,
+          // borderRadius: 20,
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
           backgroundColor: "#cbd5e1", // light grey

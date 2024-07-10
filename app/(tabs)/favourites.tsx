@@ -43,10 +43,10 @@ export default function Favourites() {
     const fetchFavouriteRecipes = async () => {
       try {
         // Check if favorites are already cached
-        // if (cachedFavorites.current.length > 0) {
-        //   setFavouriteRecipes(cachedFavorites.current);
-        //   return;
-        // }
+        if (cachedFavorites.current.length > 0) {
+          setFavouriteRecipes(cachedFavorites.current);
+          return;
+        }
 
         const response = await fetch(
           `${BACKEND_URL}/users/fetchFavourites/${user.token}`
@@ -145,7 +145,10 @@ export default function Favourites() {
                 className="absolute top-20 right-5"
                 onPress={() => removeRecipeFromFavourites(recipe.id)}
               >
-                <Entypo name="trash" size={28} color="gray" />
+                <Image
+                  source={require("../../assets/images/trash1.png")}
+                  className="w-8 h-8"
+                />
               </TouchableOpacity>
 
               <View className="flex items-center justify-center">

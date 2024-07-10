@@ -35,10 +35,10 @@ export default function recipesFromFridge() {
   useEffect(() => {
     const searchRecipesFromFridge = async () => {
       try {
-        if (cachedRecipes.current.length > 0) {
-          setRecipes(cachedRecipes.current);
-          return;
-        }
+        // if (cachedRecipes.current.length > 0) {
+        //   setRecipes(cachedRecipes.current);
+        //   return;
+        // }
 
         const search = searchQuery
           .toLowerCase()
@@ -81,7 +81,7 @@ export default function recipesFromFridge() {
       dispatch(addToFavouriteRecipes(recipes));
       setIsFavourite(true);
       console.log("Recipe added to favourites:", recipes.id);
-      // alert("Recipe added to favourites");
+
       toast.show("Recipe added to favourites", {
         type: "success",
         placement: "center",
@@ -98,12 +98,17 @@ export default function recipesFromFridge() {
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <Background cellSize={25} />
-      <Text className="text-center font-Flux text-[24px] m-5">
-        Recipes From my ingredients
-      </Text>
-      <TouchableOpacity onPress={() => navigation.navigate("fridge")}>
-        <Text>Go Back</Text>
-      </TouchableOpacity>
+      <View className="flex flex-row justify-center items-center">
+        <TouchableOpacity onPress={() => navigation.navigate("fridge")}>
+          <Image
+            source={require("../../assets/images/yellowArrow.png")}
+            className="w-10 h-10"
+          />
+        </TouchableOpacity>
+        <Text className="text-center font-Flux text-[24px] m-5">
+          Recipes From my ingredients
+        </Text>
+      </View>
 
       <ScrollView className="flex-1">
         {recipes.length === 0 && (
@@ -127,13 +132,16 @@ export default function recipesFromFridge() {
               />
 
               <TouchableOpacity
-                className="absolute top-20 right-5"
+                className="absolute top-20 right-4"
                 onPress={() => addRecipeToFavourites(recipe.id)}
               >
-                <Ionicons
-                  name={isFavourite ? "heart" : "heart-outline"}
-                  size={30}
-                  color="red"
+                <Image
+                  source={
+                    isFavourite
+                      ? require("../../assets/images/heart1.png")
+                      : require("../../assets/images/heart3.png")
+                  }
+                  className="w-8 h-8"
                 />
               </TouchableOpacity>
 

@@ -785,13 +785,16 @@ export default function Search() {
                 style={styles.shadow}
               />
               <TouchableOpacity
-                className="absolute top-20 right-5"
+                className="absolute top-20 right-4"
                 onPress={() => addRecipeToFavourites(recipe.id)}
               >
-                <Ionicons
-                  name={isFavourite ? "heart" : "heart-outline"}
-                  size={30}
-                  color="red"
+                <Image
+                  source={
+                    isFavourite
+                      ? require("../../assets/images/heart1.png")
+                      : require("../../assets/images/heart3.png")
+                  }
+                  className="w-8 h-8"
                 />
               </TouchableOpacity>
 
