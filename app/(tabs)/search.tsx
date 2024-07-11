@@ -23,12 +23,11 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import Background from "@/components/Background";
-import { fetchRandomRecipe, randomStickerImage } from "@/apiFunctions";
+import { fetchRandomRecipe } from "@/apiFunctions";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
 import RNPickerSelect from "react-native-picker-select";
 import { useToast } from "react-native-toast-notifications";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function Search() {
   const navigation = useNavigation();
@@ -328,7 +327,7 @@ export default function Search() {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        setTimeout(bounceAnimation, 8000);
+        setTimeout(bounceAnimation, 12000);
       });
     };
 

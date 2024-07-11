@@ -10,6 +10,7 @@ module.exports = {
     extend: {
       fontFamily: {
         Nobile: ['Nobile'],
+        NobileBold: ['NobileBold'],
         Flux: ['Flux'],
         Maax: ['Maax'],
         CreamyCookies: ['CreamyCookies'],

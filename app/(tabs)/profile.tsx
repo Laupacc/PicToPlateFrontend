@@ -21,6 +21,7 @@ import { useToast } from "react-native-toast-notifications";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { FlatList, ScrollView } from "react-native-gesture-handler";
 
 export default function Profile() {
   const navigation = useNavigation();
@@ -88,28 +89,6 @@ export default function Profile() {
       setOldIngredients(oldIngredients);
     }
   }, [userInfo.ingredients]);
-
-  const renderOldIngredients = () => {
-    if (oldIngredients.length > 0) {
-      return (
-        <View>
-          <Text>
-            You have {oldIngredients.length} ingredient(s) older than a week in
-            your fridge. You should use them up soon! The ingredients are:
-            {oldIngredients
-              ? oldIngredients.map((item: any) => (
-                  <Text key={item._id}>
-                    {item.name} added on{" "}
-                    {moment(item.dateAdded).format("MMM Do YY")}
-                  </Text>
-                ))
-              : null}
-          </Text>
-        </View>
-      );
-    }
-    return <Text>You have no old ingredients in your fridge.</Text>;
-  };
 
   const randomPostitImage = () => {
     const images = [
@@ -203,52 +182,52 @@ export default function Profile() {
         </View>
       </View>
 
-      {/* Middle Box 1*/}
+      {/* Middle Postit 1*/}
       <View className="flex flex-row justify-center items-center">
         <View
-          className="flex justify-center items-center relative w-48 h-48 m-2"
+          className="flex justify-center items-center relative w-48 h-48 m-1"
           style={styles.shadow}
         >
           <Image
             source={randomPostitImage()}
             className="absolute inset-0 w-full h-full"
           />
-          <Text className="text-center text-2xl font-Flux text-slate-700">
-            {userInfo.favourites?.length}
-          </Text>
           <Image
             source={require("../../assets/images/heart1.png")}
             className="w-10 h-10"
           />
+          <Text className="text-center text-2xl font-Flux text-slate-700">
+            {userInfo.favourites?.length}
+          </Text>
           <Text className="text-center text-lg font-Flux text-slate-700">
             favourite recipes
           </Text>
         </View>
 
-        {/* Middle Box 2 */}
+        {/* Middle Postit 2 */}
         <View
-          className="flex justify-center items-center relative w-48 h-48 m-2"
+          className="flex justify-center items-center relative w-48 h-48 m-1"
           style={styles.shadow}
         >
           <Image
             source={randomPostitImage()}
             className="absolute inset-0 w-full h-full"
           />
-          <Text className="text-center text-2xl font-Flux text-slate-700">
-            {userInfo.ingredients?.length}
-          </Text>
           <Image
             source={require("../../assets/images/missingIng.png")}
             className="w-10 h-10"
           />
+          <Text className="text-center text-2xl font-Flux text-slate-700">
+            {userInfo.ingredients?.length}
+          </Text>
           <Text className="text-center text-lg font-Flux text-slate-700">
-            ingredients in your fridge
+            ingredients saved
           </Text>
         </View>
       </View>
 
       {/* Bottom Box */}
-      <View className="flex justify-center items-center">
+      {/* <View className="flex justify-center items-center">
         <View className="relative m-1">
           <View
             className="absolute bg-[#b91c1c] rounded-2xl right-0.5 bottom-0.5"
@@ -271,6 +250,56 @@ export default function Profile() {
             </View>
           </View>
         </View>
+      </View> */}
+
+      <View
+        className="flex justify-center items-center relative w-96 h-56 m-1"
+        style={styles.shadow}
+      >
+        <Image
+          source={require("../../assets/images/recipeBack/recipeBack19.png")}
+          className="absolute inset-0 w-full h-full"
+        />
+        {oldIngredients.length > 0 ? (
+          <View className="flex justify-center items-center m-2 p-2 top-4">
+            <Text className="text-base font-Flux text-slate-700 text-center">
+              You have {oldIngredients.length} ingredient(s) older than a week :
+            </Text>
+            <View className="h-24 overflow-y-auto">
+              <FlatList
+                contentContainerStyle={{
+                  marginTop: 10,
+                }}
+                data={oldIngredients}
+                renderItem={({ item }) => (
+                  <View className="flex flex-row justify-center items-center">
+                    <Text
+                      className="text-lg font-Nobile text-red-600 text-center"
+                      key={item._id}
+                    >
+                      - {item.name}{" "}
+                    </Text>
+                    <Text className="text-md font-Nobile text-red-600 text-center">
+                      (added on {moment(item.dateAdded).format("MMM Do YYYY")})
+                    </Text>
+                  </View>
+                )}
+                keyExtractor={(item) => item._id}
+              />
+            </View>
+          </View>
+        ) : (
+          <View className="flex justify-center items-center mt-4">
+            <Text className="text-xl font-Flux text-slate-700">Well done!</Text>
+            <Text className="text-xl font-Flux text-slate-700">
+              Everything is fresh!
+            </Text>
+            <Image
+              source={require("../../assets/images/applause.png")}
+              className="w-20 h-20"
+            />
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );

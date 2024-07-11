@@ -10,8 +10,7 @@ import {
   Switch,
   StatusBar,
   Modal,
-  FlatList,
-  TouchableWithoutFeedback,
+  Animated,
 } from "react-native";
 import { DataTable } from "react-native-paper";
 import { ScrollView } from "react-native-gesture-handler";
@@ -20,10 +19,6 @@ import { useNavigation } from "expo-router";
 import { useRoute } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
-import FontAwesome6 from "react-native-vector-icons/FontAwesome5";
-import Entypo from "react-native-vector-icons/Entypo";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import Background from "@/components/Background";
 import wineCategories from "../../_dataSets.json";
@@ -37,16 +32,14 @@ import { useToast } from "react-native-toast-notifications";
 import {
   addToFavouriteRecipes,
   removeFromFavouriteRecipes,
-  updateFavouriteRecipes,
 } from "@/store/recipes";
 
 export default function RecipeCard() {
-  const navigation = useNavigation();
   const dispatch = useDispatch();
-  const toast = useToast();
   const user = useSelector((state) => state.user.value);
-  const token = useSelector((state) => state.user.value.token);
-  const favourites = useSelector((state) => state.recipes.favourites);
+  const navigation = useNavigation();
+  const toast = useToast();
+  const bounceAnim = useRef(new Animated.Value(0)).current;
 
   const route = useRoute();
   const { recipeId } = route.params as { recipeId: number };
@@ -57,12 +50,13 @@ export default function RecipeCard() {
   const [dynamicHeightWine, setDynamicHeightWine] = useState(0);
   const [ingredientSubstitutes, setIngredientSubstitutes] = useState([]);
   const [showWinePairing, setShowWinePairing] = useState(false);
-  // const [wineDescription, setWineDescription] = useState({});
   const [activeIngredientId, setActiveIngredientId] = useState(null);
   const [ingredientModalVisible, setIngredientModalVisible] = useState(false);
   const [selectedIngredientNutrition, setSelectedIngredientNutrition] =
     useState(null);
   const [showNutrition, setShowNutrition] = useState(false);
+  const [showMacros, setShowMacros] = useState(false);
+  const [showSubstitutes, setShowSubstitutes] = useState(false);
   const [isFavourite, setIsFavourite] = useState(false);
 
   const BACKEND_URL = "http://192.168.1.34:3000";
@@ -171,21 +165,6 @@ export default function RecipeCard() {
     navigation.navigate("recipeCard", { recipeId: randomRecipe.id });
   };
 
-  // const fetchWineDescription = async (pairedWines) => {
-  //   const descriptions = await Promise.all(
-  //     pairedWines.map(async (wine) => {
-  //       const response = await fetch(
-  //         `http://192.168.1.34:3000/recipes/wineDescription/${wine}`
-  //       );
-  //       const data = await response.json();
-  //       console.log("Wine description data:", [wine], data.wineDescription);
-  //       return { [wine]: data.wineDescription };
-  //     })
-  //   );
-
-  //   setWineDescription(Object.assign({}, ...descriptions));
-  // };
-
   const imageForWine = (wine) => {
     const wineImages = {
       white_wine: require("../../assets/images/wines/whitewine.png"),
@@ -261,7 +240,7 @@ export default function RecipeCard() {
         icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
       });
     } catch (error) {
-      console.error(error.message);
+      console.error("Error adding recipe to favourites:", error.message);
     }
   };
 
@@ -300,7 +279,7 @@ export default function RecipeCard() {
         icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
       });
     } catch (error) {
-      console.error(error.message);
+      console.error("Error removing recipe from favourites:", error.message);
     }
   };
 
@@ -330,6 +309,40 @@ export default function RecipeCard() {
     ];
     return images[Math.floor(Math.random() * images.length)];
   };
+
+  useEffect(() => {
+    const bounceAnimation = () => {
+      Animated.sequence([
+        Animated.timing(bounceAnim, {
+          toValue: -30,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: -15,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bounceAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setTimeout(bounceAnimation, 12000);
+      });
+    };
+
+    bounceAnimation();
+
+    // Clear the timeout when the component unmounts
+    return () => clearTimeout(bounceAnimation);
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
@@ -367,10 +380,11 @@ export default function RecipeCard() {
               </View>
             </View>
 
-            {/* Back Button and Random Recipe Button */}
+            {/* Back Button */}
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               className="absolute top-5 left-5"
+              style={styles.shadow}
             >
               <Image
                 source={require("../../assets/images/yellowArrow.png")}
@@ -378,17 +392,22 @@ export default function RecipeCard() {
               />
             </TouchableOpacity>
 
+            {/* Random Recipe Button */}
             <TouchableOpacity
               onPress={handleFetchRandomRecipe}
-              className="absolute top-4 right-2"
+              className="absolute top-44 right-4"
+              style={styles.shadow}
             >
-              <Image
+              <Animated.Image
                 source={require("../../assets/images/surprise.png")}
-                className="w-11 h-11"
+                className="w-12 h-12"
+                style={{
+                  transform: [{ translateY: bounceAnim }],
+                }}
               />
             </TouchableOpacity>
 
-            {/* Favourite Button */}
+            {/* Favourite Recipe Button */}
             {user.token && (
               <TouchableOpacity
                 onPress={
@@ -396,7 +415,7 @@ export default function RecipeCard() {
                     ? removeRecipeFromFavourites
                     : addRecipeToFavourites
                 }
-                className="absolute top-4 right-16"
+                className="absolute top-4 right-4"
               >
                 <Image
                   source={
@@ -474,70 +493,203 @@ export default function RecipeCard() {
               </View>
             </ScrollView>
 
-            {/* Switch, time and servings */}
-            <View>
-              <View className="flex flex-row justify-around items-center m-2">
-                <View className="flex flex-row justify-center items-center mr-4">
-                  <Text className="font-SpaceMono text-md m-2">US</Text>
-                  <Switch
-                    value={unitSystem === "us"}
-                    onValueChange={(value) =>
-                      setUnitSystem(value ? "us" : "metric")
-                    }
-                    trackColor={{ false: "#ffb600", true: "#ffb600" }}
-                    thumbColor={"#f94a00"}
-                  ></Switch>
-                  <Text className="font-SpaceMono text-md m-2">Metric</Text>
-                </View>
-                <View className="flex justify-center items-center">
-                  <Ionicons name="timer" size={40} color={"#149575"} />
-                  <Text className="font-SpaceMono text-md">
-                    {recipe.readyInMinutes} mins
-                  </Text>
-                </View>
-                <View className="flex justify-center items-center ml-4">
-                  <View className="flex flex-row justify-center items-center">
-                    <TouchableOpacity onPress={decrementServings}>
-                      <Ionicons
-                        name="remove-circle"
-                        size={40}
-                        color={"#149575"}
-                      />
-                    </TouchableOpacity>
-                    <Text className="font-SpaceMono text-md mx-1">
-                      {servings}
-                    </Text>
-                    <TouchableOpacity onPress={incrementServings}>
-                      <Ionicons name="add-circle" size={40} color={"#149575"} />
-                    </TouchableOpacity>
-                  </View>
-                  <Text className="font-SpaceMono text-md">Servings</Text>
-                </View>
-              </View>
-
-              <View>
-                <Text>
-                  {recipe.nutrition.caloricBreakdown.percentProtein}% Protein -
-                  {recipe.nutrition.caloricBreakdown.percentFat}% Fat -
-                  {recipe.nutrition.caloricBreakdown.percentCarbs}% Carbs
-                </Text>
-              </View>
-
+            {/* Four Option Buttons */}
+            <View className="flex flex-row justify-center items-center">
+              {/* Macros Button */}
               <TouchableOpacity
-                onPress={() => setShowNutrition(!showNutrition)}
-                className="flex justify-center items-center m-2"
+                onPress={() => setShowMacros(!showMacros)}
+                className="flex justify-center items-center my-2 mx-4 p-2 rounded-2xl bg-slate-200"
                 style={styles.shadow}
               >
                 <View className="flex justify-center items-center">
-                  <Text style={{ fontSize: 40 }}>🍏</Text>
-                  <Text className="font-SpaceMono text-lg text-[#7a1b0e] text-center">
-                    Nutritional Values
+                  <Image
+                    source={require("../../assets/images/macronutrients.png")}
+                    className="w-12 h-12"
+                  />
+                  <Text className="text-lg text-[#7a1b0e] text-center">
+                    Macros
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Nutritional Values Button */}
+              <TouchableOpacity
+                onPress={() => setShowNutrition(!showNutrition)}
+                className="flex justify-center items-center my-2 mx-4 p-2 rounded-2xl bg-slate-200"
+                style={styles.shadow}
+              >
+                <View className="flex justify-center items-center">
+                  <Image
+                    source={require("../../assets/images/nutriValues.png")}
+                    className="w-12 h-12"
+                  />
+                  <Text className="text-lg text-[#7a1b0e] text-center">
+                    Nutri
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Wine Pairing Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowWinePairing(!showWinePairing);
+                }}
+                className="flex justify-center items-center my-2 mx-4 p-2 rounded-2xl bg-slate-200"
+                style={styles.shadow}
+              >
+                <View className="flex justify-center items-center">
+                  {/* <Text className="text-[60px]">🍷</Text> */}
+                  <Image
+                    source={require("../../assets/images/winePairing.png")}
+                    className="w-14 h-14"
+                  />
+                  <Text className="text-lg text-[#7a1b0e] text-center">
+                    Wine
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Food Substitute Button */}
+              <TouchableOpacity
+                onPress={() => setShowSubstitutes(!showSubstitutes)}
+                className="flex justify-center items-center my-2 mx-4 p-2 rounded-2xl bg-slate-200"
+                style={styles.shadow}
+              >
+                <View className="flex justify-center items-center">
+                  <Image
+                    source={require("../../assets/images/foodSubs3.png")}
+                    className="w-12 h-14"
+                  />
+                  <Text className="text-lg text-[#7a1b0e] text-center">
+                    Subs
                   </Text>
                 </View>
               </TouchableOpacity>
             </View>
 
-            {/* Nutrition Modal */}
+            {/* Macros */}
+            {showMacros && (
+              <View className="flex flex-row justify-center items-start my-2">
+                <View className="border py-1.5 px-3 rounded-lg bg-[#d75348] mx-1">
+                  <Text className="font-bold text-lg text-center text-black">
+                    {recipe.nutrition.caloricBreakdown.percentProtein}%
+                  </Text>
+                  <Text className="font-bold text-base text-center text-black">
+                    Protein
+                  </Text>
+                </View>
+                <View className="border py-1.5 px-3 rounded-lg bg-[#79c94b] mx-1">
+                  <Text className="font-bold text-lg text-center text-black">
+                    {recipe.nutrition.caloricBreakdown.percentFat}%
+                  </Text>
+                  <Text className="font-bold text-base text-center text-black">
+                    Fat
+                  </Text>
+                </View>
+                <View className="border py-1.5 px-3 rounded-lg bg-[#F9D166] mx-1">
+                  <Text className="font-bold text-lg text-center text-black">
+                    {recipe.nutrition.caloricBreakdown.percentCarbs}%
+                  </Text>
+                  <Text className="font-bold text-base text-center text-black">
+                    Carbs
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Wine Pairing */}
+            {showWinePairing &&
+              recipe.winePairing.pairedWines &&
+              Array.isArray(recipe.winePairing.pairedWines) &&
+              recipe.winePairing.pairedWines.length > 0 && (
+                <View className="relative m-2">
+                  <View
+                    className="absolute bg-[#0098a3] rounded-2xl right-0.5 bottom-0.5"
+                    style={{
+                      width: screenWidth - 40,
+                      height: dynamicHeightWine,
+                      ...styles.shadow,
+                    }}
+                  ></View>
+                  <View
+                    className="flex justify-center items-center bg-slate-300 rounded-2xl m-2 p-2"
+                    style={{
+                      width: screenWidth - 40,
+                    }}
+                    onLayout={(event) => {
+                      const { height } = event.nativeEvent.layout;
+                      setDynamicHeightWine(height);
+                    }}
+                  >
+                    <ScrollView
+                      horizontal={true}
+                      showsHorizontalScrollIndicator={false}
+                    >
+                      <View className="flex flex-row justify-center items-center flex-wrap">
+                        {recipe.winePairing.pairedWines.map(
+                          (wine, index: number) => (
+                            <View
+                              key={index}
+                              className="flex flex-row justify-center items-center m-2 w-20 h-80"
+                            >
+                              <Image
+                                source={imageForWine(wine)}
+                                className="absolute inset-0 w-full h-full"
+                              />
+                              <Text
+                                style={styles.shadow}
+                                className="font-Nobile text-2xl text-center text-red-600 w-48 top-10 -rotate-90"
+                              >
+                                {wine
+                                  .split(" ")
+                                  .map(
+                                    (word: string) =>
+                                      word.charAt(0).toUpperCase() +
+                                      word.slice(1)
+                                  )
+                                  .join(" ")}
+                              </Text>
+                            </View>
+                          )
+                        )}
+                      </View>
+                    </ScrollView>
+                    <Text className="text-lg my-2 mx-3 text-center font-SpaceMono">
+                      {recipe.winePairing.pairingText}
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+            {/* Wine Pairing When No Wines */}
+            {showWinePairing &&
+              (!recipe.winePairing.pairedWines ||
+                !Array.isArray(recipe.winePairing.pairedWines) ||
+                recipe.winePairing.pairedWines.length === 0) && (
+                <View className="relative m-2">
+                  <View
+                    className="absolute bg-[#0098a3] rounded-2xl right-0.5 bottom-0.5"
+                    style={{
+                      width: screenWidth - 40,
+                      height: 100,
+                      ...styles.shadow,
+                    }}
+                  ></View>
+                  <View
+                    className="flex justify-center items-center bg-slate-300 rounded-2xl m-2 p-2"
+                    style={{
+                      width: screenWidth - 40,
+                      height: 100,
+                    }}
+                  >
+                    <Text className="text-lg m-2 text-center font-SpaceMono">
+                      There are no wine pairing suggestions for this recipe
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+            {/* Nutritional Modal */}
             <Modal
               animationType="fade"
               transparent={true}
@@ -610,14 +762,155 @@ export default function RecipeCard() {
               </View>
             </Modal>
 
+            {/* Subsitutes Modal */}
+            <Modal
+              animationType="fade"
+              transparent={true}
+              visible={showSubstitutes}
+              onRequestClose={() => {
+                setShowSubstitutes(false);
+              }}
+            >
+              <View className="flex-1 justify-center items-center bg-black/50">
+                <View
+                  style={styles.shadow}
+                  className="bg-slate-200 rounded-2xl p-2 w-[80%] max-h-[90%]"
+                >
+                  <ScrollView>
+                    <TouchableOpacity
+                      onPress={() => setShowSubstitutes(false)}
+                      className="items-end"
+                    >
+                      <AntDesign name="close" size={30} color={"#64748b"} />
+                    </TouchableOpacity>
+                    <View className="flex flex-row flex-wrap justify-center items-center">
+                      {recipe.extendedIngredients?.map(
+                        (ingredient, index: number) => (
+                          <View>
+                            <View className="m-2 p-1" key={index}>
+                              <TouchableOpacity
+                                className="flex justify-center items-center w-20 h-20 p-1 rounded-2xl bg-white"
+                                style={styles.shadow}
+                                onPress={() => {
+                                  fetchIngredientSubstitution(ingredient.id);
+                                  if (activeIngredientId === ingredient.id) {
+                                    setActiveIngredientId(null);
+                                  } else {
+                                    setActiveIngredientId(ingredient.id);
+                                  }
+                                }}
+                              >
+                                {ingredient.image ? (
+                                  <Image
+                                    source={{
+                                      uri: constructImageUrl(ingredient.image),
+                                    }}
+                                    className="w-full h-full"
+                                    resizeMode="contain"
+                                  />
+                                ) : (
+                                  <Image
+                                    source={require("../../assets/images/missingIng.png")}
+                                    className="w-full h-full"
+                                  />
+                                )}
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        )
+                      )}
+                      <View className="flex justify-center items-center mt-4">
+                        {activeIngredientId !== null && (
+                          <View className="w-full items-center">
+                            {recipe.extendedIngredients.map(
+                              (ingredient, index: number) =>
+                                activeIngredientId === ingredient.id && (
+                                  <View key={index}>
+                                    <Text className="font-SpaceMono text-lg text-center mb-2">
+                                      {ingredient.originalName
+                                        .charAt(0)
+                                        .toUpperCase() +
+                                        ingredient.originalName.slice(1)}
+                                    </Text>
+                                    {ingredientSubstitutes.length > 0 ? (
+                                      ingredientSubstitutes.map(
+                                        (substitute, subIndex) => (
+                                          <Text
+                                            key={subIndex}
+                                            className="font-SpaceMono text-md text-center"
+                                          >
+                                            {substitute}
+                                          </Text>
+                                        )
+                                      )
+                                    ) : (
+                                      <Text className="font-SpaceMono text-md text-center">
+                                        No substitutes found
+                                      </Text>
+                                    )}
+                                  </View>
+                                )
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </ScrollView>
+                </View>
+              </View>
+            </Modal>
+            <View className="flex flex-row justify-around items-center m-2">
+              {/* Switch unit */}
+              <View className="flex flex-row justify-center items-center mr-4">
+                <Text className="font-SpaceMono text-md m-2">US</Text>
+                <Switch
+                  value={unitSystem === "us"}
+                  onValueChange={(value) =>
+                    setUnitSystem(value ? "us" : "metric")
+                  }
+                  trackColor={{ false: "#ffb600", true: "#ffb600" }}
+                  thumbColor={"#f94a00"}
+                ></Switch>
+                <Text className="font-SpaceMono text-md m-2">Metric</Text>
+              </View>
+
+              {/* Ready in minutes */}
+              <View className="flex justify-center items-center">
+                <Ionicons name="timer" size={40} color={"#149575"} />
+                <Text className="font-SpaceMono text-md">
+                  {recipe.readyInMinutes} mins
+                </Text>
+              </View>
+
+              {/* Servings */}
+              <View className="flex justify-center items-center ml-4">
+                <View className="flex flex-row justify-center items-center">
+                  <TouchableOpacity onPress={decrementServings}>
+                    <Ionicons
+                      name="remove-circle"
+                      size={40}
+                      color={"#149575"}
+                    />
+                  </TouchableOpacity>
+                  <Text className="font-SpaceMono text-md mx-1">
+                    {servings}
+                  </Text>
+                  <TouchableOpacity onPress={incrementServings}>
+                    <Ionicons name="add-circle" size={40} color={"#149575"} />
+                  </TouchableOpacity>
+                </View>
+                <Text className="font-SpaceMono text-md">Servings</Text>
+              </View>
+            </View>
+
             {/* Ingredients list */}
             {recipe.extendedIngredients?.map((ingredient, index: number) => (
               <View key={index} className="relative">
                 <View
                   className="absolute bg-[#64E6A6] rounded-2xl right-0.5 bottom-0.5"
                   style={{
-                    width: screenWidth - 45,
-                    minHeight: 90,
+                    width: screenWidth - 40,
+                    height: 90,
                     ...styles.shadow,
                   }}
                 ></View>
@@ -626,13 +919,13 @@ export default function RecipeCard() {
                   className="flex flex-row justify-between items-center bg-white rounded-2xl m-2 p-2"
                   style={{
                     width: screenWidth - 40,
-                    minHeight: 100,
+                    height: 100,
                   }}
                 >
                   <View className="flex flex-row justify-center items-center mx-2">
-                    {/* w-[260] */}
-
+                    {/* Ingredient Image */}
                     <TouchableOpacity
+                      className="flex justify-center items-center w-16 h-16"
                       onPress={() => {
                         handleIngredientClick(ingredient.id);
                       }}
@@ -642,47 +935,39 @@ export default function RecipeCard() {
                           source={{
                             uri: constructImageUrl(ingredient.image),
                           }}
-                          className="w-14 h-14"
+                          className="w-full h-full"
+                          resizeMode="contain"
                         />
                       ) : (
                         <Image
                           source={require("../../assets/images/missingIng.png")}
-                          className="w-14 h-14"
+                          className="w-full h-full"
                         />
                       )}
                     </TouchableOpacity>
 
-                    <View className="flex justify-center">
-                      <View className="flex items-center mx-2 flex-wrap max-w-[190]">
-                        <Text className="font-SpaceMono text-[16px]">
-                          {ingredient.originalName.charAt(0).toUpperCase() +
-                            ingredient.originalName.slice(1)}
-                        </Text>
-                      </View>
-                      {activeIngredientId === ingredient.id && (
-                        <View>
-                          {ingredientSubstitutes.length > 0 ? (
-                            ingredientSubstitutes.map((substitute, index) => (
-                              <Text
-                                key={index}
-                                className="flex items-center mx-2 flex-wrap max-w-[190] font-SpaceMono text-[15px]"
-                              >
-                                {substitute}
-                              </Text>
-                            ))
-                          ) : (
-                            <Text className="flex items-center mx-2 flex-wrap max-w-[190] font-SpaceMono text-[15px]">
-                              No substitutes found
-                            </Text>
-                          )}
+                    <View className="flex justify-center items-center">
+                      <ScrollView
+                        contentContainerStyle={{
+                          flexGrow: 1,
+                          justifyContent: "center",
+                        }}
+                      >
+                        {/* Ingredient Name */}
+                        <View className="flex justify-center items-center mx-2 flex-wrap max-w-[190]">
+                          <Text className="font-SpaceMono text-[16px]">
+                            {ingredient.originalName.charAt(0).toUpperCase() +
+                              ingredient.originalName.slice(1)}
+                          </Text>
                         </View>
-                      )}
+                      </ScrollView>
                     </View>
                   </View>
 
                   <View className="flex flex-row justify-center items-center mx-2">
-                    <View className="flex justify-center items-center">
-                      <Text className="font-SpaceMono text-[17px]">
+                    {/* Ingredient amount and unit */}
+                    <View className="flex justify-center items-center max-w-[80]">
+                      <Text className="font-SpaceMono text-[17px] text-center">
                         {unitSystem === "metric"
                           ? parseFloat(
                               (
@@ -697,33 +982,18 @@ export default function RecipeCard() {
                               ).toFixed(2)
                             )}
                       </Text>
-                      <Text className="font-SpaceMono text-[14px]">
+                      <Text className="font-SpaceMono text-[12px] text-center">
                         {unitSystem === "metric"
                           ? ingredient.measures.us.unitShort
                           : ingredient.measures.metric.unitShort}
                       </Text>
                     </View>
-                    <TouchableOpacity
-                      onPress={() => {
-                        fetchIngredientSubstitution(ingredient.id);
-                        if (activeIngredientId === ingredient.id) {
-                          setActiveIngredientId(null);
-                        } else {
-                          setActiveIngredientId(ingredient.id);
-                        }
-                      }}
-                    >
-                      <Image
-                        source={require("../../assets/images/foodSubs1.png")}
-                        className="w-7 h-16 ml-1"
-                      />
-                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
             ))}
 
-            {/* Nutrition per Ingredient */}
+            {/* Nutrition per Ingredient Modal */}
             <Modal
               animationType="fade"
               transparent={true}
@@ -813,119 +1083,12 @@ export default function RecipeCard() {
               </View>
             </Modal>
 
-            <TouchableOpacity
-              onPress={() => {
-                setShowWinePairing(!showWinePairing);
-                // fetchWineDescription(recipe.winePairing.pairedWines);
-              }}
-              className="flex justify-center items-center m-2"
-              style={styles.shadow}
-            >
-              <View className="flex justify-center items-center">
-                <Text className="text-[80px]">🍷</Text>
-                <Text className="font-SpaceMono text-[20px] text-[#7a1b0e] text-center">
-                  Wine Pairing
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            {showWinePairing &&
-              recipe.winePairing.pairedWines &&
-              Array.isArray(recipe.winePairing.pairedWines) &&
-              recipe.winePairing.pairedWines.length > 0 && (
-                <View className="relative m-2">
-                  <View
-                    className="absolute bg-[#0098a3] rounded-2xl right-0.5 bottom-0.5"
-                    style={{
-                      width: screenWidth - 40,
-                      height: dynamicHeightWine,
-                      ...styles.shadow,
-                    }}
-                  ></View>
-                  <View
-                    className="flex justify-center items-center bg-slate-300 rounded-2xl m-2 p-2"
-                    style={{
-                      width: screenWidth - 40,
-                    }}
-                    onLayout={(event) => {
-                      const { height } = event.nativeEvent.layout;
-                      setDynamicHeightWine(height);
-                    }}
-                  >
-                    <ScrollView
-                      horizontal={true}
-                      showsHorizontalScrollIndicator={false}
-                    >
-                      <View className="flex flex-row justify-center items-center flex-wrap">
-                        {recipe.winePairing.pairedWines.map(
-                          (wine, index: number) => (
-                            <View
-                              key={index}
-                              className="flex flex-row justify-center items-center m-2 w-20 h-80"
-                            >
-                              <Image
-                                source={imageForWine(wine)}
-                                className="absolute inset-0 w-full h-full"
-                              />
-                              <Text
-                                style={styles.shadow}
-                                className="font-Nobile text-2xl text-center text-red-600 w-48 top-10 -rotate-90"
-                              >
-                                {wine
-                                  .split(" ")
-                                  .map(
-                                    (word: string) =>
-                                      word.charAt(0).toUpperCase() +
-                                      word.slice(1)
-                                  )
-                                  .join(" ")}
-                              </Text>
-                              {/* <Text className="text-md">{wineDescription[wine]}</Text> */}
-                            </View>
-                          )
-                        )}
-                      </View>
-                    </ScrollView>
-                    <Text className="text-lg my-2 mx-3 text-center font-SpaceMono">
-                      {recipe.winePairing.pairingText}
-                    </Text>
-                  </View>
-                </View>
-              )}
-
-            {showWinePairing &&
-              (!recipe.winePairing.pairedWines ||
-                !Array.isArray(recipe.winePairing.pairedWines) ||
-                recipe.winePairing.pairedWines.length === 0) && (
-                <View className="relative m-2">
-                  <View
-                    className="absolute bg-[#0098a3] rounded-2xl right-0.5 bottom-0.5"
-                    style={{
-                      width: screenWidth - 40,
-                      height: 100,
-                      ...styles.shadow,
-                    }}
-                  ></View>
-                  <View
-                    className="flex justify-center items-center bg-slate-300 rounded-2xl m-2 p-2"
-                    style={{
-                      width: screenWidth - 40,
-                      height: 100,
-                    }}
-                  >
-                    <Text className="text-lg m-2 text-center font-SpaceMono">
-                      There are no wine pairing suggestions for this recipe
-                    </Text>
-                  </View>
-                </View>
-              )}
-
-            {/* Box behind instructions */}
+            {/* Instructions */}
             <View className="relative mb-5">
               <View
                 className="absolute bg-[#FF5045] rounded-2xl -right-0 -bottom-0"
                 style={{
-                  width: screenWidth - 45,
+                  width: screenWidth - 40,
                   height: dynamicHeight,
                   ...styles.shadow,
                 }}
@@ -952,6 +1115,7 @@ export default function RecipeCard() {
                           width: screenWidth - 70,
                         }}
                       >
+                        {/* Steps Image */}
                         <View
                           className="flex justify-center items-center w-20 h-20 relative mb-2"
                           style={styles.shadow}
@@ -964,6 +1128,8 @@ export default function RecipeCard() {
                             Step {instruction.number}
                           </Text>
                         </View>
+
+                        {/* Steps Text */}
                         <Text
                           className="text-justify p-1 mx-2"
                           style={{

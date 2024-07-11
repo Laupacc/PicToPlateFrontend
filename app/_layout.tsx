@@ -34,6 +34,7 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Nobile: require("../assets/fonts/Nobile-Regular.ttf"),
+    NobileBold: require("../assets/fonts/Nobile-Bold.ttf"),
     Maax: require("../assets/fonts/Maax.ttf"),
     Steradian: require("../assets/fonts/Steradian-Rg.ttf"),
     ConceptDraft: require("../assets/fonts/ConceptDraft.otf"),

@@ -22,9 +22,6 @@ import {
   updateFavouriteRecipes,
 } from "@/store/recipes";
 import { Ionicons } from "@expo/vector-icons";
-import { AntDesign } from "@expo/vector-icons";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Entypo } from "@expo/vector-icons";
 
 export default function Favourites() {
   const navigation = useNavigation();
@@ -130,10 +127,10 @@ export default function Favourites() {
 
       <ScrollView className="flex-1">
         {favouriteRecipes &&
-          favouriteRecipes.map((recipe) => (
+          favouriteRecipes.map((recipe, index) => (
             <View
               className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
-              key={recipe.id}
+              key={index}
             >
               <Image
                 source={require("../../assets/images/recipeBack/recipeBack4.png")}
