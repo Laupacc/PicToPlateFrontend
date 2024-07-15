@@ -20,10 +20,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/store/user";
+import { useToast } from "react-native-toast-notifications";
 
 export default function Authentication() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
+  const toast = useToast();
   const user = useSelector((state) => state.user.value);
 
   const [signUpUsername, setSignUpUsername] = useState("");
@@ -37,8 +39,9 @@ export default function Authentication() {
   const [signUpPasswordEmpty, setSignUpPasswordEmpty] = useState(false);
   const [loginUsernameEmpty, setLoginUsernameEmpty] = useState(false);
   const [loginPasswordEmpty, setLoginPasswordEmpty] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.1.42:3000";
 
   useEffect(() => {
     const checkToken = async () => {
@@ -154,6 +157,30 @@ export default function Authentication() {
     }
   };
 
+  const passwordForgotten = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/users/updatePassword`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: user.token,
+          newPassword,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        toast.show(data.message, { type: "success" });
+      } else {
+        toast.show(data.message, { type: "danger" });
+      }
+    } catch (error) {
+      console.error("Error updating password:", error);
+      toast.show("An error occurred. Please try again.", { type: "danger" });
+    }
+  };
+
   async function getValueFor(key) {
     const result = await SecureStore.getItemAsync(key);
     if (result) {
@@ -212,6 +239,7 @@ export default function Authentication() {
                 placeholder="Password"
                 value={loginPassword}
                 secureTextEntry={isloginPasswordHidden}
+                autoCapitalize="none"
                 onChangeText={(text) => {
                   setLoginPassword(text);
                   setLoginPasswordEmpty(false);
@@ -231,6 +259,14 @@ export default function Authentication() {
             {loginPasswordEmpty && (
               <Text className="text-red-500">Password cannot be empty</Text>
             )}
+
+            <TouchableOpacity
+              onPress={passwordForgotten}
+              className="flex justify-center items-center top-2"
+            >
+              <Text>Forgot password?</Text>
+            </TouchableOpacity>
+
             <TouchableOpacity
               onPress={handleLogin}
               className="relative flex justify-center items-center top-4"
@@ -284,6 +320,7 @@ export default function Authentication() {
                 placeholder="Password"
                 value={signUpPassword}
                 secureTextEntry={isSignUpPasswordHidden}
+                autoCapitalize="none"
                 onChangeText={(text) => {
                   setSignUpPassword(text);
                   setSignUpPasswordEmpty(false);

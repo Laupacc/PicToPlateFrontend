@@ -33,7 +33,7 @@ export default function Favourites() {
 
   const [favouriteRecipes, setFavouriteRecipes] = useState([]);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.1.42:3000";
 
   const cachedFavorites = useRef<any[]>([]);
   useEffect(() => {
@@ -120,7 +120,7 @@ export default function Favourites() {
           source={require("../../assets/images/stickers/redTape.png")}
           className="absolute inset-0 w-full h-full"
         />
-        <Text className="font-Flux text-xl text-center">
+        <Text className="font-Flux text-xl text-center text-white">
           My favourite recipes
         </Text>
       </View>

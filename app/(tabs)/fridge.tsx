@@ -44,7 +44,7 @@ export default function Fridge() {
   const ingredients = useSelector((state) => state.fridge.ingredients);
   const toast = useToast();
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.1.42:3000";
 
   const [fridgeItems, setFridgeItems] = useState([]);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
@@ -401,89 +401,16 @@ export default function Fridge() {
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
 
+      {/* Title */}
       <View className="relative flex justify-center items-center">
         <Image
           source={require("@/assets/images/stickers/blackTape.png")}
           className="w-64 h-16 absolute inset-0"
           style={styles.shadow}
         />
-        <Text className="font-Flux text-xl text-center text-white m-8">
-          My Fridge
+        <Text className="font-Flux text-xl text-center text-white my-5">
+          My Kitchen
         </Text>
-      </View>
-
-      <Text className="font-CreamyCookies text-xl text-center mb-4">
-        Add ingredients to your fridge
-      </Text>
-
-      {/* Search Section */}
-      <View className="flex flex-row justify-center items-center my-2">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-        >
-          <View className="flex items-center justify-center relative mx-2">
-            <TextInput
-              placeholder="Search ingredient"
-              placeholderTextColor={"gray"}
-              value={search}
-              onChangeText={setSearch}
-              onSubmitEditing={() => {
-                autocompleteSearchIngredient(search);
-                setIsSearchModalVisible(true);
-              }}
-              className="text-center bg-[#e2e8f0] border border-[#FF9B50] rounded-lg w-60 h-10 font-Nobile"
-            />
-            <Ionicons
-              name="search"
-              size={25}
-              color={"#FF9B50"}
-              style={{
-                position: "absolute",
-                left: 10,
-                top: "50%",
-                transform: [{ translateY: -12.5 }],
-              }}
-            />
-            <FontAwesome6
-              name="circle-xmark"
-              size={25}
-              color={"#FF9B50"}
-              onPress={() => setSearch("")}
-              style={{
-                position: "absolute",
-                right: 10,
-                top: "50%",
-                transform: [{ translateY: -12.5 }],
-              }}
-            />
-          </View>
-        </KeyboardAvoidingView>
-
-        {/* Filter button */}
-        <TouchableOpacity
-          onPress={() => setIsFilterModalVisible(!isFilterModalVisible)}
-          className="mx-1"
-          style={styles.shadow}
-        >
-          <Image
-            source={require("@/assets/images/filter4.png")}
-            alt="button"
-            className="w-12 h-12"
-          />
-        </TouchableOpacity>
-
-        {/* Back to recipes button */}
-        <TouchableOpacity
-          onPress={goBackToRecipesFromFridge}
-          className="mx-1"
-          style={styles.shadow}
-        >
-          <Image
-            source={require("@/assets/images/backToRecipeFridge.png")}
-            alt="button"
-            className="w-12 h-12"
-          />
-        </TouchableOpacity>
       </View>
 
       {/* Filter Modal */}
@@ -495,77 +422,92 @@ export default function Fridge() {
           onRequestClose={() => setIsFilterModalVisible(false)}
         >
           <View className="flex-1 justify-center items-center bg-black/50">
-            <View
-              className="m-5 bg-white rounded-lg p-10 items-center justify-center"
-              style={styles.shadow}
-            >
+            <View className=" bg-slate-50 rounded-lg p-8" style={styles.shadow}>
               <TouchableOpacity
                 onPress={() => setIsFilterModalVisible(false)}
-                className="absolute top-4 right-4"
+                className="absolute top-3 right-3"
               >
                 <Ionicons name="close" size={35} color="#FF9B50" />
               </TouchableOpacity>
-              <List.Section className="flex justify-center items-center">
+              <List.Section className="flex justify-center items-center bg-slate-50">
                 <List.Accordion
-                  className="flex justify-center items-center w-48"
+                  className="flex justify-center items-center w-48 bg-slate-50"
                   id={1}
                   title="Name"
                   titleStyle={{
                     fontFamily: "Nobile",
-                    color: "#FF9B50",
+                    color: "#475569",
+                    fontSize: 18,
                   }}
                   left={(props) => (
                     <MaterialCommunityIcons
                       {...props}
                       name="sort-alphabetical-variant"
-                      size={20}
+                      size={26}
+                      color={"#FF9B50"}
                     />
                   )}
                 >
                   <List.Item
-                    title="Ascending"
+                    title="⚬ A → Z"
                     onPress={() => filterIngredients("name", "asc")}
                   />
                   <List.Item
-                    title="Descending"
+                    title="⚬ Z → A"
                     onPress={() => filterIngredients("name", "desc")}
                   />
                 </List.Accordion>
                 <List.Accordion
-                  className="flex justify-center items-center w-48"
+                  className="flex justify-center items-center w-48 bg-slate-50"
                   id={2}
-                  title="Checked"
+                  title="Selected"
+                  titleStyle={{
+                    fontFamily: "Nobile",
+                    color: "#475569",
+                    fontSize: 18,
+                  }}
                   left={(props) => (
                     <MaterialCommunityIcons
                       {...props}
                       name="target"
-                      size={24}
+                      size={26}
+                      color={"#FF9B50"}
                     />
                   )}
                 >
                   <List.Item
-                    title="Ascending"
+                    title="⚬ ⬜️ to ☑️"
                     onPress={() => filterIngredients("checked", "asc")}
                   />
                   <List.Item
-                    title="Descending"
+                    title="⚬ ☑️ to ⬜️"
                     onPress={() => filterIngredients("checked", "desc")}
                   />
                 </List.Accordion>
                 <List.Accordion
-                  className="flex justify-center items-center w-48"
+                  className="flex justify-center items-center w-48 bg-slate-50"
                   id={3}
                   title="Date"
+                  titleStyle={{
+                    fontFamily: "Nobile",
+                    color: "#475569",
+                    fontSize: 18,
+                  }}
                   left={(props) => (
-                    <Ionicons {...props} name="calendar-outline" size={24} />
+                    <MaterialCommunityIcons
+                      {...props}
+                      name="calendar-month-outline"
+                      size={26}
+                      color={"#FF9B50"}
+                    />
                   )}
                 >
                   <List.Item
-                    title="Ascending"
+                    title="⚬ Old → New"
                     onPress={() => filterIngredients("dateAdded", "asc")}
                   />
                   <List.Item
-                    title="Descending"
+                    title="⚬ New → Old"
                     onPress={() => filterIngredients("dateAdded", "desc")}
                   />
                 </List.Accordion>
@@ -575,12 +517,12 @@ export default function Fridge() {
                 className="relative flex justify-center items-center top-4"
               >
                 <Image
-                  source={require("@/assets/images/button/button5.png")}
+                  source={require("@/assets/images/button/button12.png")}
                   alt="button"
-                  className="w-40 h-12"
+                  className="w-36 h-12"
                 />
                 <Text className="text-lg text-white absolute font-Nobile">
-                  Clear Filters
+                  Clear Sort
                 </Text>
               </TouchableOpacity>
             </View>
@@ -598,7 +540,7 @@ export default function Fridge() {
                 className="relative flex justify-center items-center"
               >
                 <Image
-                  source={require("@/assets/images/button/button10.png")}
+                  source={require("@/assets/images/button/button9.png")}
                   alt="button"
                   className="w-40 h-12"
                 />
@@ -618,7 +560,7 @@ export default function Fridge() {
               className="relative flex justify-center items-center"
             >
               <Image
-                source={require("@/assets/images/button/button6.png")}
+                source={require("@/assets/images/button/button5.png")}
                 alt="button"
                 className="w-40 h-12"
               />
@@ -638,7 +580,6 @@ export default function Fridge() {
         <View className="flex justify-center items-center">
           {fridgeItems.map((item, index) => (
             <View key={index} className="relative p-1 m-1">
-              {/* w-52 */}
               <View
                 className="absolute bg-[#FF9B50] rounded-2xl -right-0.5 -bottom-0.5"
                 style={{
@@ -715,19 +656,95 @@ export default function Fridge() {
         </View>
       </ScrollView>
 
+      {/* Search Section */}
+      <View className="flex flex-row justify-center items-center mt-4">
+        <View className="flex justify-center items-center mx-2">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <View className="items-center justify-center relative w-full">
+              <TextInput
+                placeholder="Add ingredients"
+                placeholderTextColor={"gray"}
+                value={search}
+                onChangeText={setSearch}
+                onSubmitEditing={() => {
+                  autocompleteSearchIngredient(search);
+                  setIsSearchModalVisible(true);
+                }}
+                className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-60 h-10 font-Nobile"
+              />
+              <FontAwesome6
+                name="circle-xmark"
+                size={25}
+                color={"#f87171"}
+                onPress={() => setSearch("")}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: [{ translateY: -12.5 }],
+                }}
+              />
+            </View>
+            <Ionicons
+              name="search"
+              size={25}
+              color={"#0891b2"}
+              onPress={() => {
+                autocompleteSearchIngredient(search);
+                setIsSearchModalVisible(true);
+              }}
+              style={{
+                position: "absolute",
+                right: 40,
+                top: "50%",
+                transform: [{ translateY: -12.5 }],
+              }}
+            />
+          </KeyboardAvoidingView>
+        </View>
+
+        {/* Filter button */}
+        <TouchableOpacity
+          onPress={() => setIsFilterModalVisible(!isFilterModalVisible)}
+          className="mx-1"
+          style={styles.shadow}
+        >
+          <Image
+            source={require("@/assets/images/filter4.png")}
+            alt="button"
+            className="w-12 h-12"
+          />
+        </TouchableOpacity>
+
+        {/* Back to recipes button */}
+        <TouchableOpacity
+          onPress={goBackToRecipesFromFridge}
+          className="mx-1"
+          style={styles.shadow}
+        >
+          <Image
+            source={require("@/assets/images/backToRecipeFridge.png")}
+            alt="button"
+            className="w-12 h-12"
+          />
+        </TouchableOpacity>
+      </View>
+
       {/* Autocomplete Search Modal */}
       {isSearchModalVisible && searchResults.length > 0 && (
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={isSearchModalVisible}
           onRequestClose={() => setIsSearchModalVisible(false)}
         >
-          <View className="flex-1 justify-center items-center">
-            <View
-              className="bg-white p-10 rounded-lg items-center justify-center"
-              style={styles.shadow}
-            >
+          <View
+            className="flex-1 justify-center items-center bg-black/50"
+            style={styles.shadow}
+          >
+            <View className="bg-white p-10 rounded-lg items-center justify-center">
               <TouchableOpacity
                 onPress={() => setIsSearchModalVisible(false)}
                 className="absolute top-4 right-4"
@@ -766,13 +783,13 @@ export default function Fridge() {
                 <Image
                   source={require("@/assets/images/button/button5.png")}
                   alt="button"
-                  className="w-40 h-12"
+                  className="w-32 h-10"
                 />
                 <Text
                   className="text-lg text-white absolute font-Nobile"
                   style={styles.shadow}
                 >
-                  Add to Fridge
+                  Add
                 </Text>
               </TouchableOpacity>
             </View>

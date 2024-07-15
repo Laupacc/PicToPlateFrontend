@@ -65,7 +65,7 @@ export default function Search() {
   const calculatedHeight = screenWidth * (9 / 16);
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.1.42:3000";
 
   // const fetchTrivia = async () => {
   //   const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
@@ -350,7 +350,7 @@ export default function Search() {
         <View className="w-72 h-[1] bg-slate-400"></View>
       </View>
 
-      <Text className="text-center font-CreamyCookies text-[20px] text-[#475569] my-6 mx-12">
+      <Text className="text-center font-Nobile text-lg text-[#475569] my-2">
         Turn your pantry into delicious meals!
       </Text>
 
@@ -362,7 +362,7 @@ export default function Search() {
           >
             <View className="relative items-center w-full justify-center">
               <TextInput
-                placeholder="Search by ingredients"
+                placeholder="Search for recipes"
                 placeholderTextColor={"gray"}
                 value={search}
                 onChangeText={setSearch}
@@ -375,14 +375,14 @@ export default function Search() {
                     maxReadyTime
                   )
                 }
-                className="border-2 border-gray-400 rounded-lg pl-4 w-60 h-12 bg-[#e2e8f0]"
+                className="border border-gray-400 rounded-lg pl-4 w-60 h-10 bg-[#e2e8f0] font-Nobile"
               />
               <FontAwesome6
                 name="circle-xmark"
                 size={25}
                 color={"#f87171"}
                 onPress={() => handleClearSearch()}
-                className="absolute right-2.5 top-3 -translate-y-3.125"
+                className="absolute right-2.5 top-2 -translate-y-3.125"
               />
             </View>
             <FontAwesome
@@ -398,7 +398,7 @@ export default function Search() {
               name="search"
               size={25}
               color={"#0891b2"}
-              className="absolute right-11 top-3 -translate-y-3.125"
+              className="absolute right-11 top-2 -translate-y-3.125"
             />
           </KeyboardAvoidingView>
         </View>
@@ -471,7 +471,7 @@ export default function Search() {
           style={styles.shadow}
         >
           <Image
-            source={require("@/assets/images/button/button4.png")}
+            source={require("@/assets/images/button/button3.png")}
             alt="button"
             className="w-40 h-12"
           />
@@ -479,7 +479,7 @@ export default function Search() {
             className="text-lg text-white absolute text-center font-Nobile"
             style={styles.shadow}
           >
-            Convert Units
+            Unit Converter
           </Text>
         </TouchableOpacity>
       </View>

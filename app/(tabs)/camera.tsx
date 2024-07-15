@@ -58,7 +58,7 @@ export default function Camera() {
   const toast = useToast();
   const user = useSelector((state) => state.user.value);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.1.42:3000";
 
   // useEffect to get the camera permissions
   useEffect(() => {
@@ -265,7 +265,7 @@ export default function Camera() {
       <StatusBar barStyle="light-content" />
       <LinearGradient
         colors={["transparent", "#0891b2", "#0d6e8c", "#0a4f6c"]}
-            className="absolute top-0 left-0 right-0 bottom-0"
+        className="absolute top-0 left-0 right-0 bottom-0"
       />
       <Background cellSize={25} />
 

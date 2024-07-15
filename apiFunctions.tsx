@@ -1,4 +1,4 @@
-const BACKEND_URL = "http://192.168.1.34:3000";
+const BACKEND_URL = "http://192.168.1.42:3000";
 
 export const fetchRandomRecipe = async () => {
   try {

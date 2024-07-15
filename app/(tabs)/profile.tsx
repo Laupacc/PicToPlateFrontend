@@ -6,6 +6,9 @@ import {
   Text,
   TouchableOpacity,
   Dimensions,
+  TextInput,
+  Modal,
+  Alert,
 } from "react-native";
 import React from "react";
 import { useEffect, useState } from "react";
@@ -19,7 +22,13 @@ import Background from "@/components/Background";
 import moment from "moment";
 import { useToast } from "react-native-toast-notifications";
 import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Feather,
+  FontAwesome5,
+  Ionicons,
+  Entypo,
+  FontAwesome,
+} from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { FlatList, ScrollView } from "react-native-gesture-handler";
 
@@ -30,12 +39,17 @@ export default function Profile() {
   const user = useSelector((state) => state.user.value);
 
   const [userInfo, setUserInfo] = useState({});
+  const [newPassword, setNewPassword] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+  const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
+  const [isUpdateInfoModalVisible, setIsUpdateInfoModalVisible] =
+    useState(false);
   const [oldIngredients, setOldIngredients] = useState([{}]);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const BACKEND_URL = "http://192.168.1.42:3000";
 
   const handleLogout = async () => {
     if (!user.token) {
@@ -76,6 +90,112 @@ export default function Profile() {
   }, [user.token]);
   // userInfo
 
+  const updateUsername = async () => {
+    Alert.alert(
+      "Update Username",
+      "Are you sure you want to update your username?",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "OK",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${BACKEND_URL}/users/updateUsername`,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    token: user.token,
+                    newUsername,
+                  }),
+                }
+              );
+
+              const data = await response.json();
+              if (!response.ok) {
+                toast.show(data.message, { type: "danger" });
+                return;
+              }
+
+              if (data.message) {
+                setUserInfo((prevUserInfo) => ({
+                  ...prevUserInfo,
+                  username: newUsername,
+                }));
+                setNewUsername("");
+                setIsUpdateInfoModalVisible(false);
+                toast.show(data.message, { type: "success" });
+              } else {
+                toast.show("Failed to update username", { type: "danger" });
+              }
+            } catch (error) {
+              console.error("Error updating username:", error);
+              toast.show("An error occurred. Please try again.", {
+                type: "warning",
+              });
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const updatePassword = async () => {
+    Alert.alert(
+      "Update Password",
+      "Are you sure you want to update your password?",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "OK",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${BACKEND_URL}/users/updatePassword`,
+                {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    token: user.token,
+                    newPassword,
+                  }),
+                }
+              );
+              const data = await response.json();
+              if (response.ok) {
+                toast.show(data.message, { type: "success" });
+                setNewPassword("");
+                setIsUpdateInfoModalVisible(false);
+              } else {
+                toast.show(data.message, { type: "danger" });
+              }
+            } catch (error) {
+              console.error("Error updating password:", error);
+              toast.show("An error occurred. Please try again.", {
+                type: "danger",
+              });
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
   //get favourite ingredients older than 7 days from today
   useEffect(() => {
     if (userInfo.ingredients) {
@@ -98,6 +218,10 @@ export default function Profile() {
       require("../../assets/images/stickers/postit4.png"),
     ];
     return images[Math.floor(Math.random() * images.length)];
+  };
+
+  const toggleIsNewPasswordVisible = () => {
+    setIsNewPasswordVisible(!isNewPasswordVisible);
   };
 
   return (
@@ -142,29 +266,44 @@ export default function Profile() {
               colors={["transparent", "#d97706"]}
               className="absolute top-0 left-0 right-0 bottom-0 rounded-2xl"
             /> */}
-
+            {user.token ? (
+              <View className="absolute top-3 right-3">
+                <TouchableOpacity
+                  onPress={() => setIsUpdateInfoModalVisible(true)}
+                >
+                  <FontAwesome5 name="user-cog" size={24} color="#4b5563" />
+                </TouchableOpacity>
+              </View>
+            ) : null}
             <Image
               source={require("../../assets/images/avatar.png")}
               className="w-20 h-20 rounded-full"
             />
-
+            {/* User info */}
             {user.token ? (
-              <Text className="text-xl text-cyan-600">{userInfo.username}</Text>
+              <View>
+                <View className="border border-slate-300 px-2 rounded-lg">
+                  <Text className="text-xl text-cyan-600">
+                    {userInfo.username}
+                  </Text>
+                </View>
+              </View>
             ) : (
               <Text className="text-xl text-cyan-600">Guest</Text>
             )}
 
+            {/* Login, logout*/}
             {!user.token ? (
-              <Link href="/authentication">
-                <TouchableOpacity className="flex flex-row justify-center items-center">
+              <TouchableOpacity className="flex flex-row justify-center items-center">
+                <Link href="/authentication">
                   <Text className="text-lg font-Nobile">Login</Text>
                   <Image
                     source={require("@/assets/images/login.png")}
                     alt="button"
                     className="w-9 h-9 m-1"
                   />
-                </TouchableOpacity>
-              </Link>
+                </Link>
+              </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 onPress={handleLogout}
@@ -182,10 +321,78 @@ export default function Profile() {
         </View>
       </View>
 
-      {/* Middle Postit 1*/}
+      {/* Update info modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isUpdateInfoModalVisible}
+        onRequestClose={() => {
+          setIsUpdateInfoModalVisible(false);
+        }}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className=" bg-slate-50 rounded-lg p-8" style={styles.shadow}>
+            <Text className="text-xl text-center">Update Information</Text>
+            <View className="flex-row justify-center items-center">
+              <TextInput
+                placeholder="New Username"
+                value={newUsername}
+                onChangeText={(text) => setNewUsername(text)}
+                autoCapitalize="none"
+                className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
+              />
+              <TouchableOpacity
+                onPress={updateUsername}
+                className="bg-[#51A0FF] rounded-lg p-2 m-2"
+              >
+                <Entypo name="check" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+            <View className="flex-row justify-center items-center">
+              <View className="relative">
+                <TextInput
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChangeText={(text) => setNewPassword(text)}
+                  secureTextEntry={!isNewPasswordVisible}
+                  autoCapitalize="none"
+                  className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
+                />
+                <TouchableOpacity
+                  onPress={toggleIsNewPasswordVisible}
+                  className="absolute right-5 top-5"
+                >
+                  <FontAwesome
+                    name={!isNewPasswordVisible ? "eye" : "eye-slash"}
+                    size={20}
+                  />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                onPress={updateUsername}
+                className="bg-[#51A0FF] rounded-lg p-2 m-2"
+              >
+                <Entypo name="check" size={24} color="white" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
+                setIsUpdateInfoModalVisible(false);
+                setNewPassword("");
+                setNewUsername("");
+              }}
+            >
+              <Text className="text-lg text-center mt-4">Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Postits*/}
       <View className="flex flex-row justify-center items-center">
+        {/* Middle Postit 1*/}
         <View
-          className="flex justify-center items-center relative w-48 h-48 m-1"
+          className="flex justify-center items-center relative w-40 h-40 m-1"
           style={styles.shadow}
         >
           <Image
@@ -206,7 +413,7 @@ export default function Profile() {
 
         {/* Middle Postit 2 */}
         <View
-          className="flex justify-center items-center relative w-48 h-48 m-1"
+          className="flex justify-center items-center relative w-40 h-40 m-1"
           style={styles.shadow}
         >
           <Image
@@ -252,6 +459,7 @@ export default function Profile() {
         </View>
       </View> */}
 
+      {/* Old ingredients */}
       <View
         className="flex justify-center items-center relative w-96 h-56 m-1"
         style={styles.shadow}
