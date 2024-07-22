@@ -7,9 +7,9 @@ import {
   TouchableOpacity,
   Dimensions,
   TextInput,
-  Modal,
   Alert,
 } from "react-native";
+import { Modal } from "react-native-paper";
 import React from "react";
 import { useEffect, useState } from "react";
 import { Link } from "expo-router";
@@ -22,12 +22,14 @@ import Background from "@/components/Background";
 import moment from "moment";
 import { useToast } from "react-native-toast-notifications";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   Feather,
   FontAwesome5,
   Ionicons,
   Entypo,
   FontAwesome,
+  AntDesign,
 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { FlatList, ScrollView } from "react-native-gesture-handler";
@@ -45,6 +47,8 @@ export default function Profile() {
   const [isUpdateInfoModalVisible, setIsUpdateInfoModalVisible] =
     useState(false);
   const [oldIngredients, setOldIngredients] = useState([{}]);
+  const [isAvatarPickerVisible, setIsAvatarPickerVisible] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -91,6 +95,14 @@ export default function Profile() {
   // userInfo
 
   const updateUsername = async () => {
+    if (!newUsername) {
+      toast.show("Please enter a new username", {
+        type: "warning",
+        placement: "top",
+      });
+      return;
+    }
+
     Alert.alert(
       "Update Username",
       "Are you sure you want to update your username?",
@@ -149,6 +161,13 @@ export default function Profile() {
   };
 
   const updatePassword = async () => {
+    if (!newPassword) {
+      toast.show("Please enter a new password", {
+        type: "warning",
+        placement: "top",
+      });
+      return;
+    }
     Alert.alert(
       "Update Password",
       "Are you sure you want to update your password?",
@@ -224,6 +243,45 @@ export default function Profile() {
     setIsNewPasswordVisible(!isNewPasswordVisible);
   };
 
+  const avatarImages = [
+    require("../../assets/images/avatars/friedChicken.png"),
+    require("../../assets/images/avatars/hamburger.png"),
+    require("../../assets/images/avatars/pizza.png"),
+    require("../../assets/images/avatars/ramen.png"),
+    require("../../assets/images/avatars/steak.png"),
+    require("../../assets/images/avatars/fruitBowl.png"),
+    require("../../assets/images/avatars/sushi.png"),
+    require("../../assets/images/avatars/poutine.png"),
+    require("../../assets/images/avatars/taco.png"),
+    require("../../assets/images/avatars/thaiFood.png"),
+    require("../../assets/images/avatars/salad.png"),
+    require("../../assets/images/avatars/fish.png"),
+  ];
+
+  useEffect(() => {
+    const loadAvatar = async () => {
+      const savedAvatar = await AsyncStorage.getItem("selectedAvatar");
+      if (savedAvatar !== null) {
+        setSelectedAvatar(JSON.parse(savedAvatar));
+        setUserInfo((prevUserInfo) => ({
+          ...prevUserInfo,
+          avatar: savedAvatar,
+        }));
+      }
+    };
+    loadAvatar();
+  }, []);
+
+  const handleAvatarSelect = async (avatar) => {
+    setSelectedAvatar(avatar);
+    setUserInfo((prevUserInfo) => ({
+      ...prevUserInfo,
+      avatar: avatar,
+    }));
+    setIsAvatarPickerVisible(false);
+    await AsyncStorage.setItem("selectedAvatar", JSON.stringify(avatar));
+  };
+
   return (
     <SafeAreaView className="flex-1 justify-center items-center">
       {/* <LinearGradient
@@ -232,7 +290,7 @@ export default function Profile() {
       /> */}
       <Background cellSize={25} />
 
-      <View className="flex justify-center items-center mb-2 absolute top-16">
+      <View className="flex justify-center items-center">
         <Image
           source={require("../../assets/images/logo8.png")}
           className="w-60 h-14"
@@ -244,94 +302,215 @@ export default function Profile() {
         <Link href="/authentication">Got to authentication</Link>
       </View> */}
 
-      {/* Top Box */}
-      <View className="flex justify-center items-center">
-        <View className="flex justify-center items-center relative">
-          <View
-            className="absolute bg-[#9333ea] rounded-2xl right-0.5 bottom-0.5"
-            style={{
-              width: screenWidth - 45,
-              height: calculatedHeight,
-              ...styles.shadow,
-            }}
-          ></View>
-          <View
-            className="flex justify-center items-center bg-white rounded-2xl m-2 p-2"
-            style={{
-              width: screenWidth - 40,
-              height: calculatedHeight,
-            }}
-          >
-            {/* <LinearGradient
-              colors={["transparent", "#d97706"]}
-              className="absolute top-0 left-0 right-0 bottom-0 rounded-2xl"
-            /> */}
-            {user.token ? (
-              <View className="absolute top-3 right-3">
-                <TouchableOpacity
-                  onPress={() => setIsUpdateInfoModalVisible(true)}
-                >
-                  <FontAwesome5 name="user-cog" size={24} color="#4b5563" />
-                </TouchableOpacity>
-              </View>
-            ) : null}
-            <Image
-              source={require("../../assets/images/avatar.png")}
-              className="w-20 h-20 rounded-full"
-            />
-            {/* User info */}
-            {user.token ? (
-              <View>
-                <View className="border border-slate-300 px-2 rounded-lg">
-                  <Text className="text-xl text-cyan-600">
-                    {userInfo.username}
-                  </Text>
+      <View className="flex-1 justify-center items-center">
+        {/* Top Box */}
+        <View className="flex justify-center items-center mb-4 -mt-16">
+          <View className="flex justify-center items-center relative">
+            <View
+              className="absolute bg-[#9333ea] rounded-2xl -right-1.5 -bottom-1.5"
+              style={{
+                width: screenWidth - 45,
+                height: 270,
+                ...styles.shadow,
+              }}
+            ></View>
+            <View
+              className="flex justify-center items-center bg-white rounded-2xl"
+              style={{
+                width: screenWidth - 45,
+                height: 270,
+              }}
+            >
+              {/* Edit Info Modal Button */}
+              {user.token && (
+                <View className="absolute top-3 right-3 flex-row">
+                  <TouchableOpacity
+                    onPress={() => setIsUpdateInfoModalVisible(true)}
+                  >
+                    <FontAwesome5 name="user-edit" size={24} color="#4b5563" />
+                  </TouchableOpacity>
                 </View>
-              </View>
-            ) : (
-              <Text className="text-xl text-cyan-600">Guest</Text>
-            )}
+              )}
 
-            {/* Login, logout*/}
-            {!user.token ? (
-              <TouchableOpacity className="flex flex-row justify-center items-center">
-                <Link href="/authentication">
-                  <Text className="text-lg font-Nobile">Login</Text>
-                  <Image
-                    source={require("@/assets/images/login.png")}
-                    alt="button"
-                    className="w-9 h-9 m-1"
-                  />
-                </Link>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={handleLogout}
-                className="flex flex-row justify-center items-center"
-              >
-                <Text className="text-lg font-Nobile">Logout</Text>
+              {/* Avatar */}
+              <TouchableOpacity onPress={() => setIsAvatarPickerVisible(true)}>
                 <Image
-                  source={require("@/assets/images/logout1.png")}
-                  alt="button"
-                  className="w-9 h-9 m-1"
+                  source={
+                    selectedAvatar ||
+                    require("../../assets/images/avatars/poutine.png")
+                  }
+                  className="w-20 h-20"
                 />
               </TouchableOpacity>
-            )}
+
+              {/* User info */}
+              {user.token ? (
+                <View className="flex justify-center items-center m-2">
+                  <View className="bg-slate-100 border border-slate-200 rounded-lg w-60 h-10 font-Nobile justify-center items-center m-1">
+                    <Text className="text-xl text-cyan-600">
+                      {userInfo.username}
+                    </Text>
+                  </View>
+                  <View className="bg-slate-100 border border-slate-200 rounded-lg w-60 h-10 font-Nobile justify-center items-center m-1">
+                    <Text className="text-md text-cyan-600">
+                      {userInfo.email}
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <View className="bg-slate-100 border border-slate-200 rounded-lg w-32 h-10 font-Nobile justify-center items-center m-2">
+                  <Text className="text-xl text-cyan-600">Guest</Text>
+                </View>
+              )}
+
+              {/* Login, logout*/}
+              {!user.token ? (
+                <View className="flex mt-10 items-center justify-center">
+                  <Link
+                    href="/authentication"
+                    className="flex flex-row justify-center items-center"
+                  >
+                    <View className="flex flex-row">
+                      <Text className="text-lg font-Nobile mx-1">Login</Text>
+                      <AntDesign
+                        name="login"
+                        size={24}
+                        color="black"
+                        className="w-9 h-9"
+                      ></AntDesign>
+                    </View>
+                  </Link>
+                  <Text> to see your profile</Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleLogout}
+                  className="flex flex-row justify-center items-center mt-5"
+                >
+                  <Text className="text-lg font-Nobile m-1">Logout</Text>
+                  <AntDesign
+                    name="logout"
+                    size={24}
+                    color="black"
+                    className="w-9 h-9"
+                  ></AntDesign>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
+        </View>
+
+        {/* Postits*/}
+        <View className="flex flex-row justify-center items-center">
+          {/* Middle Postit 1*/}
+          <View
+            className="flex justify-center items-center relative w-40 h-40 m-1"
+            style={styles.shadow}
+          >
+            <Image
+              source={randomPostitImage()}
+              className="absolute inset-0 w-full h-full"
+            />
+            <Image
+              source={require("../../assets/images/heart1.png")}
+              className="w-10 h-10"
+            />
+            <Text className="text-center text-xl font-Flux text-slate-700">
+              {userInfo.favourites?.length}
+            </Text>
+            <Text className="text-center text-md font-Flux text-slate-700">
+              favourite recipes
+            </Text>
+          </View>
+
+          {/* Middle Postit 2 */}
+          <View
+            className="flex justify-center items-center relative w-40 h-40 m-1"
+            style={styles.shadow}
+          >
+            <Image
+              source={randomPostitImage()}
+              className="absolute inset-0 w-full h-full"
+            />
+            <Image
+              source={require("../../assets/images/missingIng.png")}
+              className="w-10 h-10"
+            />
+            <Text className="text-center text-xl font-Flux text-slate-700">
+              {userInfo.ingredients?.length}
+            </Text>
+            <Text className="text-center text-md font-Flux text-slate-700">
+              ingredients saved
+            </Text>
+          </View>
+        </View>
+
+        {/* Old ingredients */}
+        <View
+          className="flex justify-center items-center relative w-96 h-56 m-1"
+          style={styles.shadow}
+        >
+          <Image
+            source={require("../../assets/images/recipeBack/recipeBack19.png")}
+            className="absolute inset-0 w-full h-full"
+          />
+          {oldIngredients.length > 0 ? (
+            <View className="flex justify-center items-center m-2 p-2 top-4">
+              <Text className="text-base font-Flux text-slate-700 text-center">
+                You have {oldIngredients.length} ingredient(s) older than a week
+                :
+              </Text>
+              <View className="h-24 overflow-y-auto">
+                <FlatList
+                  contentContainerStyle={{
+                    marginTop: 10,
+                  }}
+                  data={oldIngredients}
+                  renderItem={({ item }) => (
+                    <View className="flex flex-row justify-center items-center">
+                      <Text
+                        className="text-lg font-Nobile text-red-600 text-center"
+                        key={item._id}
+                      >
+                        - {item.name}{" "}
+                      </Text>
+                      <Text className="text-md font-Nobile text-red-600 text-center">
+                        (added on {moment(item.dateAdded).format("MMM Do YYYY")}
+                        )
+                      </Text>
+                    </View>
+                  )}
+                  keyExtractor={(item) => item._id}
+                />
+              </View>
+            </View>
+          ) : (
+            <View className="flex justify-center items-center mt-4">
+              <Text className="text-xl font-Flux text-slate-700">
+                Well done!
+              </Text>
+              <Text className="text-xl font-Flux text-slate-700">
+                Everything is fresh!
+              </Text>
+              <Image
+                source={require("../../assets/images/applause.png")}
+                className="w-20 h-20"
+              />
+            </View>
+          )}
         </View>
       </View>
 
       {/* Update info modal */}
       <Modal
-        animationType="fade"
-        transparent={true}
         visible={isUpdateInfoModalVisible}
-        onRequestClose={() => {
-          setIsUpdateInfoModalVisible(false);
-        }}
+        onDismiss={() => setIsUpdateInfoModalVisible(false)}
       >
-        <View className="flex-1 justify-center items-center bg-black/50">
-          <View className=" bg-slate-50 rounded-lg p-8" style={styles.shadow}>
+        <View className="flex justify-center items-center">
+          <View
+            className=" bg-slate-50 rounded-lg w-80 h-60 p-4"
+            style={styles.shadow}
+          >
             <Text className="text-xl text-center">Update Information</Text>
             <View className="flex-row justify-center items-center">
               <TextInput
@@ -369,7 +548,7 @@ export default function Profile() {
                 </TouchableOpacity>
               </View>
               <TouchableOpacity
-                onPress={updateUsername}
+                onPress={updatePassword}
                 className="bg-[#51A0FF] rounded-lg p-2 m-2"
               >
                 <Entypo name="check" size={24} color="white" />
@@ -388,50 +567,32 @@ export default function Profile() {
         </View>
       </Modal>
 
-      {/* Postits*/}
-      <View className="flex flex-row justify-center items-center">
-        {/* Middle Postit 1*/}
-        <View
-          className="flex justify-center items-center relative w-40 h-40 m-1"
-          style={styles.shadow}
-        >
-          <Image
-            source={randomPostitImage()}
-            className="absolute inset-0 w-full h-full"
-          />
-          <Image
-            source={require("../../assets/images/heart1.png")}
-            className="w-10 h-10"
-          />
-          <Text className="text-center text-2xl font-Flux text-slate-700">
-            {userInfo.favourites?.length}
-          </Text>
-          <Text className="text-center text-lg font-Flux text-slate-700">
-            favourite recipes
-          </Text>
+      {/* Avatar Picker Modal */}
+      <Modal
+        visible={isAvatarPickerVisible}
+        onDismiss={() => setIsAvatarPickerVisible(false)}
+        contentContainerStyle={{
+          margin: 30,
+        }}
+      >
+        <View className="flex justify-center items-center">
+          <View className=" bg-slate-100 rounded-lg p-6 items-center justify-center">
+            <Text className="font-bold text-gray-600 text-2xl p-2">
+              Select Avatar
+            </Text>
+            <View className="flex-row justify-center items-center flex-wrap">
+              {avatarImages.map((avatar, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => handleAvatarSelect(avatar)}
+                >
+                  <Image source={avatar} className="w-20 h-20 m-2" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
         </View>
-
-        {/* Middle Postit 2 */}
-        <View
-          className="flex justify-center items-center relative w-40 h-40 m-1"
-          style={styles.shadow}
-        >
-          <Image
-            source={randomPostitImage()}
-            className="absolute inset-0 w-full h-full"
-          />
-          <Image
-            source={require("../../assets/images/missingIng.png")}
-            className="w-10 h-10"
-          />
-          <Text className="text-center text-2xl font-Flux text-slate-700">
-            {userInfo.ingredients?.length}
-          </Text>
-          <Text className="text-center text-lg font-Flux text-slate-700">
-            ingredients saved
-          </Text>
-        </View>
-      </View>
+      </Modal>
 
       {/* Bottom Box */}
       {/* <View className="flex justify-center items-center">
@@ -458,57 +619,6 @@ export default function Profile() {
           </View>
         </View>
       </View> */}
-
-      {/* Old ingredients */}
-      <View
-        className="flex justify-center items-center relative w-96 h-56 m-1"
-        style={styles.shadow}
-      >
-        <Image
-          source={require("../../assets/images/recipeBack/recipeBack19.png")}
-          className="absolute inset-0 w-full h-full"
-        />
-        {oldIngredients.length > 0 ? (
-          <View className="flex justify-center items-center m-2 p-2 top-4">
-            <Text className="text-base font-Flux text-slate-700 text-center">
-              You have {oldIngredients.length} ingredient(s) older than a week :
-            </Text>
-            <View className="h-24 overflow-y-auto">
-              <FlatList
-                contentContainerStyle={{
-                  marginTop: 10,
-                }}
-                data={oldIngredients}
-                renderItem={({ item }) => (
-                  <View className="flex flex-row justify-center items-center">
-                    <Text
-                      className="text-lg font-Nobile text-red-600 text-center"
-                      key={item._id}
-                    >
-                      - {item.name}{" "}
-                    </Text>
-                    <Text className="text-md font-Nobile text-red-600 text-center">
-                      (added on {moment(item.dateAdded).format("MMM Do YYYY")})
-                    </Text>
-                  </View>
-                )}
-                keyExtractor={(item) => item._id}
-              />
-            </View>
-          </View>
-        ) : (
-          <View className="flex justify-center items-center mt-4">
-            <Text className="text-xl font-Flux text-slate-700">Well done!</Text>
-            <Text className="text-xl font-Flux text-slate-700">
-              Everything is fresh!
-            </Text>
-            <Image
-              source={require("../../assets/images/applause.png")}
-              className="w-20 h-20"
-            />
-          </View>
-        )}
-      </View>
     </SafeAreaView>
   );
 }

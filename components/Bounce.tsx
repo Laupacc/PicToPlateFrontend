@@ -1,13 +1,13 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, Image, View } from 'react-native';
+import React, { useEffect, useRef } from "react";
+import { Animated, Image, View } from "react-native";
 
-const BouncingImage = () => {
+const BouncingImage = ({ children }) => {
   // Step 2: Initialize an animated value
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
   // Step 3: Create a bouncing animation
-  const startBouncing = () => {
-    Animated.loop(
+  useEffect(() => {
+    const bounceAnimation = () => {
       Animated.sequence([
         Animated.timing(bounceAnim, {
           toValue: -30,
@@ -29,27 +29,22 @@ const BouncingImage = () => {
           duration: 500,
           useNativeDriver: true,
         }),
-      ])
-    ).start();
-  };
+      ]).start(() => {
+        setTimeout(bounceAnimation, 12000);
+      });
+    };
 
-  // Step 5: Start the animation
-  useEffect(() => {
-    startBouncing();
-  }, []);
+    // Start the first animation
+    bounceAnimation();
+
+    // Clear the timeout when the component unmounts
+    return () => clearTimeout(bounceAnimation);
+  }, [bounceAnim]);
 
   return (
-    <View>
-      {/* Step 4: Apply the animation */}
-      <Animated.Image
-        source={{ uri: 'https://example.com/your-image.png' }}
-        style={{
-          width: 100,
-          height: 100,
-          transform: [{ translateY: bounceAnim }],
-        }}
-      />
-    </View>
+    <Animated.View style={{ transform: [{ translateY: bounceAnim }] }}>
+      {children}
+    </Animated.View>
   );
 };
 

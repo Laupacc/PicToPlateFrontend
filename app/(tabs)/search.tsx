@@ -23,6 +23,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import Background from "@/components/Background";
+import BouncingImage from "@/components/Bounce";
 import { fetchRandomRecipe } from "@/apiFunctions";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
@@ -63,7 +64,6 @@ export default function Search() {
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
-  const bounceAnim = useRef(new Animated.Value(0)).current;
 
   const BACKEND_URL = "http://192.168.1.42:3000";
 
@@ -303,46 +303,11 @@ export default function Search() {
     }
   }, [diet, intolerances, maxReadyTime]);
 
-  useEffect(() => {
-    const bounceAnimation = () => {
-      Animated.sequence([
-        Animated.timing(bounceAnim, {
-          toValue: -30,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: -15,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setTimeout(bounceAnimation, 12000);
-      });
-    };
-
-    // Start the first animation
-    bounceAnimation();
-
-    // Clear the timeout when the component unmounts
-    return () => clearTimeout(bounceAnimation);
-  }, []);
-
   return (
     <SafeAreaView className="flex-1 items-center justify-center pb-16">
       <StatusBar barStyle="dark-content" />
       <Background cellSize={25} />
-      <View className="flex justify-center items-center mb-2">
+      <View className="flex justify-center items-center">
         <Image
           source={require("../../assets/images/logo8.png")}
           className="w-60 h-14"
@@ -413,22 +378,18 @@ export default function Search() {
               onPress={handleFetchRandomRecipe}
               className="flex flex-row justify-center items-center"
             >
-              <View className="relative w-16 h-16 flex justify-center items-center">
-                <Animated.Image
-                  source={require("../../assets/images/randomButton.png")}
-                  className="absolute inset-0 w-full h-full"
-                  style={{
-                    transform: [{ translateY: bounceAnim }],
-                  }}
-                />
-                <Animated.Image
-                  source={require("../../assets/images/dice5.png")}
-                  className="w-6 h-6 bottom-2"
-                  style={{
-                    transform: [{ translateY: bounceAnim }],
-                  }}
-                />
-              </View>
+              <BouncingImage>
+                <View className="relative w-16 h-16 flex justify-center items-center">
+                  <Image
+                    source={require("../../assets/images/randomButton.png")}
+                    className="absolute inset-0 w-full h-full"
+                  />
+                  <Image
+                    source={require("../../assets/images/dice5.png")}
+                    className="w-6 h-6 bottom-2"
+                  />
+                </View>
+              </BouncingImage>
             </TouchableOpacity>
           </View>
         </View>

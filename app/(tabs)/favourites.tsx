@@ -125,52 +125,61 @@ export default function Favourites() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1">
-        {favouriteRecipes &&
-          favouriteRecipes.map((recipe, index) => (
-            <View
-              className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
-              key={index}
-            >
-              <Image
-                source={require("../../assets/images/recipeBack/recipeBack4.png")}
-                className="absolute inset-0 w-full h-full"
-                style={styles.shadow}
-              />
-
-              <TouchableOpacity
-                className="absolute top-20 right-5"
-                onPress={() => removeRecipeFromFavourites(recipe.id)}
-              >
-                <Image
-                  source={require("../../assets/images/trash1.png")}
-                  className="w-8 h-8"
-                />
-              </TouchableOpacity>
-
-              <View className="flex items-center justify-center">
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate("recipeCard", { recipeId: recipe.id })
-                  }
-                  key={recipe.id}
-                  className="flex items-center justify-center"
+      <View className="flex flex-1 items-center justify-center">
+        {favouriteRecipes.length === 0 ? (
+          <View className="flex items-center justify-center">
+            <Text className="font-CreamyCookies text-center text-3xl">
+              Add some recipes to your favourites
+            </Text>
+          </View>
+        ) : (
+          <ScrollView className="flex-1">
+            {favouriteRecipes &&
+              favouriteRecipes.map((recipe, index) => (
+                <View
+                  className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
+                  key={index}
                 >
                   <Image
-                    source={{ uri: recipe.image }}
-                    className="rounded-xl w-[200] h-[200] right-4"
+                    source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                    className="absolute inset-0 w-full h-full"
+                    style={styles.shadow}
                   />
-
-                  <View className="flex items-center justify-center max-w-[200] mt-4">
-                    <Text className="font-Flux text-center">
-                      {recipe.title}
-                    </Text>
+                  <TouchableOpacity
+                    className="absolute top-20 right-5"
+                    onPress={() => removeRecipeFromFavourites(recipe.id)}
+                  >
+                    <Image
+                      source={require("../../assets/images/trash1.png")}
+                      className="w-8 h-8"
+                    />
+                  </TouchableOpacity>
+                  <View className="flex items-center justify-center">
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate("recipeCard", {
+                          recipeId: recipe.id,
+                        })
+                      }
+                      key={recipe.id}
+                      className="flex items-center justify-center"
+                    >
+                      <Image
+                        source={{ uri: recipe.image }}
+                        className="rounded-xl w-[200] h-[200] right-4"
+                      />
+                      <View className="flex items-center justify-center max-w-[200] mt-4">
+                        <Text className="font-Flux text-center">
+                          {recipe.title}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-      </ScrollView>
+                </View>
+              ))}
+          </ScrollView>
+        )}
+      </View>
     </SafeAreaView>
   );
 }

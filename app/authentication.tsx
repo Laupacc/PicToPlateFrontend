@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   StatusBar,
-  ImageBackground,
 } from "react-native";
 import React from "react";
 import { Link } from "expo-router";
@@ -21,6 +20,7 @@ import * as SecureStore from "expo-secure-store";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/store/user";
 import { useToast } from "react-native-toast-notifications";
+import { Modal } from "react-native-paper";
 
 export default function Authentication() {
   const navigation = useNavigation();
@@ -30,6 +30,7 @@ export default function Authentication() {
 
   const [signUpUsername, setSignUpUsername] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
+  const [signUpEmail, setSignUpEmail] = useState("");
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [isloginPasswordHidden, setIsLoginPasswordHidden] = useState(true);
@@ -39,10 +40,12 @@ export default function Authentication() {
   const [signUpPasswordEmpty, setSignUpPasswordEmpty] = useState(false);
   const [loginUsernameEmpty, setLoginUsernameEmpty] = useState(false);
   const [loginPasswordEmpty, setLoginPasswordEmpty] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
+  const [forgotPasswordModal, setForgotPasswordModal] = useState(false);
+  const [email, setEmail] = useState("");
 
   const BACKEND_URL = "http://192.168.1.42:3000";
 
+  // Check if token exists
   useEffect(() => {
     const checkToken = async () => {
       try {
@@ -61,6 +64,12 @@ export default function Authentication() {
     checkToken();
   }, []);
 
+  const validateEmail = (email) => {
+    const regex = /\S+@\S+\.\S+/;
+    return regex.test(email);
+  };
+
+  // Sign Up
   const handleSignUp = async () => {
     setSignUpUsernameEmpty(false);
     setSignUpPasswordEmpty(false);
@@ -73,6 +82,10 @@ export default function Authentication() {
       setSignUpPasswordEmpty(true);
       return;
     }
+    if (signUpEmail && !validateEmail(signUpEmail)) {
+      alert("Please enter a valid email address");
+      return;
+    }
 
     try {
       const response = await fetch(`${BACKEND_URL}/users/signup`, {
@@ -83,6 +96,7 @@ export default function Authentication() {
         body: JSON.stringify({
           username: signUpUsername,
           password: signUpPassword,
+          email: signUpEmail,
         }),
       });
       const data = await response.json();
@@ -100,6 +114,7 @@ export default function Authentication() {
 
         navigation.navigate("(tabs)", { screen: "profile" });
         setSignUpUsername("");
+        setSignUpEmail("");
         setSignUpPassword("");
         alert("Signed up successfully");
       }
@@ -108,6 +123,8 @@ export default function Authentication() {
       alert("An error occured when signing up");
     }
   };
+
+  // Login
   const handleLogin = async () => {
     setLoginUsernameEmpty(false);
     setLoginPasswordEmpty(false);
@@ -147,7 +164,7 @@ export default function Authentication() {
         await SecureStore.setItemAsync("token", data.token);
         console.log("Token stored successfully");
 
-        navigation.navigate("(tabs)", { screen: "search" });
+        navigation.navigate("(tabs)", { screen: "profile" });
         setLoginUsername("");
         setLoginPassword("");
         alert("Logged in successfully");
@@ -157,44 +174,51 @@ export default function Authentication() {
     }
   };
 
-  const passwordForgotten = async () => {
+  // Forgot Password
+  const handleForgotPassword = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/users/updatePassword`, {
-        method: "PUT",
+      const response = await fetch(`${BACKEND_URL}/users/forgotPassword`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          token: user.token,
-          newPassword,
+          email,
         }),
       });
       const data = await response.json();
-      if (response.ok) {
-        toast.show(data.message, { type: "success" });
-      } else {
-        toast.show(data.message, { type: "danger" });
+      console.log(data);
+      if (!response.ok) {
+        alert(data.message);
+        return;
+      }
+      if (data.result) {
+        console.log("Password reset link sent successfully", data);
+        alert("Password reset link sent successfully");
       }
     } catch (error) {
-      console.error("Error updating password:", error);
-      toast.show("An error occurred. Please try again.", { type: "danger" });
+      console.error("Error:", error);
     }
   };
 
-  async function getValueFor(key) {
-    const result = await SecureStore.getItemAsync(key);
-    if (result) {
-      alert("🔐 Here's your value 🔐 \n" + result);
-    } else {
-      alert("No values stored under that key.");
-    }
-  }
+  // async function getValueFor(key) {
+  //   const result = await SecureStore.getItemAsync(key);
+  //   if (result) {
+  //     alert("🔐 Here's your value 🔐 \n" + result);
+  //   } else {
+  //     alert("No values stored under that key.");
+  //   }
+  // }
 
   const toggleSignUpPasswordVisibility = () => {
     setIsSignUpPasswordHidden(!isSignUpPasswordHidden);
   };
   const toggleLoginPasswordVisibility = () => {
     setIsLoginPasswordHidden(!isloginPasswordHidden);
+  };
+
+  const toggleForgotPasswordModal = () => {
+    setForgotPasswordModal(!forgotPasswordModal);
   };
 
   return (
@@ -261,7 +285,7 @@ export default function Authentication() {
             )}
 
             <TouchableOpacity
-              onPress={passwordForgotten}
+              onPress={toggleForgotPasswordModal}
               className="flex justify-center items-center top-2"
             >
               <Text>Forgot password?</Text>
@@ -315,6 +339,14 @@ export default function Authentication() {
             {signUpUsernameEmpty && (
               <Text className="text-red-500">Username cannot be empty</Text>
             )}
+            <TextInput
+              placeholder="Email"
+              autoCapitalize="none"
+              value={signUpEmail}
+              onChangeText={(text) => setSignUpEmail(text)}
+              className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
+            />
+
             <View className="relative">
               <TextInput
                 placeholder="Password"
@@ -353,7 +385,7 @@ export default function Authentication() {
                 Sign Up ✔︎
               </Text>
             </TouchableOpacity>
-            <View className="flex justify-center items-center top-20">
+            <View className="flex justify-center items-center top-12">
               <Text>Already have an account?</Text>
               <TouchableOpacity onPress={() => setSignUpVisible(false)}>
                 <Text className="text-lg">Login</Text>
@@ -362,6 +394,46 @@ export default function Authentication() {
           </View>
         </View>
       )}
+
+      {/* Forgot Password Modal */}
+      <Modal
+        visible={forgotPasswordModal}
+        onDismiss={toggleForgotPasswordModal}
+        contentContainerStyle={{
+          backgroundColor: "white",
+          paddingHorizontal: 40,
+          paddingVertical: 60,
+          margin: 40,
+          borderRadius: 20,
+        }}
+      >
+        <View className="flex justify-center items-center">
+          <Text>Reset Password</Text>
+          <TextInput
+            placeholder="Enter your email"
+            autoCapitalize="none"
+            className="bg-slate-100 w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
+            value={email}
+            onChangeText={(text) => setEmail(text)}
+          />
+          <TouchableOpacity
+            onPress={() => {
+              handleForgotPassword();
+              toggleForgotPasswordModal();
+            }}
+            className="relative flex justify-center items-center top-4"
+          >
+            <Image
+              source={require("../assets/images/button/button1.png")}
+              alt="button"
+              className="w-40 h-12"
+            />
+            <Text className="text-xl text-white absolute font-Nobile">
+              Submit ✔︎
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
 
       {/* <TouchableOpacity onPress={() => getValueFor("token")}>
         <Text className="text-lg text-red-500">Get Token</Text>

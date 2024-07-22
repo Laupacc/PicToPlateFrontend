@@ -244,15 +244,21 @@ export default function Camera() {
         throw new Error("Failed to add ingredients");
       }
       const data = await response.json();
-      console.log("Added ingredients:", data);
-      toast.show(`${ingredients} added successfully`, {
-        type: "success",
-        placement: "center",
-        duration: 2000,
-        animationType: "zoom-in",
-        swipeEnabled: true,
-        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-      });
+      console.log("Added ingredients:", ingredients);
+      toast.show(
+        `${
+          ingredients[0].name.charAt(0).toUpperCase() +
+          ingredients[0].name.slice(1)
+        } added successfully`,
+        {
+          type: "success",
+          placement: "center",
+          duration: 2000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+        }
+      );
 
       dispatch(addIngredient(ingredients));
     } catch (error) {
@@ -458,7 +464,7 @@ export default function Camera() {
                 className="relative flex justify-center items-center top-4"
               >
                 <Image
-                  source={require("../../assets/images/button/button8.png")}
+                  source={require("../../assets/images/button/button7.png")}
                   alt="button"
                   className="w-44 h-12"
                 />

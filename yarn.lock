@@ -1287,6 +1287,19 @@
   dependencies:
     "@types/hammerjs" "^2.0.36"
 
+"@emailjs/browser@^4.3.3":
+  version "4.4.1"
+  resolved "https://registry.yarnpkg.com/@emailjs/browser/-/browser-4.4.1.tgz#ad5684af5a912c0ab415202184845eb3270c4c81"
+  integrity sha512-DGSlP9sPvyFba3to2A50kDtZ+pXVp/0rhmqs2LmbMS3I5J8FSOgLwzY2Xb4qfKlOVHh29EAutLYwe5yuEZmEFg==
+
+"@emailjs/react-native@^4.2.2":
+  version "4.2.2"
+  resolved "https://registry.yarnpkg.com/@emailjs/react-native/-/react-native-4.2.2.tgz#e825e882fa1b25d062f85f5e265e40722fbaf6b7"
+  integrity sha512-jXjEliE8zMWsOkOfbCA/jA16usjV0SdhQvZ6Cw3PDBxsFbInIMPKhxexHG4/bXxX7cjAhdBK4lfDHL4P+dZfNw==
+  dependencies:
+    "@emailjs/browser" "^4.3.3"
+    "@react-native-async-storage/async-storage" "^1.22.3"
+
 "@eslint-community/eslint-utils@^4.2.0", "@eslint-community/eslint-utils@^4.4.0":
   version "4.4.0"
   resolved "https://registry.yarnpkg.com/@eslint-community/eslint-utils/-/eslint-utils-4.4.0.tgz#a23514e8fb9af1269d5f7788aa556798d61c6b59"
@@ -2554,6 +2567,13 @@
   dependencies:
     "@react-aria/ssr" "^3.0.1"
     "@react-aria/utils" "^3.3.0"
+
+"@react-native-async-storage/async-storage@^1.22.3":
+  version "1.24.0"
+  resolved "https://registry.yarnpkg.com/@react-native-async-storage/async-storage/-/async-storage-1.24.0.tgz#888efbc62a26f7d9464b32f4d3027b7f2771999b"
+  integrity sha512-W4/vbwUOYOjco0x3toB8QCr7EjIP6nE9G7o8PMguvvjYT5Awg09lyV4enACRx4s++PPulBiBSjL0KTFx2u0Z/g==
+  dependencies:
+    merge-options "^3.0.4"
 
 "@react-native-async-storage/async-storage@^1.23.1":
   version "1.23.1"

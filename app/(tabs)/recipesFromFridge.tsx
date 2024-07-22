@@ -98,6 +98,8 @@ export default function recipesFromFridge() {
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <Background cellSize={25} />
+
+      {/* Arrow to go back to fridge and title */}
       <View className="flex flex-row justify-center items-center">
         <TouchableOpacity onPress={() => navigation.navigate("fridge")}>
           <Image
@@ -110,64 +112,65 @@ export default function recipesFromFridge() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1">
-        {recipes.length === 0 && (
-          <View className="flex items-center justify-center">
-            <Text className="text-center font-Flux text-[20px]">
+      <View className="flex flex-1 items-center justify-center">
+        {recipes.length === 0 ? (
+          <View className="flex flex-1 items-center justify-center">
+            <Text className="text-center font-CreamyCookies text-3xl">
               No recipes found with these ingredients
             </Text>
           </View>
-        )}
-
-        {recipes &&
-          recipes.map((recipe) => (
-            <View
-              className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
-              key={recipe.id}
-            >
-              <Image
-                source={require("../../assets/images/recipeBack/recipeBack4.png")}
-                className="absolute inset-0 w-full h-full"
-                style={styles.shadow}
-              />
-
-              <TouchableOpacity
-                className="absolute top-20 right-4"
-                onPress={() => addRecipeToFavourites(recipe.id)}
-              >
-                <Image
-                  source={
-                    isFavourite
-                      ? require("../../assets/images/heart1.png")
-                      : require("../../assets/images/heart3.png")
-                  }
-                  className="w-8 h-8"
-                />
-              </TouchableOpacity>
-
-              <View className="flex items-center justify-center">
-                <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate("recipeCard", { recipeId: recipe.id })
-                  }
+        ) : (
+          <ScrollView>
+            {recipes &&
+              recipes.map((recipe) => (
+                <View
+                  className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
                   key={recipe.id}
-                  className="flex items-center justify-center"
                 >
                   <Image
-                    source={{ uri: recipe.image }}
-                    className="rounded-xl w-[200] h-[200] right-4"
+                    source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                    className="absolute inset-0 w-full h-full"
+                    style={styles.shadow}
                   />
-
-                  <View className="flex items-center justify-center max-w-[200] mt-4">
-                    <Text className="text-center font-Flux text-[15px]">
-                      {recipe.title}
-                    </Text>
+                  <TouchableOpacity
+                    className="absolute top-20 right-4"
+                    onPress={() => addRecipeToFavourites(recipe.id)}
+                  >
+                    <Image
+                      source={
+                        isFavourite
+                          ? require("../../assets/images/heart1.png")
+                          : require("../../assets/images/heart3.png")
+                      }
+                      className="w-8 h-8"
+                    />
+                  </TouchableOpacity>
+                  <View className="flex items-center justify-center">
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate("recipeCard", {
+                          recipeId: recipe.id,
+                        })
+                      }
+                      key={recipe.id}
+                      className="flex items-center justify-center"
+                    >
+                      <Image
+                        source={{ uri: recipe.image }}
+                        className="rounded-xl w-[200] h-[200] right-4"
+                      />
+                      <View className="flex items-center justify-center max-w-[200] mt-4">
+                        <Text className="text-center font-Flux text-[15px]">
+                          {recipe.title}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
                   </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ))}
-      </ScrollView>
+                </View>
+              ))}
+          </ScrollView>
+        )}
+      </View>
     </SafeAreaView>
   );
 }

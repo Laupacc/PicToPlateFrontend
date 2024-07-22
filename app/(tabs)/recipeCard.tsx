@@ -9,10 +9,9 @@ import {
   Dimensions,
   Switch,
   StatusBar,
-  Modal,
   Animated,
 } from "react-native";
-import { DataTable } from "react-native-paper";
+import { DataTable, Modal } from "react-native-paper";
 import { ScrollView } from "react-native-gesture-handler";
 import { useState, useEffect, useRef } from "react";
 import { useNavigation } from "expo-router";
@@ -21,6 +20,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import AntDesign from "react-native-vector-icons/AntDesign";
 import Background from "@/components/Background";
+import BouncingImage from "@/components/Bounce";
 import wineCategories from "../../_dataSets.json";
 import {
   fetchRandomRecipe,
@@ -39,9 +39,8 @@ export default function RecipeCard() {
   const user = useSelector((state) => state.user.value);
   const navigation = useNavigation();
   const toast = useToast();
-  const bounceAnim = useRef(new Animated.Value(0)).current;
-
   const route = useRoute();
+
   const { recipeId } = route.params as { recipeId: number };
   const [recipe, setRecipe] = useState<any>(null);
   const [servings, setServings] = useState(0);
@@ -310,40 +309,6 @@ export default function RecipeCard() {
     return images[Math.floor(Math.random() * images.length)];
   };
 
-  useEffect(() => {
-    const bounceAnimation = () => {
-      Animated.sequence([
-        Animated.timing(bounceAnim, {
-          toValue: -30,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: -15,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(bounceAnim, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setTimeout(bounceAnimation, 12000);
-      });
-    };
-
-    bounceAnimation();
-
-    // Clear the timeout when the component unmounts
-    return () => clearTimeout(bounceAnimation);
-  }, []);
-
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <StatusBar barStyle="dark-content" />
@@ -398,13 +363,12 @@ export default function RecipeCard() {
               className="absolute top-44 right-4"
               style={styles.shadow}
             >
-              <Animated.Image
-                source={require("../../assets/images/surprise.png")}
-                className="w-12 h-12"
-                style={{
-                  transform: [{ translateY: bounceAnim }],
-                }}
-              />
+              <BouncingImage>
+                <Image
+                  source={require("../../assets/images/surprise.png")}
+                  className="w-12 h-12"
+                />
+              </BouncingImage>
             </TouchableOpacity>
 
             {/* Favourite Recipe Button */}
@@ -689,176 +653,6 @@ export default function RecipeCard() {
                 </View>
               )}
 
-            {/* Nutritional Modal */}
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={showNutrition}
-              onRequestClose={() => {
-                setShowNutrition(false);
-              }}
-            >
-              <View className="flex-1 justify-center items-center bg-black/50">
-                <View
-                  style={styles.shadow}
-                  className="bg-slate-300 rounded-2xl p-2 w-[80%] max-h-[70%]"
-                >
-                  <ScrollView>
-                    <TouchableOpacity
-                      onPress={() => setShowNutrition(false)}
-                      className="items-end"
-                    >
-                      <AntDesign name="close" size={30} color={"#64748b"} />
-                    </TouchableOpacity>
-                    <View className="items-center">
-                      <Text className="font-SpaceMono text-lg text-center">
-                        Nutritional Values for {recipe.title} recipe
-                      </Text>
-                    </View>
-
-                    <DataTable className="w-max">
-                      <DataTable.Header>
-                        <DataTable.Title className="justify-center">
-                          <Text>Nutrient</Text>
-                        </DataTable.Title>
-                        <DataTable.Title className="justify-center">
-                          Amount
-                        </DataTable.Title>
-                        <DataTable.Title className="justify-center">
-                          % of daily needs
-                        </DataTable.Title>
-                      </DataTable.Header>
-
-                      {recipe.nutrition.nutrients &&
-                        recipe.nutrition.nutrients.map((nutrient, index) => (
-                          <DataTable.Row
-                            key={index}
-                            style={
-                              index % 2 === 0
-                                ? { backgroundColor: "#f1f5f9" }
-                                : { backgroundColor: "#e2e8f0" }
-                            }
-                          >
-                            <DataTable.Cell className="justify-center">
-                              <Text numberOfLines={2} className="text-center">
-                                {nutrient.name}
-                              </Text>
-                            </DataTable.Cell>
-                            <DataTable.Cell className="justify-center">
-                              <Text numberOfLines={1}>
-                                {nutrient.amount} {nutrient.unit}
-                              </Text>
-                            </DataTable.Cell>
-                            <DataTable.Cell className="justify-center">
-                              <Text numberOfLines={1}>
-                                {nutrient.percentOfDailyNeeds}
-                              </Text>
-                            </DataTable.Cell>
-                          </DataTable.Row>
-                        ))}
-                    </DataTable>
-                  </ScrollView>
-                </View>
-              </View>
-            </Modal>
-
-            {/* Subsitutes Modal */}
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={showSubstitutes}
-              onRequestClose={() => {
-                setShowSubstitutes(false);
-              }}
-            >
-              <View className="flex-1 justify-center items-center bg-black/50">
-                <View
-                  style={styles.shadow}
-                  className="bg-slate-200 rounded-2xl p-2 w-[80%] max-h-[90%]"
-                >
-                  <ScrollView>
-                    <TouchableOpacity
-                      onPress={() => setShowSubstitutes(false)}
-                      className="items-end"
-                    >
-                      <AntDesign name="close" size={30} color={"#64748b"} />
-                    </TouchableOpacity>
-                    <View className="flex flex-row flex-wrap justify-center items-center">
-                      {recipe.extendedIngredients?.map(
-                        (ingredient, index: number) => (
-                          <View>
-                            <View className="m-2 p-1" key={index}>
-                              <TouchableOpacity
-                                className="flex justify-center items-center w-20 h-20 p-1 rounded-2xl bg-white"
-                                style={styles.shadow}
-                                onPress={() => {
-                                  fetchIngredientSubstitution(ingredient.id);
-                                  if (activeIngredientId === ingredient.id) {
-                                    setActiveIngredientId(null);
-                                  } else {
-                                    setActiveIngredientId(ingredient.id);
-                                  }
-                                }}
-                              >
-                                {ingredient.image ? (
-                                  <Image
-                                    source={{
-                                      uri: constructImageUrl(ingredient.image),
-                                    }}
-                                    className="w-full h-full"
-                                    resizeMode="contain"
-                                  />
-                                ) : (
-                                  <Image
-                                    source={require("../../assets/images/missingIng.png")}
-                                    className="w-full h-full"
-                                  />
-                                )}
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-                        )
-                      )}
-                      <View className="flex justify-center items-center mt-4">
-                        {activeIngredientId !== null && (
-                          <View className="w-full items-center">
-                            {recipe.extendedIngredients.map(
-                              (ingredient, index: number) =>
-                                activeIngredientId === ingredient.id && (
-                                  <View key={index}>
-                                    <Text className="font-SpaceMono text-lg text-center mb-2">
-                                      {ingredient.originalName
-                                        .charAt(0)
-                                        .toUpperCase() +
-                                        ingredient.originalName.slice(1)}
-                                    </Text>
-                                    {ingredientSubstitutes.length > 0 ? (
-                                      ingredientSubstitutes.map(
-                                        (substitute, subIndex) => (
-                                          <Text
-                                            key={subIndex}
-                                            className="font-SpaceMono text-md text-center"
-                                          >
-                                            {substitute}
-                                          </Text>
-                                        )
-                                      )
-                                    ) : (
-                                      <Text className="font-SpaceMono text-md text-center">
-                                        No substitutes found
-                                      </Text>
-                                    )}
-                                  </View>
-                                )
-                            )}
-                          </View>
-                        )}
-                      </View>
-                    </View>
-                  </ScrollView>
-                </View>
-              </View>
-            </Modal>
             <View className="flex flex-row justify-around items-center m-2">
               {/* Switch unit */}
               <View className="flex flex-row justify-center items-center mr-4">
@@ -993,96 +787,6 @@ export default function RecipeCard() {
               </View>
             ))}
 
-            {/* Nutrition per Ingredient Modal */}
-            <Modal
-              animationType="fade"
-              transparent={true}
-              visible={ingredientModalVisible}
-              onRequestClose={() => {
-                setIngredientModalVisible(false);
-              }}
-            >
-              <View className="flex-1 justify-center items-center bg-black/50">
-                <View
-                  style={styles.shadow}
-                  className="bg-slate-300 rounded-2xl p-2 w-[80%] max-h-[70%]"
-                >
-                  <ScrollView>
-                    <TouchableOpacity
-                      onPress={() => setIngredientModalVisible(false)}
-                      className="items-end"
-                    >
-                      <AntDesign name="close" size={30} color={"#64748b"} />
-                    </TouchableOpacity>
-
-                    {selectedIngredientNutrition && (
-                      <View>
-                        <View>
-                          <Text className="font-SpaceMono text-[20px] text-center">
-                            {`Nutritional Values for ${
-                              selectedIngredientNutrition.amount
-                            } ${
-                              selectedIngredientNutrition.unit
-                            } of ${selectedIngredientNutrition.name
-                              .charAt(0)
-                              .toUpperCase()}${selectedIngredientNutrition.name.slice(
-                              1
-                            )}`}
-                          </Text>
-                        </View>
-
-                        <DataTable className="w-max">
-                          <DataTable.Header>
-                            <DataTable.Title className="justify-center">
-                              <Text>Nutrient</Text>
-                            </DataTable.Title>
-                            <DataTable.Title className="justify-center">
-                              Amount
-                            </DataTable.Title>
-                            <DataTable.Title className="justify-center">
-                              % of daily needs
-                            </DataTable.Title>
-                          </DataTable.Header>
-
-                          {selectedIngredientNutrition.nutrients.map(
-                            (nutrient, index) => (
-                              <DataTable.Row
-                                key={index}
-                                style={
-                                  index % 2 === 0
-                                    ? { backgroundColor: "#f1f5f9" }
-                                    : { backgroundColor: "#e2e8f0" }
-                                }
-                              >
-                                <DataTable.Cell className="justify-center">
-                                  <Text
-                                    numberOfLines={2}
-                                    className="text-center"
-                                  >
-                                    {nutrient.name}
-                                  </Text>
-                                </DataTable.Cell>
-                                <DataTable.Cell className="justify-center">
-                                  <Text numberOfLines={1}>
-                                    {nutrient.amount} {nutrient.unit}
-                                  </Text>
-                                </DataTable.Cell>
-                                <DataTable.Cell className="justify-center">
-                                  <Text numberOfLines={1}>
-                                    {nutrient.percentOfDailyNeeds}
-                                  </Text>
-                                </DataTable.Cell>
-                              </DataTable.Row>
-                            )
-                          )}
-                        </DataTable>
-                      </View>
-                    )}
-                  </ScrollView>
-                </View>
-              </View>
-            </Modal>
-
             {/* Instructions */}
             <View className="relative mb-5">
               <View
@@ -1153,6 +857,251 @@ export default function RecipeCard() {
           </View>
         )}
       </ScrollView>
+      {/* Nutritional Modal */}
+      <Modal visible={showNutrition} onDismiss={() => setShowNutrition(false)}>
+        <View className="flex justify-center items-center ">
+          <View
+            style={styles.shadow}
+            className="bg-slate-300 rounded-2xl p-2 items-center justify-center h-[92%] w-[90%]"
+          >
+            {recipe && (
+              <ScrollView>
+                <TouchableOpacity
+                  onPress={() => setShowNutrition(false)}
+                  className="items-end"
+                >
+                  <AntDesign name="close" size={30} color={"#64748b"} />
+                </TouchableOpacity>
+                <View className="items-center">
+                  <Text className="font-SpaceMono text-lg text-center">
+                    Nutritional Values for {recipe.title} recipe
+                  </Text>
+                </View>
+
+                <DataTable className="w-max">
+                  <DataTable.Header>
+                    <DataTable.Title className="justify-center">
+                      <Text>Nutrient</Text>
+                    </DataTable.Title>
+                    <DataTable.Title className="justify-center">
+                      Amount
+                    </DataTable.Title>
+                    <DataTable.Title className="justify-center">
+                      % of daily needs
+                    </DataTable.Title>
+                  </DataTable.Header>
+
+                  {recipe.nutrition.nutrients &&
+                    recipe.nutrition.nutrients.map((nutrient, index) => (
+                      <DataTable.Row
+                        key={index}
+                        style={
+                          index % 2 === 0
+                            ? { backgroundColor: "#f1f5f9" }
+                            : { backgroundColor: "#e2e8f0" }
+                        }
+                      >
+                        <DataTable.Cell className="justify-center">
+                          <Text numberOfLines={2} className="text-center">
+                            {nutrient.name}
+                          </Text>
+                        </DataTable.Cell>
+                        <DataTable.Cell className="justify-center">
+                          <Text numberOfLines={1}>
+                            {nutrient.amount} {nutrient.unit}
+                          </Text>
+                        </DataTable.Cell>
+                        <DataTable.Cell className="justify-center">
+                          <Text numberOfLines={1}>
+                            {nutrient.percentOfDailyNeeds}
+                          </Text>
+                        </DataTable.Cell>
+                      </DataTable.Row>
+                    ))}
+                </DataTable>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Subsitutes Modal */}
+      <Modal
+        visible={showSubstitutes}
+        onDismiss={() => setShowSubstitutes(false)}
+      >
+        <View className="flex justify-center items-center">
+          <View
+            style={styles.shadow}
+            className="bg-slate-200 rounded-2xl w-96 min-h-96 p-2"
+          >
+            <ScrollView>
+              <TouchableOpacity
+                onPress={() => setShowSubstitutes(false)}
+                className="items-end"
+              >
+                <AntDesign name="close" size={30} color={"#64748b"} />
+              </TouchableOpacity>
+              <View className="flex flex-row flex-wrap justify-center items-center">
+                {recipe &&
+                  recipe.extendedIngredients?.map(
+                    (ingredient, index: number) => (
+                      <View>
+                        <View className="m-2 p-1" key={index}>
+                          <TouchableOpacity
+                            className="flex justify-center items-center w-20 h-20 p-1 rounded-2xl bg-white"
+                            style={styles.shadow}
+                            onPress={() => {
+                              fetchIngredientSubstitution(ingredient.id);
+                              if (activeIngredientId === ingredient.id) {
+                                setActiveIngredientId(null);
+                              } else {
+                                setActiveIngredientId(ingredient.id);
+                              }
+                            }}
+                          >
+                            {ingredient.image ? (
+                              <Image
+                                source={{
+                                  uri: constructImageUrl(ingredient.image),
+                                }}
+                                className="w-full h-full"
+                                resizeMode="contain"
+                              />
+                            ) : (
+                              <Image
+                                source={require("../../assets/images/missingIng.png")}
+                                className="w-full h-full"
+                              />
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )
+                  )}
+                <View className="flex justify-center items-center mt-4">
+                  {activeIngredientId !== null && (
+                    <View className="w-full items-center">
+                      {recipe.extendedIngredients.map(
+                        (ingredient, index: number) =>
+                          activeIngredientId === ingredient.id && (
+                            <View key={index}>
+                              <Text className="font-SpaceMono text-lg text-center mb-2">
+                                {ingredient.originalName
+                                  .charAt(0)
+                                  .toUpperCase() +
+                                  ingredient.originalName.slice(1)}
+                              </Text>
+                              {ingredientSubstitutes.length > 0 ? (
+                                ingredientSubstitutes.map(
+                                  (substitute, subIndex) => (
+                                    <Text
+                                      key={subIndex}
+                                      className="font-SpaceMono text-md text-center"
+                                    >
+                                      {substitute}
+                                    </Text>
+                                  )
+                                )
+                              ) : (
+                                <Text className="font-SpaceMono text-md text-center">
+                                  No substitutes found
+                                </Text>
+                              )}
+                            </View>
+                          )
+                      )}
+                    </View>
+                  )}
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Nutrition per Ingredient Modal */}
+      <Modal
+        visible={ingredientModalVisible}
+        onDismiss={() => setIngredientModalVisible(false)}
+      >
+        <View className="flex justify-center items-center">
+          <View
+            style={styles.shadow}
+            className="bg-slate-300 rounded-2xl p-2 justify-center items-center h-[92%] w-[90%]"
+          >
+            <ScrollView>
+              <TouchableOpacity
+                onPress={() => setIngredientModalVisible(false)}
+                className="items-end"
+              >
+                <AntDesign name="close" size={30} color={"#64748b"} />
+              </TouchableOpacity>
+
+              {selectedIngredientNutrition && (
+                <View>
+                  <View>
+                    <Text className="font-SpaceMono text-[20px] text-center">
+                      {`Nutritional Values for ${
+                        selectedIngredientNutrition.amount
+                      } ${
+                        selectedIngredientNutrition.unit
+                      } of ${selectedIngredientNutrition.name
+                        .charAt(0)
+                        .toUpperCase()}${selectedIngredientNutrition.name.slice(
+                        1
+                      )}`}
+                    </Text>
+                  </View>
+
+                  <DataTable className="w-max">
+                    <DataTable.Header>
+                      <DataTable.Title className="justify-center">
+                        <Text>Nutrient</Text>
+                      </DataTable.Title>
+                      <DataTable.Title className="justify-center">
+                        Amount
+                      </DataTable.Title>
+                      <DataTable.Title className="justify-center">
+                        % of daily needs
+                      </DataTable.Title>
+                    </DataTable.Header>
+
+                    {selectedIngredientNutrition.nutrients.map(
+                      (nutrient, index) => (
+                        <DataTable.Row
+                          key={index}
+                          style={
+                            index % 2 === 0
+                              ? { backgroundColor: "#f1f5f9" }
+                              : { backgroundColor: "#e2e8f0" }
+                          }
+                        >
+                          <DataTable.Cell className="justify-center">
+                            <Text numberOfLines={2} className="text-center">
+                              {nutrient.name}
+                            </Text>
+                          </DataTable.Cell>
+                          <DataTable.Cell className="justify-center">
+                            <Text numberOfLines={1}>
+                              {nutrient.amount} {nutrient.unit}
+                            </Text>
+                          </DataTable.Cell>
+                          <DataTable.Cell className="justify-center">
+                            <Text numberOfLines={1}>
+                              {nutrient.percentOfDailyNeeds}
+                            </Text>
+                          </DataTable.Cell>
+                        </DataTable.Row>
+                      )
+                    )}
+                  </DataTable>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
