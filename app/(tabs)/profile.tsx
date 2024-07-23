@@ -53,7 +53,7 @@ export default function Profile() {
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const BACKEND_URL = "http://192.168.1.42:3000";
+  const BACKEND_URL = "http://192.168.114.158:3000";
 
   const handleLogout = async () => {
     if (!user.token) {
@@ -63,7 +63,7 @@ export default function Profile() {
     dispatch(logout());
     toast.show("Logged out successfully", {
       type: "normal",
-      placement: "center",
+      placement: "top",
       duration: 2000,
       animationType: "zoom-in",
       swipeEnabled: true,
@@ -143,14 +143,18 @@ export default function Profile() {
                 }));
                 setNewUsername("");
                 setIsUpdateInfoModalVisible(false);
-                toast.show(data.message, { type: "success" });
+                toast.show(data.message, { type: "success", placement: "top" });
               } else {
-                toast.show("Failed to update username", { type: "danger" });
+                toast.show("Failed to update username", {
+                  type: "danger",
+                  placement: "top",
+                });
               }
             } catch (error) {
               console.error("Error updating username:", error);
               toast.show("An error occurred. Please try again.", {
                 type: "warning",
+                placement: "top",
               });
             }
           },
@@ -196,16 +200,17 @@ export default function Profile() {
               );
               const data = await response.json();
               if (response.ok) {
-                toast.show(data.message, { type: "success" });
+                toast.show(data.message, { type: "success", placement: "top" });
                 setNewPassword("");
                 setIsUpdateInfoModalVisible(false);
               } else {
-                toast.show(data.message, { type: "danger" });
+                toast.show(data.message, { type: "danger", placement: "top" });
               }
             } catch (error) {
               console.error("Error updating password:", error);
               toast.show("An error occurred. Please try again.", {
                 type: "danger",
+                placement: "top",
               });
             }
           },
@@ -508,51 +513,59 @@ export default function Profile() {
       >
         <View className="flex justify-center items-center">
           <View
-            className=" bg-slate-50 rounded-lg w-80 h-60 p-4"
+            className="flex justify-between items-center bg-slate-50 rounded-lg w-80 h-72 p-4"
             style={styles.shadow}
           >
-            <Text className="text-xl text-center">Update Information</Text>
-            <View className="flex-row justify-center items-center">
-              <TextInput
-                placeholder="New Username"
-                value={newUsername}
-                onChangeText={(text) => setNewUsername(text)}
-                autoCapitalize="none"
-                className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
-              />
-              <TouchableOpacity
-                onPress={updateUsername}
-                className="bg-[#51A0FF] rounded-lg p-2 m-2"
-              >
-                <Entypo name="check" size={24} color="white" />
-              </TouchableOpacity>
-            </View>
-            <View className="flex-row justify-center items-center">
-              <View className="relative">
+            <Text className="text-xl text-center font-Nobile">
+              Update Information
+            </Text>
+            <View>
+              <View className="flex-row justify-center items-center">
                 <TextInput
-                  placeholder="New Password"
-                  value={newPassword}
-                  onChangeText={(text) => setNewPassword(text)}
-                  secureTextEntry={!isNewPasswordVisible}
+                  placeholder="New Username"
+                  value={newUsername}
+                  onChangeText={(text) => setNewUsername(text)}
                   autoCapitalize="none"
-                  className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
+                  className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
                 />
-                <TouchableOpacity
-                  onPress={toggleIsNewPasswordVisible}
-                  className="absolute right-5 top-5"
-                >
-                  <FontAwesome
-                    name={!isNewPasswordVisible ? "eye" : "eye-slash"}
-                    size={20}
-                  />
-                </TouchableOpacity>
+                <View style={styles.shadow}>
+                  <TouchableOpacity onPress={updateUsername}>
+                    <Image
+                      source={require("../../assets/images/yesIcon.png")}
+                      className="w-10 h-10 m-1"
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-              <TouchableOpacity
-                onPress={updatePassword}
-                className="bg-[#51A0FF] rounded-lg p-2 m-2"
-              >
-                <Entypo name="check" size={24} color="white" />
-              </TouchableOpacity>
+              <View className="flex-row justify-center items-center">
+                <View className="relative">
+                  <TextInput
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChangeText={(text) => setNewPassword(text)}
+                    secureTextEntry={!isNewPasswordVisible}
+                    autoCapitalize="none"
+                    className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
+                  />
+                  <TouchableOpacity
+                    onPress={toggleIsNewPasswordVisible}
+                    className="absolute right-5 top-5"
+                  >
+                    <FontAwesome
+                      name={!isNewPasswordVisible ? "eye" : "eye-slash"}
+                      size={20}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.shadow}>
+                  <TouchableOpacity onPress={updatePassword}>
+                    <Image
+                      source={require("../../assets/images/yesIcon.png")}
+                      className="w-10 h-10 m-1"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
             <TouchableOpacity
               onPress={() => {
@@ -561,7 +574,9 @@ export default function Profile() {
                 setNewUsername("");
               }}
             >
-              <Text className="text-lg text-center mt-4">Close</Text>
+              <Text className="text-lg text-center mt-4 font-Nobile">
+                Close
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -58,7 +58,7 @@ export default function RecipeCard() {
   const [showSubstitutes, setShowSubstitutes] = useState(false);
   const [isFavourite, setIsFavourite] = useState(false);
 
-  const BACKEND_URL = "http://192.168.1.42:3000";
+  const BACKEND_URL = "http://192.168.114.158:3000";
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);

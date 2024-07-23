@@ -45,7 +45,7 @@ export default function Fridge() {
   const ingredients = useSelector((state) => state.fridge.ingredients);
   const toast = useToast();
 
-  const BACKEND_URL = "http://192.168.1.42:3000";
+  const BACKEND_URL = "http://192.168.114.158:3000";
 
   const [fridgeItems, setFridgeItems] = useState([]);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
@@ -462,20 +462,21 @@ export default function Fridge() {
 
         {/* No Fridge Items */}
         {fridgeItems.length === 0 && (
-          <View className="flex justify-center items-center mx-10">
-            <Text className="font-CreamyCookies text-xl text-center">
+          <View className="flex justify-center items-center mx-20">
+            <Text className="font-CreamyCookies text-3xl text-center">
               You don't have any ingredients in your kitchen yet. Add some now!
             </Text>
-            <View className="flex flex-row m-10 justify-center items-start">
+            <View className="flex flex-row m-10 justify-center items-center">
               <Image
                 source={require("../../assets/images/curvedArrowDownLeft.png")}
-                className="w-12 h-12 top-2 mx-4"
+                className="w-12 h-12 top-5 mx-4"
               />
 
-              <Text className="font-CreamyCookies text-xl">Search</Text>
+              <Text className="font-CreamyCookies text-2xl">Search</Text>
             </View>
           </View>
         )}
+
         {/* Fridge Items */}
         {fridgeItems.length > 0 && (
           <View className="border-2 border-slate-400 flex-1 p-1 rounded-3xl">
@@ -655,7 +656,7 @@ export default function Fridge() {
       {/* Take a picture arrow */}
       {fridgeItems.length === 0 && (
         <View className="flex m-10 justify-center items-center">
-          <Text className="font-CreamyCookies text-xl text-center">
+          <Text className="font-CreamyCookies text-2xl text-center">
             Or take a picture
           </Text>
           <BouncingImage>

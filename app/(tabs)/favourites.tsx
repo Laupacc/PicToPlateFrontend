@@ -33,7 +33,7 @@ export default function Favourites() {
 
   const [favouriteRecipes, setFavouriteRecipes] = useState([]);
 
-  const BACKEND_URL = "http://192.168.1.42:3000";
+  const BACKEND_URL = "http://192.168.114.158:3000";
 
   const cachedFavorites = useRef<any[]>([]);
   useEffect(() => {
@@ -127,10 +127,17 @@ export default function Favourites() {
 
       <View className="flex flex-1 items-center justify-center">
         {favouriteRecipes.length === 0 ? (
-          <View className="flex items-center justify-center">
-            <Text className="font-CreamyCookies text-center text-3xl">
-              Add some recipes to your favourites
-            </Text>
+          <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
+            <Image
+              source={require("../../assets/images/recipeBack/recipeBack4.png")}
+              className="absolute inset-0 w-full h-full"
+              style={styles.shadow}
+            />
+            <View className="flex items-center justify-center max-w-[180]">
+              <Text className="font-CreamyCookies text-center text-3xl">
+                You don't have any favourite recipes saved yet
+              </Text>
+            </View>
           </View>
         ) : (
           <ScrollView className="flex-1">

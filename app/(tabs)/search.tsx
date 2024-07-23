@@ -40,6 +40,7 @@ export default function Search() {
   const [joke, setJoke] = useState("");
   const [recipe, setRecipe] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [searchPerformed, setSearchPerformed] = useState(false);
   const [recipesFromIngredients, setRecipesFromIngredients] = useState<any[]>(
     []
   );
@@ -65,7 +66,7 @@ export default function Search() {
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const BACKEND_URL = "http://192.168.1.42:3000";
+  const BACKEND_URL = "http://192.168.114.158:3000";
 
   // const fetchTrivia = async () => {
   //   const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
@@ -125,6 +126,7 @@ export default function Search() {
       setIntolerances(intolerances);
       setMaxReadyTime(maxReadyTime);
       setRecipesFromIngredients(recipe.results);
+      setSearchPerformed(true);
     } catch (error) {
       console.error("Error fetching recipes:", error);
       toast.show("Error fetching recipes", {
@@ -733,7 +735,8 @@ export default function Search() {
 
       {/* Recipe Results */}
       <ScrollView className="flex-1 m-2">
-        {recipesFromIngredients && recipesFromIngredients.length > 0 ? (
+        {recipesFromIngredients &&
+          recipesFromIngredients.length > 0 &&
           recipesFromIngredients.map((recipe) => (
             <View
               className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
@@ -779,8 +782,24 @@ export default function Search() {
                 </TouchableOpacity>
               </View>
             </View>
-          ))
-        ) : (
+          ))}
+
+        {searchPerformed && recipesFromIngredients.length === 0 && (
+          <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
+            <Image
+              source={require("../../assets/images/recipeBack/recipeBack4.png")}
+              className="absolute inset-0 w-full h-full"
+              style={styles.shadow}
+            />
+            <View className="flex items-center justify-center max-w-[180]">
+              <Text className="font-CreamyCookies text-center text-3xl">
+                No recipes found with these ingredients
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {!searchPerformed && (
           <View className="flex items-center justify-center relative mt-4">
             <View
               className="absolute bg-[#FFBA00] rounded-2xl right-1 bottom-1 w-[300] h-[420]"

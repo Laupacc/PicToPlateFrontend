@@ -21,6 +21,7 @@ import { addIngredient, updateIngredients } from "@/store/fridge";
 import LottieView from "lottie-react-native";
 import { useToast } from "react-native-toast-notifications";
 import { LinearGradient } from "expo-linear-gradient";
+import { TextInput, ScrollView } from "react-native-gesture-handler";
 import {
   StyleSheet,
   Text,
@@ -32,7 +33,6 @@ import {
   Platform,
   ImageBackground,
 } from "react-native";
-import { Line } from "react-native-svg";
 
 const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
 const USER_ID = "clarifai";
@@ -58,7 +58,7 @@ export default function Camera() {
   const toast = useToast();
   const user = useSelector((state) => state.user.value);
 
-  const BACKEND_URL = "http://192.168.1.42:3000";
+  const BACKEND_URL = "http://192.168.114.158:3000";
 
   // useEffect to get the camera permissions
   useEffect(() => {
@@ -224,11 +224,34 @@ export default function Camera() {
   // Add the selected ingredients to the user.ingredients array
   const addIngredients = async () => {
     try {
-      const ingredients = selectedIngredients.map((ingredient) => ({
-        name: ingredient.name,
-        dateAdded: ingredient.dateAdded || new Date().toISOString(),
-      }));
-      console.log("ingredients:", ingredients);
+      // Fetch existing ingredients from the fridge
+      const existingIngredientsResponse = await fetch(
+        `${BACKEND_URL}/users/fetchIngredients/${user.token}`
+      );
+      const existingIngredientsData = await existingIngredientsResponse.json();
+      const existingIngredients = existingIngredientsData.ingredients.map(
+        (ingredient) => ingredient.name
+      );
+
+      // Filter out the ingredients that are already in the fridge
+      const newIngredients = selectedIngredients
+        .filter((ingredient) => !existingIngredients.includes(ingredient.name))
+        .map((ingredient) => ({
+          name: ingredient.name,
+          dateAdded: new Date().toISOString(),
+        }));
+
+      if (newIngredients.length === 0) {
+        toast.show(`This ingredient is already in your kitchen`, {
+          type: "warning",
+          placement: "center",
+          duration: 2000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="warning-outline" size={24} color="white" />,
+        });
+        return;
+      }
 
       const response = await fetch(
         `${BACKEND_URL}/users/addIngredient/${user.token}`,
@@ -237,57 +260,53 @@ export default function Camera() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ ingredients }),
+          body: JSON.stringify({ ingredients: newIngredients }),
         }
       );
       if (!response.ok) {
         throw new Error("Failed to add ingredients");
       }
-      const data = await response.json();
-      console.log("Added ingredients:", ingredients);
+      const responseData = await response.json();
+      console.log("Ingredients added:", responseData);
+      dispatch(updateIngredients(newIngredients));
+
       toast.show(
         `${
-          ingredients[0].name.charAt(0).toUpperCase() +
-          ingredients[0].name.slice(1)
-        } added successfully`,
+          newIngredients[0].name.charAt(0).toUpperCase() +
+          newIngredients[0].name.slice(1)
+        } has been added successfully`,
         {
           type: "success",
-          placement: "center",
+          placement: "top",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
-          icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+          icon: (
+            <Ionicons name="checkmark-circle-outline" size={24} color="white" />
+          ),
         }
       );
 
-      dispatch(addIngredient(ingredients));
+      setSelectedIngredients([]);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to add ingredients:", error);
+      toast.show("Failed to add ingredients. Please try again.", {
+        type: "danger",
+        placement: "top",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="close-circle-outline" size={24} color="white" />,
+      });
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 items-center justify-center pb-16">
+    <SafeAreaView className="flex-1 items-center justify-center bg-slate-600 pb-16">
       <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={["transparent", "#0891b2", "#0d6e8c", "#0a4f6c"]}
-        className="absolute top-0 left-0 right-0 bottom-0"
-      />
       <Background cellSize={25} />
 
-      {/* <View className="flex justify-center items-center">
-        <Text
-          className="text-white text-2xl text-center"
-          style={{
-            fontFamily: "Nobile",
-          }}
-        >
-          Upload or take a picture of your ingredients to add them to your
-          pantry.
-        </Text>
-      </View> */}
-
-      <View className="flex justify-center items-center m-4">
+      <View className="flex justify-center items-center m-2">
         {!cameraOpen && (
           <View className="flex justify-center items-center">
             <View className="m-4 flex flex-row justify-center items-center">
@@ -368,10 +387,6 @@ export default function Camera() {
         )}
       </View>
 
-      {/* {isPredictionLoading && (
-        <ActivityIndicator size="large" color="#FED400" />
-      )} */}
-
       {isPredictionLoading && (
         <LottieView
           source={require("../../assets/images/animations/Animation1720193319067.json")}
@@ -386,43 +401,23 @@ export default function Camera() {
         />
       )}
 
-      {/* <View className="flex justify-center items-center m-4">
-        {!cameraOpen && !isPredictionLoading && !image && (
-          <View className="flex justify-center items-center">
-            <Text className="text-white text-lg text-center">
-              Upload an image or take a picture to get started!
-            </Text>
-            <Image
-              source={require("../../assets/images/missingIng.png")}
-              className="w-64 h-64"
-              style={{
-                shadowColor: "#000",
-                shadowOffset: {
-                  width: 4,
-                  height: 4,
-                },
-                shadowOpacity: 0.25,
-                shadowRadius: 4,
-              }}
-            />
-          </View>
-        )}
-      </View> */}
-
       {!cameraOpen && image && !isPredictionLoading && predictions && (
         <View className="flex justify-center items-center relative">
           <Image
-            source={require("../../assets/images/recipeBack/recipeBack10.png")}
-            className="w-[410] h-[325]"
+            source={require("../../assets/images/stickers/postit2.png")}
+            className="w-[340] h-[340]"
           />
           <View className="flex justify-center items-center absolute">
             <View className="flex justify-center items-center">
-              <>
-                <Text className="text-base text-center mb-1 font-Nobile">
-                  AI Predictions
+              <ScrollView className="overflow-y-auto h-[180]">
+                <Text className="text-base text-center font-Nobile mb-2">
+                  Predictions (probability %)
                 </Text>
-                {predictions.slice(0, 5).map((prediction, index) => (
-                  <View key={index} className="w-[220] p-1.5">
+                {predictions.slice(0, 10).map((prediction, index) => (
+                  <View
+                    key={index}
+                    className="p-1 flex justify-center items-center w-[190]"
+                  >
                     <BouncyCheckbox
                       onPress={() => toggleIngredient(prediction)}
                       isChecked={selectedIngredients.includes(prediction)}
@@ -451,13 +446,12 @@ export default function Camera() {
                       innerIconStyle={{ borderColor: "grey" }}
                       bounceEffectIn={0.6}
                     />
-                    {/* <RNBounceable
-                      onPress={() => console.log("Pressed")}
-                    ></RNBounceable> */}
                   </View>
                 ))}
-              </>
+              </ScrollView>
             </View>
+
+            {/* Add ingredients button */}
             {selectedIngredients.length > 0 && (
               <TouchableOpacity
                 onPress={addIngredients}

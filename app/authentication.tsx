@@ -43,7 +43,7 @@ export default function Authentication() {
   const [forgotPasswordModal, setForgotPasswordModal] = useState(false);
   const [email, setEmail] = useState("");
 
-  const BACKEND_URL = "http://192.168.1.42:3000";
+  const BACKEND_URL = "http://192.168.114.158:3000";
 
   // Check if token exists
   useEffect(() => {
