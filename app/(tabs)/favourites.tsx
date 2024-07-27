@@ -157,7 +157,7 @@ export default function Favourites() {
                     onPress={() => removeRecipeFromFavourites(recipe.id)}
                   >
                     <Image
-                      source={require("../../assets/images/trash1.png")}
+                      source={require("../../assets/images/trash2.png")}
                       className="w-8 h-8"
                     />
                   </TouchableOpacity>

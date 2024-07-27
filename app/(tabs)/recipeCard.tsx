@@ -58,7 +58,7 @@ export default function RecipeCard() {
   const [showSubstitutes, setShowSubstitutes] = useState(false);
   const [isFavourite, setIsFavourite] = useState(false);
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const BACKEND_URL = "http://10.0.0.97:3000";
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -384,8 +384,8 @@ export default function RecipeCard() {
                 <Image
                   source={
                     isFavourite
-                      ? require("../../assets/images/heart1.png")
-                      : require("../../assets/images/heart3.png")
+                      ? require("../../assets/images/heart4.png")
+                      : require("../../assets/images/heart5.png")
                   }
                   className="w-10 h-10"
                 />
@@ -443,7 +443,6 @@ export default function RecipeCard() {
                   if (imageSource) {
                     const imageStyle =
                       screenWidth > 320 ? "w-14 h-14 m-1" : "w-12 h-12 m-1";
-
                     return (
                       <Image
                         key={diet}
@@ -462,15 +461,15 @@ export default function RecipeCard() {
               {/* Macros Button */}
               <TouchableOpacity
                 onPress={() => setShowMacros(!showMacros)}
-                className="flex justify-center items-center my-2 mx-4 p-2 rounded-2xl bg-slate-200"
+                className="flex justify-center items-center m-2 p-2 border border-sky-100 rounded-lg bg-sky-100"
                 style={styles.shadow}
               >
                 <View className="flex justify-center items-center">
-                  <Image
+                  {/* <Image
                     source={require("../../assets/images/macronutrients.png")}
                     className="w-12 h-12"
-                  />
-                  <Text className="text-lg text-[#7a1b0e] text-center">
+                  /> */}
+                  <Text className="text-md text-slate-700 text-center">
                     Macros
                   </Text>
                 </View>
@@ -479,16 +478,16 @@ export default function RecipeCard() {
               {/* Nutritional Values Button */}
               <TouchableOpacity
                 onPress={() => setShowNutrition(!showNutrition)}
-                className="flex justify-center items-center my-2 mx-4 p-2 rounded-2xl bg-slate-200"
+                className="flex justify-center items-center m-2 p-2 border border-sky-100 rounded-lg bg-sky-100"
                 style={styles.shadow}
               >
                 <View className="flex justify-center items-center">
-                  <Image
+                  {/* <Image
                     source={require("../../assets/images/nutriValues.png")}
                     className="w-12 h-12"
-                  />
-                  <Text className="text-lg text-[#7a1b0e] text-center">
-                    Nutri
+                  /> */}
+                  <Text className="text-md text-slate-700 text-center">
+                    Nutritional values
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -498,16 +497,16 @@ export default function RecipeCard() {
                 onPress={() => {
                   setShowWinePairing(!showWinePairing);
                 }}
-                className="flex justify-center items-center my-2 mx-4 p-2 rounded-2xl bg-slate-200"
+                className="flex justify-center items-center m-2 p-2 border border-sky-100 rounded-lg bg-sky-100"
                 style={styles.shadow}
               >
                 <View className="flex justify-center items-center">
                   {/* <Text className="text-[60px]">🍷</Text> */}
-                  <Image
+                  {/* <Image
                     source={require("../../assets/images/winePairing.png")}
                     className="w-14 h-14"
-                  />
-                  <Text className="text-lg text-[#7a1b0e] text-center">
+                  /> */}
+                  <Text className="text-md text-slate-700 text-center">
                     Wine
                   </Text>
                 </View>
@@ -516,16 +515,16 @@ export default function RecipeCard() {
               {/* Food Substitute Button */}
               <TouchableOpacity
                 onPress={() => setShowSubstitutes(!showSubstitutes)}
-                className="flex justify-center items-center my-2 mx-4 p-2 rounded-2xl bg-slate-200"
+                className="flex justify-center items-center m-2 p-2 border border-sky-100 rounded-lg bg-sky-100"
                 style={styles.shadow}
               >
                 <View className="flex justify-center items-center">
-                  <Image
+                  {/* <Image
                     source={require("../../assets/images/foodSubs3.png")}
                     className="w-12 h-14"
-                  />
-                  <Text className="text-lg text-[#7a1b0e] text-center">
-                    Subs
+                  /> */}
+                  <Text className="text-md text-slate-700 text-center">
+                    Substitutes
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -534,29 +533,50 @@ export default function RecipeCard() {
             {/* Macros */}
             {showMacros && (
               <View className="flex flex-row justify-center items-start my-2">
-                <View className="border py-1.5 px-3 rounded-lg bg-[#d75348] mx-1">
-                  <Text className="font-bold text-lg text-center text-black">
-                    {recipe.nutrition.caloricBreakdown.percentProtein}%
-                  </Text>
-                  <Text className="font-bold text-base text-center text-black">
-                    Protein
-                  </Text>
+                {/* <View className="border py-1.5 px-3 rounded-lg bg-[#d75348] mx-1"> */}
+                <View className="relative mx-1">
+                  <Image
+                    source={require("../../assets/images/redRibbon2.png")}
+                    className="w-32 h-12"
+                  />
+                  <View className="absolute top-0.5 left-7">
+                    <Text className="font-bold text-base text-center text-black">
+                      {recipe.nutrition.caloricBreakdown.percentProtein}%
+                    </Text>
+                    <Text className="font-bold text-md text-center text-black">
+                      Protein
+                    </Text>
+                  </View>
                 </View>
-                <View className="border py-1.5 px-3 rounded-lg bg-[#79c94b] mx-1">
-                  <Text className="font-bold text-lg text-center text-black">
-                    {recipe.nutrition.caloricBreakdown.percentFat}%
-                  </Text>
-                  <Text className="font-bold text-base text-center text-black">
-                    Fat
-                  </Text>
+                {/* <View className="border py-1.5 px-3 rounded-lg bg-[#79c94b] mx-1 relative"> */}
+                <View className="relative mx-1">
+                  <Image
+                    source={require("../../assets/images/greenRibbon2.png")}
+                    className="w-28 h-12"
+                  />
+                  <View className="absolute left-7">
+                    <Text className="font-bold text-base text-center text-black">
+                      {recipe.nutrition.caloricBreakdown.percentFat}%
+                    </Text>
+                    <Text className="font-bold text-md text-center text-black">
+                      Fat
+                    </Text>
+                  </View>
                 </View>
-                <View className="border py-1.5 px-3 rounded-lg bg-[#F9D166] mx-1">
-                  <Text className="font-bold text-lg text-center text-black">
-                    {recipe.nutrition.caloricBreakdown.percentCarbs}%
-                  </Text>
-                  <Text className="font-bold text-base text-center text-black">
-                    Carbs
-                  </Text>
+                {/* <View className="border py-1.5 px-3 rounded-lg bg-[#F9D166] mx-1"> */}
+                <View className="relative mx-1">
+                  <Image
+                    source={require("../../assets/images/yellowRibbon2.png")}
+                    className="w-24 h-12"
+                  />
+                  <View className="absolute top-1 left-5">
+                    <Text className="font-bold text-base text-center text-black">
+                      {recipe.nutrition.caloricBreakdown.percentCarbs}%
+                    </Text>
+                    <Text className="font-bold text-md text-center text-black">
+                      Carbs
+                    </Text>
+                  </View>
                 </View>
               </View>
             )}
@@ -857,6 +877,7 @@ export default function RecipeCard() {
           </View>
         )}
       </ScrollView>
+      
       {/* Nutritional Modal */}
       <Modal visible={showNutrition} onDismiss={() => setShowNutrition(false)}>
         <View className="flex justify-center items-center ">

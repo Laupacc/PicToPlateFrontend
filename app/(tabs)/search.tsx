@@ -66,7 +66,7 @@ export default function Search() {
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const BACKEND_URL = "http://10.0.0.97:3000";
 
   // const fetchTrivia = async () => {
   //   const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
@@ -243,12 +243,14 @@ export default function Search() {
 
   const randomRecipeIcon = () => {
     const icons = [
-      require("../../assets/images/recipeMissing/recipe1.png"),
-      require("../../assets/images/recipeMissing/recipe2.png"),
-      require("../../assets/images/recipeMissing/recipe3.png"),
-      require("../../assets/images/recipeMissing/recipe4.png"),
-      require("../../assets/images/recipeMissing/recipe5.png"),
-      require("../../assets/images/recipeMissing/recipe6.png"),
+      // require("../../assets/images/recipeMissing/recipe1.png"),
+      // require("../../assets/images/recipeMissing/recipe2.png"),
+      // require("../../assets/images/recipeMissing/recipe3.png"),
+      // require("../../assets/images/recipeMissing/recipe4.png"),
+      // require("../../assets/images/recipeMissing/recipe5.png"),
+      // require("../../assets/images/recipeMissing/recipe6.png"),
+      require("../../assets/images/recipeMissing/recipe7.png"),
+      require("../../assets/images/recipeMissing/recipe8.png"),
     ];
     return icons[Math.floor(Math.random() * icons.length)];
   };
@@ -296,7 +298,6 @@ export default function Search() {
     { label: "l", value: "l" },
   ];
 
-  //
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -332,7 +333,7 @@ export default function Search() {
                 placeholder="Search for recipes"
                 placeholderTextColor={"gray"}
                 value={search}
-                onChangeText={setSearch}
+                onChangeText={(text) => setSearch(text)}
                 onSubmitEditing={() =>
                   search.trim() &&
                   complexSearchByIngredients(
@@ -344,15 +345,18 @@ export default function Search() {
                 }
                 className="border border-gray-400 rounded-lg pl-4 w-60 h-10 bg-[#e2e8f0] font-Nobile"
               />
-              <FontAwesome6
-                name="circle-xmark"
-                size={25}
-                color={"#f87171"}
+              <TouchableOpacity
                 onPress={() => handleClearSearch()}
                 className="absolute right-2.5 top-2 -translate-y-3.125"
-              />
+              >
+                <Image
+                  source={require("@/assets/images/redCross.png")}
+                  alt="clear"
+                  className="w-6 h-6"
+                />
+              </TouchableOpacity>
             </View>
-            <FontAwesome
+            <TouchableOpacity
               onPress={() =>
                 search.trim() &&
                 complexSearchByIngredients(
@@ -362,11 +366,14 @@ export default function Search() {
                   maxReadyTime
                 )
               }
-              name="search"
-              size={25}
-              color={"#0891b2"}
               className="absolute right-11 top-2 -translate-y-3.125"
-            />
+            >
+              <Image
+                source={require("@/assets/images/search2.png")}
+                alt="search"
+                className="w-6 h-6"
+              />
+            </TouchableOpacity>
           </KeyboardAvoidingView>
         </View>
 
@@ -802,7 +809,7 @@ export default function Search() {
         {!searchPerformed && (
           <View className="flex items-center justify-center relative mt-4">
             <View
-              className="absolute bg-[#FFBA00] rounded-2xl right-1 bottom-1 w-[300] h-[420]"
+              className="absolute bg-[#FFBA00] rounded-2xl right-2 bottom-2 w-[300] h-[420]"
               style={styles.shadow}
             ></View>
             <View className="bg-white w-[300] h-[420] m-4 items-center justify-center rounded-2xl">
@@ -843,8 +850,8 @@ const styles = StyleSheet.create({
   shadow: {
     shadowColor: "#000",
     shadowOffset: {
-      width: 6,
-      height: 6,
+      width: 3,
+      height: 3,
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,

@@ -404,66 +404,66 @@ export default function Camera() {
       {!cameraOpen && image && !isPredictionLoading && predictions && (
         <View className="flex justify-center items-center relative">
           <Image
-            source={require("../../assets/images/stickers/postit2.png")}
+            source={require("../../assets/images/stickers/postit5.png")}
             className="w-[340] h-[340]"
           />
-          <View className="flex justify-center items-center absolute">
-            <View className="flex justify-center items-center">
-              <ScrollView className="overflow-y-auto h-[180]">
-                <Text className="text-base text-center font-Nobile mb-2">
-                  Predictions (probability %)
-                </Text>
-                {predictions.slice(0, 10).map((prediction, index) => (
-                  <View
-                    key={index}
-                    className="p-1 flex justify-center items-center w-[190]"
-                  >
-                    <BouncyCheckbox
-                      onPress={() => toggleIngredient(prediction)}
-                      isChecked={selectedIngredients.includes(prediction)}
-                      text={
-                        (
-                          prediction.name +
-                          " (" +
-                          (prediction.value * 100).toFixed(2) +
-                          "%)"
-                        )
-                          .charAt(0)
-                          .toUpperCase() +
-                        (
-                          prediction.name +
-                          " (" +
-                          (prediction.value * 100).toFixed(2) +
-                          "%)"
-                        ).slice(1)
-                      }
-                      textStyle={{
-                        fontFamily: "Nobile",
-                        textDecorationLine: "none",
-                      }}
-                      fillColor="#FED400"
-                      // unFillColor="#e2e8f0"
-                      innerIconStyle={{ borderColor: "grey" }}
-                      bounceEffectIn={0.6}
-                    />
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
+          <View className="flex justify-center items-center absolute h-[263]">
+            {/* <View className="flex justify-center items-center"> */}
+            <Text className="text-base text-center text-slate-600 font-Nobile mb-1">
+              Predictions (probability %) :
+            </Text>
+            <ScrollView className="w-[240]">
+              {predictions.slice(0, 10).map((prediction, index) => (
+                <View
+                  key={index}
+                  className="p-1 flex justify-center items-center"
+                >
+                  <BouncyCheckbox
+                    onPress={() => toggleIngredient(prediction)}
+                    isChecked={selectedIngredients.includes(prediction)}
+                    text={
+                      (
+                        prediction.name +
+                        " (" +
+                        (prediction.value * 100).toFixed(2) +
+                        "%)"
+                      )
+                        .charAt(0)
+                        .toUpperCase() +
+                      (
+                        prediction.name +
+                        " (" +
+                        (prediction.value * 100).toFixed(2) +
+                        "%)"
+                      ).slice(1)
+                    }
+                    textStyle={{
+                      fontFamily: "Nobile",
+                      textDecorationLine: "none",
+                    }}
+                    fillColor="#FED400"
+                    // unFillColor="#e2e8f0"
+                    innerIconStyle={{ borderColor: "grey" }}
+                    bounceEffectIn={0.6}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+            {/* </View> */}
 
             {/* Add ingredients button */}
             {selectedIngredients.length > 0 && (
               <TouchableOpacity
                 onPress={addIngredients}
-                className="relative flex justify-center items-center top-4"
+                className="relative flex justify-center items-center -mb-9"
               >
                 <Image
                   source={require("../../assets/images/button/button7.png")}
                   alt="button"
-                  className="w-44 h-12"
+                  className="w-32 h-10"
                 />
                 <Text className="text-base text-slate-700 absolute font-Nobile">
-                  Add Ingredient(s)
+                  Add
                 </Text>
               </TouchableOpacity>
             )}

@@ -53,7 +53,7 @@ export default function Profile() {
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const BACKEND_URL = "http://10.0.0.97:3000";
 
   const handleLogout = async () => {
     if (!user.token) {
@@ -417,7 +417,7 @@ export default function Profile() {
               className="absolute inset-0 w-full h-full"
             />
             <Image
-              source={require("../../assets/images/heart1.png")}
+              source={require("../../assets/images/heart4.png")}
               className="w-10 h-10"
             />
             <Text className="text-center text-xl font-Flux text-slate-700">
@@ -438,7 +438,7 @@ export default function Profile() {
               className="absolute inset-0 w-full h-full"
             />
             <Image
-              source={require("../../assets/images/missingIng.png")}
+              source={require("../../assets/images/missingIng2.png")}
               className="w-10 h-10"
             />
             <Text className="text-center text-xl font-Flux text-slate-700">
@@ -551,9 +551,13 @@ export default function Profile() {
                     onPress={toggleIsNewPasswordVisible}
                     className="absolute right-5 top-5"
                   >
-                    <FontAwesome
-                      name={!isNewPasswordVisible ? "eye" : "eye-slash"}
-                      size={20}
+                    <Image
+                      source={
+                        isNewPasswordVisible
+                          ? require("../../assets/images/eyeHide.png")
+                          : require("../../assets/images/eyeView.png")
+                      }
+                      className="w-6 h-6"
                     />
                   </TouchableOpacity>
                 </View>

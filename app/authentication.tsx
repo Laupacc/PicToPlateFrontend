@@ -43,7 +43,7 @@ export default function Authentication() {
   const [forgotPasswordModal, setForgotPasswordModal] = useState(false);
   const [email, setEmail] = useState("");
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const BACKEND_URL = "http://10.0.0.97:3000";
 
   // Check if token exists
   useEffect(() => {
@@ -274,9 +274,18 @@ export default function Authentication() {
                 onPress={toggleLoginPasswordVisibility}
                 className="absolute right-5 top-5"
               >
-                <FontAwesome
+                {/* <FontAwesome
                   name={isloginPasswordHidden ? "eye" : "eye-slash"}
                   size={20}
+                /> */}
+                <Image
+                  source={
+                    isloginPasswordHidden
+                      ? require("../assets/images/eyeView.png")
+                      : require("../assets/images/eyeHide.png")
+                  }
+                  alt="eye"
+                  className="w-6 h-6"
                 />
               </TouchableOpacity>
             </View>
@@ -363,9 +372,14 @@ export default function Authentication() {
                 onPress={toggleSignUpPasswordVisibility}
                 className="absolute right-5 top-5"
               >
-                <FontAwesome
-                  name={isSignUpPasswordHidden ? "eye" : "eye-slash"}
-                  size={20}
+                <Image
+                  source={
+                    isSignUpPasswordHidden
+                      ? require("../assets/images/eyeView.png")
+                      : require("../assets/images/eyeHide.png")
+                  }
+                  alt="eye"
+                  className="w-6 h-6"
                 />
               </TouchableOpacity>
             </View>

@@ -550,7 +550,7 @@ export default function Fridge() {
                               color="#FF003D"
                             />
                           ) : (
-                            <Feather name="square" size={20} color="#FF003D" />
+                            <Feather name="square" size={20} color="grey" />
                           )}
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -560,7 +560,7 @@ export default function Fridge() {
                           }
                         >
                           <Image
-                            source={require("../../assets/images/trash1.png")}
+                            source={require("../../assets/images/trash2.png")}
                             className="w-6 h-6"
                           />
                         </TouchableOpacity>
@@ -590,10 +590,7 @@ export default function Fridge() {
                   }}
                   className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-60 h-10 font-Nobile"
                 />
-                <FontAwesome6
-                  name="circle-xmark"
-                  size={25}
-                  color={"#f87171"}
+                <TouchableOpacity
                   onPress={() => setSearch("")}
                   style={{
                     position: "absolute",
@@ -601,23 +598,33 @@ export default function Fridge() {
                     top: "50%",
                     transform: [{ translateY: -12.5 }],
                   }}
-                />
+                >
+                  <Image
+                    source={require("@/assets/images/redCross.png")}
+                    alt="clear"
+                    className="w-6 h-6"
+                  />
+                </TouchableOpacity>
               </View>
-              <Ionicons
-                name="search"
-                size={25}
-                color={"#0891b2"}
+
+              <TouchableOpacity
                 onPress={() => {
                   autocompleteSearchIngredient(search);
                   setIsSearchModalVisible(true);
                 }}
                 style={{
                   position: "absolute",
-                  right: 40,
+                  right: 45,
                   top: "50%",
                   transform: [{ translateY: -12.5 }],
                 }}
-              />
+              >
+                <Image
+                  source={require("@/assets/images/search2.png")}
+                  alt="search"
+                  className="w-6 h-6"
+                />
+              </TouchableOpacity>
             </KeyboardAvoidingView>
           </View>
 
@@ -630,9 +637,9 @@ export default function Fridge() {
                 style={styles.shadow}
               >
                 <Image
-                  source={require("@/assets/images/filter4.png")}
+                  source={require("@/assets/images/filter5.png")}
                   alt="button"
-                  className="w-12 h-12"
+                  className="w-10 h-10"
                 />
               </TouchableOpacity>
 
