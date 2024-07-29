@@ -53,7 +53,7 @@ export default function Profile() {
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const BACKEND_URL = "http://10.0.0.97:3000";
+  const BACKEND_URL = "http://192.168.114.158:3000";
 
   const handleLogout = async () => {
     if (!user.token) {
