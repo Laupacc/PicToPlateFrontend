@@ -40,6 +40,7 @@ export default function Search() {
   const [joke, setJoke] = useState("");
   const [recipe, setRecipe] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [numberOfRecipes, setNumberOfRecipes] = useState(10);
   const [searchPerformed, setSearchPerformed] = useState(false);
   const [recipesFromIngredients, setRecipesFromIngredients] = useState<any[]>(
     []
@@ -66,7 +67,7 @@ export default function Search() {
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   // const fetchTrivia = async () => {
   //   const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
@@ -88,11 +89,14 @@ export default function Search() {
     navigation.navigate("recipeCard", { recipeId: recipe.id });
   };
 
+  // Search for recipes by ingredients
   const complexSearchByIngredients = async (
     search,
     diet,
     intolerances,
-    maxReadyTime
+    maxReadyTime,
+    number,
+    offset = 0
   ) => {
     if (!search.trim()) return;
 
@@ -103,7 +107,7 @@ export default function Search() {
       .trim()
       .split(" ")
       .join(",");
-    let URL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}`;
+    let URL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${number}&offset=${offset}`;
     if (diet.length > 0) {
       const dietParam = diet.join(",");
       URL += `&diet=${dietParam}`;
@@ -120,18 +124,27 @@ export default function Search() {
       console.log(URL);
       console.log(response);
       const recipe = await response.json();
-      // console.log(recipe);
+
+      if (offset === 0) {
+        setRecipesFromIngredients(recipe.results);
+      } else {
+        setRecipesFromIngredients((prevRecipes) => [
+          ...prevRecipes,
+          ...recipe.results,
+        ]);
+      }
+
       setSearch(search);
       setDiet(diet);
       setIntolerances(intolerances);
       setMaxReadyTime(maxReadyTime);
-      setRecipesFromIngredients(recipe.results);
       setSearchPerformed(true);
+      setNumberOfRecipes(number + offset);
     } catch (error) {
       console.error("Error fetching recipes:", error);
       toast.show("Error fetching recipes", {
         type: "warning",
-        placement: "center",
+        placement: "top",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -140,6 +153,7 @@ export default function Search() {
     }
   };
 
+  // Add recipe to favourites list
   const addRecipeToFavourites = async (recipeId) => {
     try {
       const token = user.token;
@@ -152,7 +166,7 @@ export default function Search() {
         console.log("Error adding recipe to favourites");
         toast.show("Error adding recipe to favourites", {
           type: "danger",
-          placement: "center",
+          placement: "top",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -166,7 +180,7 @@ export default function Search() {
       console.log("Recipe added to favourites:", recipe.id);
       toast.show("Recipe added to favourites", {
         type: "success",
-        placement: "center",
+        placement: "top",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -177,6 +191,7 @@ export default function Search() {
     }
   };
 
+  // Unit Converter
   const convertAmount = async (
     ingredientName,
     sourceAmount,
@@ -238,17 +253,11 @@ export default function Search() {
     setDiet([]);
     setIntolerances([]);
     setMaxReadyTime(null);
-    complexSearchByIngredients("", [], [], null);
+    complexSearchByIngredients("", [], [], null, 0);
   };
 
   const randomRecipeIcon = () => {
     const icons = [
-      // require("../../assets/images/recipeMissing/recipe1.png"),
-      // require("../../assets/images/recipeMissing/recipe2.png"),
-      // require("../../assets/images/recipeMissing/recipe3.png"),
-      // require("../../assets/images/recipeMissing/recipe4.png"),
-      // require("../../assets/images/recipeMissing/recipe5.png"),
-      // require("../../assets/images/recipeMissing/recipe6.png"),
       require("../../assets/images/recipeMissing/recipe7.png"),
       require("../../assets/images/recipeMissing/recipe8.png"),
     ];
@@ -298,13 +307,33 @@ export default function Search() {
     { label: "l", value: "l" },
   ];
 
+  // Search for recipes on initial load based on user's preferences
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
     } else {
-      complexSearchByIngredients(search, diet, intolerances, maxReadyTime);
+      complexSearchByIngredients(
+        search,
+        diet,
+        intolerances,
+        maxReadyTime,
+        10, // always request 10 recipes per call
+        0 // reset offset on initial load
+      );
     }
   }, [diet, intolerances, maxReadyTime]);
+
+  // Load more recipes on scroll button click
+  const loadMoreRecipes = () => {
+    complexSearchByIngredients(
+      search,
+      diet,
+      intolerances,
+      maxReadyTime,
+      10, // always request 10 more recipes per call
+      numberOfRecipes // current number of loaded recipes as offset
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center pb-16">
@@ -340,7 +369,8 @@ export default function Search() {
                     search,
                     diet,
                     intolerances,
-                    maxReadyTime
+                    maxReadyTime,
+                    numberOfRecipes
                   )
                 }
                 className="border border-gray-400 rounded-lg pl-4 w-60 h-10 bg-[#e2e8f0] font-Nobile"
@@ -363,7 +393,8 @@ export default function Search() {
                   search,
                   diet,
                   intolerances,
-                  maxReadyTime
+                  maxReadyTime,
+                  numberOfRecipes
                 )
               }
               className="absolute right-11 top-2 -translate-y-3.125"
@@ -632,7 +663,7 @@ export default function Search() {
         {showDiet && (
           <View className="relative mx-3">
             <View
-              className="absolute bg-[#64E6A6] rounded-2xl -right-2 -bottom-2 w-[200] h-[330]"
+              className="absolute bg-[#64E6A6] rounded-lg -right-2 -bottom-2 w-[200] h-[330]"
               style={styles.shadow}
             ></View>
             <View className="bg-white w-[200] p-2 rounded-lg">
@@ -668,7 +699,7 @@ export default function Search() {
         {showIntolerances && (
           <View className="relative mx-3">
             <View
-              className="absolute bg-[#FF9B50] rounded-2xl -right-2 -bottom-2 w-[140] h-[360]"
+              className="absolute bg-[#FF9B50] rounded-lg -right-2 -bottom-2 w-[140] h-[360]"
               style={styles.shadow}
             ></View>
             <View className="bg-white w-[140] p-2 rounded-lg">
@@ -704,7 +735,7 @@ export default function Search() {
         {showMaxReadyTime && (
           <View className="relative mx-3">
             <View
-              className="absolute bg-[#0098a3] rounded-2xl -right-2 -bottom-2 w-[140] h-[240]"
+              className="absolute bg-[#0098a3] rounded-lg -right-2 -bottom-2 w-[140] h-[240]"
               style={styles.shadow}
             ></View>
             <View className="bg-white w-[140] p-2 rounded-lg">
@@ -791,6 +822,29 @@ export default function Search() {
             </View>
           ))}
 
+        {/* Load more recipes button */}
+        {recipesFromIngredients.length > 0 && (
+          <View className="flex justify-center items-center mb-4">
+            <TouchableOpacity
+              onPress={loadMoreRecipes}
+              className="relative flex justify-center items-center"
+            >
+              <Image
+                source={require("@/assets/images/button/button9.png")}
+                alt="button"
+                className="w-40 h-12"
+              />
+              <Text
+                className="text-lg text-white absolute font-Nobile"
+                style={styles.shadow}
+              >
+                Load more
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* No recipes found */}
         {searchPerformed && recipesFromIngredients.length === 0 && (
           <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
             <Image
@@ -806,6 +860,7 @@ export default function Search() {
           </View>
         )}
 
+        {/* No search performed yet */}
         {!searchPerformed && (
           <View className="flex items-center justify-center relative mt-4">
             <View

@@ -1,19 +1,15 @@
-import {
-  Image,
-  StyleSheet,
-  Platform,
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { Image, StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import { ScrollView } from "react-native-gesture-handler";
 import React, { useEffect, useState, useRef } from "react";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Background from "@/components/Background";
 import { useDispatch, useSelector } from "react-redux";
-import { addToFavouriteRecipes } from "@/store/recipes";
+import {
+  addToFavouriteRecipes,
+  removeFromFavouriteRecipes,
+} from "@/store/recipes";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useToast } from "react-native-toast-notifications";
 
@@ -26,20 +22,16 @@ export default function recipesFromFridge() {
 
   const { searchQuery } = route.params as { searchQuery: string };
   const [recipes, setRecipes] = useState([]);
-  const [isFavourite, setIsFavourite] = useState(false);
+  const [numberOfRecipes, setNumberOfRecipes] = useState(10);
+  const [offset, setOffset] = useState(0);
+  const [isFavourite, setIsFavourite] = useState({});
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
-  const cachedRecipes = useRef<any[]>([]);
-
+  // Search for recipes from kitchen ingredients
   useEffect(() => {
     const searchRecipesFromFridge = async () => {
       try {
-        // if (cachedRecipes.current.length > 0) {
-        //   setRecipes(cachedRecipes.current);
-        //   return;
-        // }
-
         const search = searchQuery
           .toLowerCase()
           .replace(/\band\b/g, " ")
@@ -48,24 +40,52 @@ export default function recipesFromFridge() {
           .split(" ")
           .join(",");
 
-        const response = await fetch(
-          `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${search}`
-        );
-        console.log("Search response:", response);
-        if (!response.ok) {
-          throw new Error("Failed to search recipes");
+        const fetchRecipes = async (ingredients, number, offset = 0) => {
+          const response = await fetch(
+            `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${number}&offset=${offset}`
+          );
+          console.log("Search response:", response);
+          if (!response.ok) {
+            throw new Error("Failed to search recipes");
+          }
+          const data = await response.json();
+          console.log("Search results:", data);
+          return data.results;
+        };
+
+        let results = await fetchRecipes(search, numberOfRecipes, offset);
+
+        if (results.length === 0) {
+          const individualSearches = search.split(",");
+          results = [];
+          for (const ingredient of individualSearches) {
+            const individualResults = await fetchRecipes(
+              ingredient,
+              numberOfRecipes,
+              offset
+            );
+            results = results.concat(individualResults);
+          }
         }
-        const data = await response.json();
-        console.log("Search results:", data);
-        setRecipes(data.results);
-        cachedRecipes.current = data.results;
+
+        // If offset is 0, replace the recipes, otherwise append to the existing ones
+        if (offset === 0) {
+          setRecipes(results);
+        } else {
+          setRecipes((prevRecipes) => [...prevRecipes, ...results]);
+        }
       } catch (error) {
         console.error(error);
       }
     };
     searchRecipesFromFridge();
-  }, [searchQuery]);
+  }, [searchQuery, numberOfRecipes, offset]);
 
+  const loadMoreRecipes = () => {
+    setOffset((prevOffset) => prevOffset + 10);
+  };
+
+  // Add recipe to favourites list
   const addRecipeToFavourites = async (recipeId) => {
     try {
       const token = user.token;
@@ -76,22 +96,71 @@ export default function recipesFromFridge() {
 
       if (!response.ok) {
         console.log("Error adding recipe to favourites");
+        toast.show("Error adding recipe to favourites", {
+          type: "warning",
+          placement: "top",
+          duration: 2000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="warning" size={24} color="white" />,
+        });
       }
 
-      dispatch(addToFavouriteRecipes(recipes));
-      setIsFavourite(true);
-      console.log("Recipe added to favourites:", recipes.id);
+      const data = await response.json();
+      console.log(data);
+      console.log("Recipe added to favourites:", recipes);
+      dispatch(addToFavouriteRecipes(recipeId));
+      setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
 
       toast.show("Recipe added to favourites", {
         type: "success",
-        placement: "center",
+        placement: "top",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
       });
     } catch (error) {
-      console.error(error);
+      console.error("Error adding recipe to favourites:", error.message);
+    }
+  };
+
+  // Remove recipe from favourites list
+  const removeRecipeFromFavourites = async (recipeId) => {
+    try {
+      const token = user.token;
+      const response = await fetch(
+        `${BACKEND_URL}/users/removeFavourite/${recipeId}/${token}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        toast.show("Error removing recipe from favourites", {
+          type: "warning",
+          placement: "top",
+          duration: 2000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="warning" size={24} color="white" />,
+        });
+        console.log("Error removing recipe from favourites");
+      }
+
+      const data = await response.json();
+      console.log(data);
+      dispatch(removeFromFavouriteRecipes(recipeId));
+      setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
+
+      toast.show("Recipe removed from favourites", {
+        type: "success",
+        placement: "top",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+      });
+    } catch (error) {
+      console.error("Error removing recipe from favourites:", error.message);
     }
   };
 
@@ -141,13 +210,17 @@ export default function recipesFromFridge() {
                   />
                   <TouchableOpacity
                     className="absolute top-20 right-4"
-                    onPress={() => addRecipeToFavourites(recipe.id)}
+                    onPress={() => {
+                      isFavourite[recipe.id]
+                        ? removeRecipeFromFavourites(recipe.id)
+                        : addRecipeToFavourites(recipe.id);
+                    }}
                   >
                     <Image
                       source={
-                        isFavourite
-                          ? require("../../assets/images/heart1.png")
-                          : require("../../assets/images/heart3.png")
+                        isFavourite[recipe.id]
+                          ? require("../../assets/images/heart4.png")
+                          : require("../../assets/images/heart5.png")
                       }
                       className="w-8 h-8"
                     />
@@ -175,6 +248,24 @@ export default function recipesFromFridge() {
                   </View>
                 </View>
               ))}
+            <View className="flex justify-center items-center mb-4">
+              <TouchableOpacity
+                onPress={loadMoreRecipes}
+                className="relative flex justify-center items-center"
+              >
+                <Image
+                  source={require("@/assets/images/button/button9.png")}
+                  alt="button"
+                  className="w-40 h-12"
+                />
+                <Text
+                  className="text-lg text-white absolute font-Nobile"
+                  style={styles.shadow}
+                >
+                  Load more
+                </Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         )}
       </View>

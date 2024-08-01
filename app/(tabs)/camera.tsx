@@ -7,6 +7,7 @@ import {
   FlashMode,
 } from "expo-camera";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "expo-router";
 import Entypo from "react-native-vector-icons/Entypo";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
@@ -20,19 +21,19 @@ import { useRoute } from "@react-navigation/native";
 import { addIngredient, updateIngredients } from "@/store/fridge";
 import LottieView from "lottie-react-native";
 import { useToast } from "react-native-toast-notifications";
-import { LinearGradient } from "expo-linear-gradient";
-import { TextInput, ScrollView } from "react-native-gesture-handler";
+import { ScrollView } from "react-native-gesture-handler";
 import {
   StyleSheet,
   Text,
   View,
-  ActivityIndicator,
   StatusBar,
   Image,
   TouchableOpacity,
   Platform,
-  ImageBackground,
+  Dimensions,
+  Alert,
 } from "react-native";
+import { ViewBase } from "react-native";
 
 const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
 const USER_ID = "clarifai";
@@ -56,9 +57,12 @@ export default function Camera() {
   const dispatch = useDispatch();
   const route = useRoute();
   const toast = useToast();
+  const navigation = useNavigation();
   const user = useSelector((state) => state.user.value);
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const screenWidth = Dimensions.get("window").width;
+
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   // useEffect to get the camera permissions
   useEffect(() => {
@@ -223,6 +227,38 @@ export default function Camera() {
 
   // Add the selected ingredients to the user.ingredients array
   const addIngredients = async () => {
+    if (!user.token) {
+      Alert.alert(
+        "Authentication Required",
+        "Please log in to add ingredients",
+        [
+          {
+            text: "No thanks",
+            style: "cancel",
+          },
+          {
+            text: "Login",
+            onPress: () => {
+              navigation.navigate("authentication");
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    if (selectedIngredients.length === 0) {
+      toast.show("Please select ingredients to add", {
+        type: "warning",
+        placement: "top",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning-outline" size={24} color="white" />,
+      });
+      return;
+    }
+
     try {
       // Fetch existing ingredients from the fridge
       const existingIngredientsResponse = await fetch(
@@ -244,7 +280,7 @@ export default function Camera() {
       if (newIngredients.length === 0) {
         toast.show(`This ingredient is already in your kitchen`, {
           type: "warning",
-          placement: "center",
+          placement: "top",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -402,71 +438,73 @@ export default function Camera() {
       )}
 
       {!cameraOpen && image && !isPredictionLoading && predictions && (
-        <View className="flex justify-center items-center relative">
-          <Image
-            source={require("../../assets/images/stickers/postit5.png")}
-            className="w-[340] h-[340]"
-          />
-          <View className="flex justify-center items-center absolute h-[263]">
-            {/* <View className="flex justify-center items-center"> */}
-            <Text className="text-base text-center text-slate-600 font-Nobile mb-1">
-              Predictions (probability %) :
-            </Text>
-            <ScrollView className="w-[240]">
+        <View className="relative">
+          <View
+            className="absolute bg-[#E56363] rounded-2xl right-0.5 bottom-0.5"
+            style={{
+              width: screenWidth - 45,
+              height: 295,
+              ...styles.shadow,
+            }}
+          ></View>
+          <View
+            className="flex justify-center items-center bg-slate-50 rounded-2xl m-2 p-2"
+            style={{
+              width: screenWidth - 45,
+              height: 295,
+            }}
+          >
+            <View className="flex justify-center items-center w-full p-2 bg-[#E56363] rounded-t-2xl mb-1">
+              <Text className="text-xl text-center text-slate-900 font-Maax">
+                Prediction Results:
+              </Text>
+            </View>
+            <ScrollView className="flex-1">
               {predictions.slice(0, 10).map((prediction, index) => (
                 <View
                   key={index}
-                  className="p-1 flex justify-center items-center"
+                  className="p-1 flex justify-center items-center w-[340]"
                 >
                   <BouncyCheckbox
                     onPress={() => toggleIngredient(prediction)}
                     isChecked={selectedIngredients.includes(prediction)}
                     text={
-                      (
-                        prediction.name +
-                        " (" +
-                        (prediction.value * 100).toFixed(2) +
-                        "%)"
-                      )
-                        .charAt(0)
-                        .toUpperCase() +
-                      (
-                        prediction.name +
-                        " (" +
-                        (prediction.value * 100).toFixed(2) +
-                        "%)"
-                      ).slice(1)
+                      prediction.name.charAt(0).toUpperCase() +
+                      prediction.name.slice(1) +
+                      " (" +
+                      (prediction.value * 100).toFixed(2) +
+                      "%)"
                     }
                     textStyle={{
-                      fontFamily: "Nobile",
+                      fontFamily: "SpaceMono",
                       textDecorationLine: "none",
+                      color: "#334155",
                     }}
                     fillColor="#FED400"
-                    // unFillColor="#e2e8f0"
-                    innerIconStyle={{ borderColor: "grey" }}
+                    unFillColor="#e2e8f0"
+                    innerIconStyle={{ borderColor: "#334155" }}
                     bounceEffectIn={0.6}
                   />
                 </View>
               ))}
             </ScrollView>
-            {/* </View> */}
 
             {/* Add ingredients button */}
-            {selectedIngredients.length > 0 && (
+            <View className="w-full flex items-center ">
               <TouchableOpacity
                 onPress={addIngredients}
-                className="relative flex justify-center items-center -mb-9"
+                className="relative flex justify-center items-center"
               >
                 <Image
                   source={require("../../assets/images/button/button7.png")}
                   alt="button"
-                  className="w-32 h-10"
+                  className="w-28 h-9"
                 />
                 <Text className="text-base text-slate-700 absolute font-Nobile">
                   Add
                 </Text>
               </TouchableOpacity>
-            )}
+            </View>
           </View>
         </View>
       )}

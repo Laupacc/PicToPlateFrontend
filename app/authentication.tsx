@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   StatusBar,
+  Alert,
 } from "react-native";
 import React from "react";
 import { Link } from "expo-router";
@@ -21,6 +22,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { login } from "@/store/user";
 import { useToast } from "react-native-toast-notifications";
 import { Modal } from "react-native-paper";
+import { Feather } from "@expo/vector-icons";
 
 export default function Authentication() {
   const navigation = useNavigation();
@@ -42,8 +44,9 @@ export default function Authentication() {
   const [loginPasswordEmpty, setLoginPasswordEmpty] = useState(false);
   const [forgotPasswordModal, setForgotPasswordModal] = useState(false);
   const [email, setEmail] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const BACKEND_URL = "http://10.0.0.97:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   // Check if token exists
   useEffect(() => {
@@ -99,20 +102,26 @@ export default function Authentication() {
           email: signUpEmail,
         }),
       });
+
       const data = await response.json();
-      console.log(data);
+      console.log("Response data:", data);
+
       if (!response.ok) {
         alert(data.message);
         return;
       }
-      if (data.result) {
-        // await SecureStore.setItemAsync("token", data.token);
-        // console.log("Token stored successfully");
 
+      if (data.token) {
+        // const { token, username } = data;
         console.log("User signed up successfully", data);
         dispatch(login(data));
 
+        // await SecureStore.setItemAsync("token", data.token);
+        // console.log("Token stored successfully");
+
+        console.log("Navigation object:", navigation);
         navigation.navigate("(tabs)", { screen: "profile" });
+
         setSignUpUsername("");
         setSignUpEmail("");
         setSignUpPassword("");
@@ -157,12 +166,15 @@ export default function Authentication() {
         return;
       }
 
-      if (data.result) {
-        console.log("Logged in successfully", data);
-        dispatch(login(data));
+      if (data) {
+        // Store the token if rememberMe is checked
+        if (rememberMe) {
+          await SecureStore.setItemAsync("token", data.token);
+          console.log("Token stored successfully");
+        }
 
-        await SecureStore.setItemAsync("token", data.token);
-        console.log("Token stored successfully");
+        // Dispatch login action
+        dispatch(login(data));
 
         navigation.navigate("(tabs)", { screen: "profile" });
         setLoginUsername("");
@@ -176,29 +188,81 @@ export default function Authentication() {
 
   // Forgot Password
   const handleForgotPassword = async () => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/users/forgotPassword`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-        }),
-      });
-      const data = await response.json();
-      console.log(data);
-      if (!response.ok) {
-        alert(data.message);
-        return;
-      }
-      if (data.result) {
-        console.log("Password reset link sent successfully", data);
-        alert("Password reset link sent successfully");
-      }
-    } catch (error) {
-      console.error("Error:", error);
+    if (!email.trim()) {
+      alert("Email cannot be empty");
+      return;
     }
+    if (!validateEmail(email)) {
+      alert("Please enter a valid email address");
+      return;
+    }
+
+    Alert.alert(
+      "Reset Password",
+      "Are you sure you want to reset your password?",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${BACKEND_URL}/users/forgotPassword`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    email,
+                  }),
+                }
+              );
+              const data = await response.json();
+              console.log(data);
+              if (!response.ok) {
+                alert(data.message);
+                return;
+              }
+              if (data.result) {
+                console.log("Password reset link sent successfully", data);
+                alert("Password reset link sent successfully");
+                toggleForgotPasswordModal();
+                setEmail("");
+              }
+            } catch (error) {
+              console.error("Error:", error);
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const continueAsGuest = () => {
+    Alert.alert(
+      "Continue as a guest",
+      "Heads up: guest mode has limited features. Sign up for full functionality.",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.navigate("(tabs)", { screen: "search" });
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   // async function getValueFor(key) {
@@ -274,10 +338,6 @@ export default function Authentication() {
                 onPress={toggleLoginPasswordVisibility}
                 className="absolute right-5 top-5"
               >
-                {/* <FontAwesome
-                  name={isloginPasswordHidden ? "eye" : "eye-slash"}
-                  size={20}
-                /> */}
                 <Image
                   source={
                     isloginPasswordHidden
@@ -295,10 +355,23 @@ export default function Authentication() {
 
             <TouchableOpacity
               onPress={toggleForgotPasswordModal}
-              className="flex justify-center items-center top-2"
+              className="flex justify-center items-center"
             >
               <Text>Forgot password?</Text>
             </TouchableOpacity>
+
+            <View className="right-6 mt-3">
+              <TouchableOpacity onPress={() => setRememberMe(!rememberMe)}>
+                <View className="flex-row justify-center items-center ">
+                  {rememberMe ? (
+                    <Feather name="check-square" size={20} />
+                  ) : (
+                    <Feather name="square" size={20} />
+                  )}
+                  <Text className="ml-1 text-base">Remember me</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               onPress={handleLogin}
@@ -313,12 +386,21 @@ export default function Authentication() {
                 Login ✔︎
               </Text>
             </TouchableOpacity>
-            <View className="flex justify-center items-center top-20">
+
+            <View className="flex justify-center items-center top-12">
               <Text>Don't have an account yet?</Text>
               <TouchableOpacity onPress={() => setSignUpVisible(true)}>
                 <Text className="text-lg">Sign Up</Text>
               </TouchableOpacity>
             </View>
+
+            {/* Continue as Guest */}
+            <TouchableOpacity
+              className="flex justify-center items-center top-14"
+              onPress={continueAsGuest}
+            >
+              <Text className="text-sky-600">Continue as a guest</Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
@@ -413,39 +495,36 @@ export default function Authentication() {
       <Modal
         visible={forgotPasswordModal}
         onDismiss={toggleForgotPasswordModal}
-        contentContainerStyle={{
-          backgroundColor: "white",
-          paddingHorizontal: 40,
-          paddingVertical: 60,
-          margin: 40,
-          borderRadius: 20,
-        }}
       >
         <View className="flex justify-center items-center">
-          <Text>Reset Password</Text>
-          <TextInput
-            placeholder="Enter your email"
-            autoCapitalize="none"
-            className="bg-slate-100 w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
-            value={email}
-            onChangeText={(text) => setEmail(text)}
-          />
-          <TouchableOpacity
-            onPress={() => {
-              handleForgotPassword();
-              toggleForgotPasswordModal();
-            }}
-            className="relative flex justify-center items-center top-4"
+          <View
+            className="flex justify-around items-center bg-slate-100 rounded-lg p-10"
+            style={styles.shadow}
           >
-            <Image
-              source={require("../assets/images/button/button1.png")}
-              alt="button"
-              className="w-40 h-12"
-            />
-            <Text className="text-xl text-white absolute font-Nobile">
-              Submit ✔︎
+            <Text className="text-lg text-center font-Nobile mb-4">
+              Reset Password
             </Text>
-          </TouchableOpacity>
+            <TextInput
+              placeholder="Enter your email"
+              autoCapitalize="none"
+              className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
+              value={email}
+              onChangeText={(text) => setEmail(text)}
+            />
+            <TouchableOpacity
+              onPress={() => handleForgotPassword()}
+              className="relative flex justify-center items-center mt-2"
+            >
+              <Image
+                source={require("../assets/images/button/button1.png")}
+                alt="button"
+                className="w-32 h-10"
+              />
+              <Text className="text-lg text-white absolute font-Nobile">
+                Submit ✔︎
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 

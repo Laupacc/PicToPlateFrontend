@@ -16,13 +16,15 @@ import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "@/store/user";
+import { logout, setAvatar } from "@/store/user";
 import * as SecureStore from "expo-secure-store";
 import Background from "@/components/Background";
 import moment from "moment";
 import { useToast } from "react-native-toast-notifications";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import BouncingImage from "@/components/Bounce";
+import BouncyCheckbox from "react-native-bouncy-checkbox";
 import {
   Feather,
   FontAwesome5,
@@ -39,21 +41,25 @@ export default function Profile() {
   const dispatch = useDispatch();
   const toast = useToast();
   const user = useSelector((state) => state.user.value);
+  const selectedAvatar = useSelector(
+    (state) => state.user.value.selectedAvatar
+  );
 
   const [userInfo, setUserInfo] = useState({});
   const [newPassword, setNewPassword] = useState("");
   const [newUsername, setNewUsername] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
   const [isUpdateInfoModalVisible, setIsUpdateInfoModalVisible] =
     useState(false);
   const [oldIngredients, setOldIngredients] = useState([{}]);
   const [isAvatarPickerVisible, setIsAvatarPickerVisible] = useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  // const [selectedAvatar, setSelectedAvatar] = useState(null);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   const handleLogout = async () => {
     if (!user.token) {
@@ -113,7 +119,7 @@ export default function Profile() {
           style: "cancel",
         },
         {
-          text: "OK",
+          text: "Yes",
           onPress: async () => {
             try {
               const response = await fetch(
@@ -132,7 +138,7 @@ export default function Profile() {
 
               const data = await response.json();
               if (!response.ok) {
-                toast.show(data.message, { type: "danger" });
+                toast.show(data.message, { type: "danger", placement: "top" });
                 return;
               }
 
@@ -182,7 +188,7 @@ export default function Profile() {
           style: "cancel",
         },
         {
-          text: "OK",
+          text: "Yes",
           onPress: async () => {
             try {
               const response = await fetch(
@@ -208,6 +214,59 @@ export default function Profile() {
               }
             } catch (error) {
               console.error("Error updating password:", error);
+              toast.show("An error occurred. Please try again.", {
+                type: "danger",
+                placement: "top",
+              });
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const updateEmail = async () => {
+    if (!newEmail) {
+      toast.show("Please enter a new email", {
+        type: "warning",
+        placement: "top",
+      });
+      return;
+    }
+    Alert.alert(
+      "Update Email",
+      "Are you sure you want to update your email?",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              const response = await fetch(`${BACKEND_URL}/users/updateEmail`, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  token: user.token,
+                  newEmail,
+                }),
+              });
+              const data = await response.json();
+              if (response.ok) {
+                toast.show(data.message, { type: "success", placement: "top" });
+                setNewEmail("");
+                setIsUpdateInfoModalVisible(false);
+              } else {
+                toast.show(data.message, { type: "danger", placement: "top" });
+              }
+            } catch (error) {
+              console.error("Error updating email:", error);
               toast.show("An error occurred. Please try again.", {
                 type: "danger",
                 placement: "top",
@@ -263,38 +322,25 @@ export default function Profile() {
     require("../../assets/images/avatars/fish.png"),
   ];
 
+  const handleAvatarSelect = async (avatar) => {
+    dispatch(setAvatar(avatar));
+    setIsAvatarPickerVisible(false);
+    await AsyncStorage.setItem("selectedAvatar", JSON.stringify(avatar));
+  };
+
   useEffect(() => {
     const loadAvatar = async () => {
       const savedAvatar = await AsyncStorage.getItem("selectedAvatar");
       if (savedAvatar !== null) {
-        setSelectedAvatar(JSON.parse(savedAvatar));
-        setUserInfo((prevUserInfo) => ({
-          ...prevUserInfo,
-          avatar: savedAvatar,
-        }));
+        dispatch(setAvatar(JSON.parse(savedAvatar)));
       }
     };
     loadAvatar();
   }, []);
 
-  const handleAvatarSelect = async (avatar) => {
-    setSelectedAvatar(avatar);
-    setUserInfo((prevUserInfo) => ({
-      ...prevUserInfo,
-      avatar: avatar,
-    }));
-    setIsAvatarPickerVisible(false);
-    await AsyncStorage.setItem("selectedAvatar", JSON.stringify(avatar));
-  };
-
   return (
     <SafeAreaView className="flex-1 justify-center items-center">
-      {/* <LinearGradient
-        colors={["transparent", "transparent", "#0891b2"]}
-        className="absolute top-0 left-0 right-0 bottom-0"
-      /> */}
       <Background cellSize={25} />
-
       <View className="flex justify-center items-center">
         <Image
           source={require("../../assets/images/logo8.png")}
@@ -315,7 +361,7 @@ export default function Profile() {
               className="absolute bg-[#9333ea] rounded-2xl -right-1.5 -bottom-1.5"
               style={{
                 width: screenWidth - 45,
-                height: 270,
+                height: 250,
                 ...styles.shadow,
               }}
             ></View>
@@ -323,7 +369,7 @@ export default function Profile() {
               className="flex justify-center items-center bg-white rounded-2xl"
               style={{
                 width: screenWidth - 45,
-                height: 270,
+                height: 250,
               }}
             >
               {/* Edit Info Modal Button */}
@@ -341,8 +387,9 @@ export default function Profile() {
               <TouchableOpacity onPress={() => setIsAvatarPickerVisible(true)}>
                 <Image
                   source={
-                    selectedAvatar ||
-                    require("../../assets/images/avatars/poutine.png")
+                    selectedAvatar
+                      ? selectedAvatar
+                      : require("../../assets/images/avatars/poutine.png")
                   }
                   className="w-20 h-20"
                 />
@@ -350,7 +397,7 @@ export default function Profile() {
 
               {/* User info */}
               {user.token ? (
-                <View className="flex justify-center items-center m-2">
+                <View className="flex justify-center items-center mt-2">
                   <View className="bg-slate-100 border border-slate-200 rounded-lg w-60 h-10 font-Nobile justify-center items-center m-1">
                     <Text className="text-xl text-cyan-600">
                       {userInfo.username}
@@ -363,19 +410,19 @@ export default function Profile() {
                   </View>
                 </View>
               ) : (
-                <View className="bg-slate-100 border border-slate-200 rounded-lg w-32 h-10 font-Nobile justify-center items-center m-2">
+                <View className="bg-slate-100 border border-slate-200 rounded-lg w-32 h-10 font-Nobile justify-center items-center mt-4">
                   <Text className="text-xl text-cyan-600">Guest</Text>
                 </View>
               )}
 
               {/* Login, logout*/}
               {!user.token ? (
-                <View className="flex mt-10 items-center justify-center">
+                <View className="flex mt-8 items-center justify-center">
                   <Link
                     href="/authentication"
                     className="flex flex-row justify-center items-center"
                   >
-                    <View className="flex flex-row">
+                    <View className="flex flex-row justify-center items-center">
                       <Text className="text-lg font-Nobile mx-1">Login</Text>
                       <AntDesign
                         name="login"
@@ -390,7 +437,7 @@ export default function Profile() {
               ) : (
                 <TouchableOpacity
                   onPress={handleLogout}
-                  className="flex flex-row justify-center items-center mt-5"
+                  className="flex flex-row justify-center items-center mt-3"
                 >
                   <Text className="text-lg font-Nobile m-1">Logout</Text>
                   <AntDesign
@@ -405,105 +452,194 @@ export default function Profile() {
           </View>
         </View>
 
-        {/* Postits*/}
-        <View className="flex flex-row justify-center items-center">
-          {/* Middle Postit 1*/}
-          <View
-            className="flex justify-center items-center relative w-40 h-40 m-1"
-            style={styles.shadow}
-          >
-            <Image
-              source={randomPostitImage()}
-              className="absolute inset-0 w-full h-full"
-            />
-            <Image
-              source={require("../../assets/images/heart4.png")}
-              className="w-10 h-10"
-            />
-            <Text className="text-center text-xl font-Flux text-slate-700">
-              {userInfo.favourites?.length}
-            </Text>
-            <Text className="text-center text-md font-Flux text-slate-700">
-              favourite recipes
-            </Text>
-          </View>
-
-          {/* Middle Postit 2 */}
-          <View
-            className="flex justify-center items-center relative w-40 h-40 m-1"
-            style={styles.shadow}
-          >
-            <Image
-              source={randomPostitImage()}
-              className="absolute inset-0 w-full h-full"
-            />
-            <Image
-              source={require("../../assets/images/missingIng2.png")}
-              className="w-10 h-10"
-            />
-            <Text className="text-center text-xl font-Flux text-slate-700">
-              {userInfo.ingredients?.length}
-            </Text>
-            <Text className="text-center text-md font-Flux text-slate-700">
-              ingredients saved
-            </Text>
-          </View>
-        </View>
-
-        {/* Old ingredients */}
-        <View
-          className="flex justify-center items-center relative w-96 h-56 m-1"
-          style={styles.shadow}
-        >
-          <Image
-            source={require("../../assets/images/recipeBack/recipeBack19.png")}
-            className="absolute inset-0 w-full h-full"
-          />
-          {oldIngredients.length > 0 ? (
-            <View className="flex justify-center items-center m-2 p-2 top-4">
-              <Text className="text-base font-Flux text-slate-700 text-center">
-                You have {oldIngredients.length} ingredient(s) older than a week
-                :
-              </Text>
-              <View className="h-24 overflow-y-auto">
-                <FlatList
-                  contentContainerStyle={{
-                    marginTop: 10,
-                  }}
-                  data={oldIngredients}
-                  renderItem={({ item }) => (
-                    <View className="flex flex-row justify-center items-center">
-                      <Text
-                        className="text-lg font-Nobile text-red-600 text-center"
-                        key={item._id}
-                      >
-                        - {item.name}{" "}
-                      </Text>
-                      <Text className="text-md font-Nobile text-red-600 text-center">
-                        (added on {moment(item.dateAdded).format("MMM Do YYYY")}
-                        )
-                      </Text>
-                    </View>
-                  )}
-                  keyExtractor={(item) => item._id}
+        {user.token ? (
+          <>
+            {/* Postits*/}
+            <View className="flex flex-row justify-center items-center">
+              {/* Middle Postit 1*/}
+              <View
+                className="flex justify-center items-center relative w-40 h-40 m-1"
+                style={styles.shadow}
+              >
+                <Image
+                  source={randomPostitImage()}
+                  className="absolute inset-0 w-full h-full"
                 />
+                <View className="relative justify-center items-center mt-4">
+                  <Image
+                    source={require("../../assets/images/heart4.png")}
+                    className="w-14 h-14 absolute"
+                  />
+                  <Text className="text-center text-xl font-SpaceMono text-black">
+                    {userInfo.favourites?.length}
+                  </Text>
+                </View>
+                <Text className="text-center text-lg font-SpaceMono text-slate-700 mt-3">
+                  favourite recipes
+                </Text>
+              </View>
+
+              {/* Middle Postit 2 */}
+              <View
+                className="flex justify-center items-center relative w-40 h-40 m-1"
+                style={styles.shadow}
+              >
+                <Image
+                  source={randomPostitImage()}
+                  className="absolute inset-0 w-full h-full"
+                />
+                <View className="relative justify-center items-center mt-4">
+                  <Image
+                    source={require("../../assets/images/groceryBag.png")}
+                    className="w-14 h-14 absolute"
+                  />
+                  <Text className="text-center text-xl font-SpaceMono text-black top-2">
+                    {userInfo.ingredients?.length}
+                  </Text>
+                </View>
+                <Text className="text-center text-lg font-SpaceMono text-slate-700 mt-4">
+                  ingredients saved
+                </Text>
               </View>
             </View>
-          ) : (
-            <View className="flex justify-center items-center mt-4">
-              <Text className="text-xl font-Flux text-slate-700">
-                Well done!
-              </Text>
-              <Text className="text-xl font-Flux text-slate-700">
-                Everything is fresh!
-              </Text>
-              <Image
-                source={require("../../assets/images/applause.png")}
-                className="w-20 h-20"
-              />
+
+            {/* Old ingredients */}
+            <View className="flex justify-center items-center">
+              <View className="relative m-1">
+                <View
+                  className={
+                    oldIngredients.length > 0
+                      ? "absolute bg-[#d45858] rounded-2xl right-0.5 bottom-0.5"
+                      : "absolute bg-[#6deb84] rounded-2xl right-0.5 bottom-0.5"
+                  }
+                  style={{
+                    width: screenWidth - 45,
+                    height: calculatedHeight,
+                    ...styles.shadow,
+                  }}
+                ></View>
+                <View
+                  className="flex justify-center items-center bg-white rounded-2xl m-2 p-2"
+                  style={{
+                    width: screenWidth - 40,
+                    height: calculatedHeight,
+                  }}
+                >
+                  {oldIngredients.length > 0 ? (
+                    <>
+                      <View className="flex-row justify-center items-center w-full p-2 bg-[#f03838e9] rounded-t-2xl mb-2">
+                        <Image
+                          source={require("../../assets/images/warning.png")}
+                          className="w-8 h-8"
+                        />
+                        <Text className="text-center text-base text-slate-900 font-Maax">
+                          You have {oldIngredients.length} ingredient(s) older
+                          than a week :
+                        </Text>
+                      </View>
+                      <ScrollView className="flex-1">
+                        <View className="flex justify-center items-start">
+                          {oldIngredients.map((item, index) => (
+                            <BouncyCheckbox
+                              isChecked={true}
+                              disabled={true}
+                              key={index}
+                              textStyle={{
+                                fontFamily: "SpaceMono",
+                                textDecorationLine: "none",
+                                color: "#334155",
+                              }}
+                              fillColor="#FED400"
+                              unFillColor="#e2e8f0"
+                              innerIconStyle={{ borderColor: "#334155" }}
+                              bounceEffectIn={0.6}
+                              textComponent={
+                                <View className="flex-row justify-center items-center p-2">
+                                  <Text className="text-lg font-SpaceMono">
+                                    {item.name &&
+                                      item.name.charAt(0).toUpperCase() +
+                                        item.name.slice(1)}
+                                  </Text>
+                                  <Text className="text-md ">
+                                    {" (added on " +
+                                      moment(item.dateAdded).format(
+                                        "MMM Do YYYY"
+                                      ) +
+                                      ")"}
+                                  </Text>
+                                </View>
+                              }
+                            />
+                          ))}
+                        </View>
+                      </ScrollView>
+                    </>
+                  ) : (
+                    <>
+                      <View className="flex-row justify-center items-center w-full p-2 bg-[#6deb84] rounded-t-2xl mb-2">
+                        <Image
+                          source={require("../../assets/images/checkGreen.png")}
+                          className="w-8 h-8 mr-2"
+                        />
+                        <Text className="text-center text-base text-slate-900 font-Maax">
+                          No ingredients older than a week!
+                        </Text>
+                      </View>
+                      <View className="flex justify-center items-center mt-2">
+                        <Text className="text-xl font-Flux text-slate-700">
+                          Well done!
+                        </Text>
+                        <Text className="text-xl font-Flux text-slate-700 mb-1">
+                          Everything is fresh!
+                        </Text>
+                        <Image
+                          source={require("../../assets/images/applause.png")}
+                          className="w-20 h-20"
+                        />
+                      </View>
+                    </>
+                  )}
+                </View>
+              </View>
             </View>
-          )}
-        </View>
+          </>
+        ) : (
+          <View className="flex justify-center items-center mt-4">
+            <View className="flex justify-center items-center relative">
+              <View
+                className="absolute bg-[#f03838] rounded-2xl -right-1.5 -bottom-1.5"
+                style={{
+                  width: screenWidth - 65,
+                  height: 220,
+                  ...styles.shadow,
+                }}
+              ></View>
+              <View
+                className="flex justify-center items-center bg-white rounded-2xl"
+                style={{
+                  width: screenWidth - 65,
+                  height: 220,
+                }}
+              >
+                <Text className="text-xl text-center font-SpaceMono mx-4">
+                  Create an account to save your ingredients and get recipes
+                  based on what you have!
+                </Text>
+              </View>
+            </View>
+            <View className="flex justify-center items-center mt-6 mb-10">
+              <Text className="font-SpaceMono text-xl text-center">
+                Snap a picture of your ingredients and get started!
+              </Text>
+              <BouncingImage>
+                <Image
+                  source={require("../../assets/images/arrowDown.png")}
+                  className="w-12 h-12 top-8"
+                />
+              </BouncingImage>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Update info modal */}
@@ -513,13 +649,13 @@ export default function Profile() {
       >
         <View className="flex justify-center items-center">
           <View
-            className="flex justify-between items-center bg-slate-50 rounded-lg w-80 h-72 p-4"
+            className="flex justify-around items-center bg-slate-50 rounded-lg p-6"
             style={styles.shadow}
           >
-            <Text className="text-xl text-center font-Nobile">
+            <Text className="text-xl text-center font-Nobile mb-4">
               Update Information
             </Text>
-            <View>
+            <View className="flex justify-center items-center">
               <View className="flex-row justify-center items-center">
                 <TextInput
                   placeholder="New Username"
@@ -530,6 +666,23 @@ export default function Profile() {
                 />
                 <View style={styles.shadow}>
                   <TouchableOpacity onPress={updateUsername}>
+                    <Image
+                      source={require("../../assets/images/yesIcon.png")}
+                      className="w-10 h-10 m-1"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <View className="flex-row justify-center items-center">
+                <TextInput
+                  placeholder="New Email"
+                  value={newEmail}
+                  onChangeText={(text) => setNewEmail(text)}
+                  autoCapitalize="none"
+                  className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
+                />
+                <View style={styles.shadow}>
+                  <TouchableOpacity onPress={updateEmail}>
                     <Image
                       source={require("../../assets/images/yesIcon.png")}
                       className="w-10 h-10 m-1"
@@ -576,6 +729,7 @@ export default function Profile() {
                 setIsUpdateInfoModalVisible(false);
                 setNewPassword("");
                 setNewUsername("");
+                setNewEmail("");
               }}
             >
               <Text className="text-lg text-center mt-4 font-Nobile">
@@ -612,32 +766,6 @@ export default function Profile() {
           </View>
         </View>
       </Modal>
-
-      {/* Bottom Box */}
-      {/* <View className="flex justify-center items-center">
-        <View className="relative m-1">
-          <View
-            className="absolute bg-[#b91c1c] rounded-2xl right-0.5 bottom-0.5"
-            style={{
-              width: screenWidth - 45,
-              height: calculatedHeight,
-              ...styles.shadow,
-            }}
-          ></View>
-          <View
-            className="flex justify-center items-center bg-white rounded-2xl m-2 p-2"
-            style={{
-              width: screenWidth - 40,
-              height: calculatedHeight,
-            }}
-          >
-            <View>
-              <Text className="text-xl text-center">Old Ingredients</Text>
-              {renderOldIngredients()}
-            </View>
-          </View>
-        </View>
-      </View> */}
     </SafeAreaView>
   );
 }

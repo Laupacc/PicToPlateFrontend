@@ -33,17 +33,18 @@ export default function Favourites() {
 
   const [favouriteRecipes, setFavouriteRecipes] = useState([]);
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   const cachedFavorites = useRef<any[]>([]);
   useEffect(() => {
     const fetchFavouriteRecipes = async () => {
+      if (!user.token) return;
       try {
         // Check if favorites are already cached
-        if (cachedFavorites.current.length > 0) {
-          setFavouriteRecipes(cachedFavorites.current);
-          return;
-        }
+        // if (cachedFavorites.current.length > 0) {
+        //   setFavouriteRecipes(cachedFavorites.current);
+        //   return;
+        // }
 
         const response = await fetch(
           `${BACKEND_URL}/users/fetchFavourites/${user.token}`
@@ -61,7 +62,7 @@ export default function Favourites() {
         dispatch(updateFavouriteRecipes(recipes));
         setFavouriteRecipes(recipes);
 
-        cachedFavorites.current = recipes;
+        // cachedFavorites.current = recipes;
       } catch (error) {
         console.error(error);
       }
@@ -82,7 +83,7 @@ export default function Favourites() {
         console.log("Error removing recipe from favourites");
         toast.show("Error removing recipe from favourites", {
           type: "danger",
-          placement: "center",
+          placement: "top",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -96,7 +97,7 @@ export default function Favourites() {
       console.log("Recipe removed from favourites:", recipeId);
       toast.show("Recipe removed from favourites", {
         type: "success",
-        placement: "center",
+        placement: "top",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -126,7 +127,25 @@ export default function Favourites() {
       </View>
 
       <View className="flex flex-1 items-center justify-center">
-        {favouriteRecipes.length === 0 ? (
+        {!user.token ? (
+          <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
+            <Image
+              source={require("../../assets/images/recipeBack/recipeBack4.png")}
+              className="absolute inset-0 w-full h-full"
+              style={styles.shadow}
+            />
+            <View className="flex items-center justify-center max-w-[180]">
+              <Link href="/authentication" className="text-blue-500">
+                <Text className="font-CreamyCookies text-center text-3xl">
+                  Log in
+                </Text>
+              </Link>
+              <Text className="font-CreamyCookies text-center text-3xl">
+                to see your favourite recipes
+              </Text>
+            </View>
+          </View>
+        ) : user.token && favouriteRecipes.length === 0 ? (
           <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
             <Image
               source={require("../../assets/images/recipeBack/recipeBack4.png")}
@@ -141,7 +160,8 @@ export default function Favourites() {
           </View>
         ) : (
           <ScrollView className="flex-1">
-            {favouriteRecipes &&
+            {user.token &&
+              favouriteRecipes.length > 0 &&
               favouriteRecipes.map((recipe, index) => (
                 <View
                   className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
@@ -166,6 +186,7 @@ export default function Favourites() {
                       onPress={() =>
                         navigation.navigate("recipeCard", {
                           recipeId: recipe.id,
+                          refresh: true,
                         })
                       }
                       key={recipe.id}

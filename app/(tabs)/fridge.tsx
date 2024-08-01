@@ -22,12 +22,14 @@ import RNBounceable from "@freakycoder/react-native-bounceable";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import { TextInput, ScrollView } from "react-native-gesture-handler";
-import { Feather, Ionicons } from "@expo/vector-icons";
-import { FontAwesome6 } from "@expo/vector-icons";
-import { FontAwesome } from "@expo/vector-icons";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import {
+  Feather,
+  Ionicons,
+  AntDesign,
+  FontAwesome,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import { List } from "react-native-paper";
-import { logout } from "@/store/user";
 import * as SecureStore from "expo-secure-store";
 import moment from "moment";
 import { useToast } from "react-native-toast-notifications";
@@ -45,7 +47,7 @@ export default function Fridge() {
   const ingredients = useSelector((state) => state.fridge.ingredients);
   const toast = useToast();
 
-  const BACKEND_URL = "http://192.168.114.158:3000";
+  const BACKEND_URL = "http://192.168.1.34:3000";
 
   const [fridgeItems, setFridgeItems] = useState([]);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
@@ -62,6 +64,7 @@ export default function Fridge() {
   // Fetch fridge items from the backend
   useEffect(() => {
     const fetchFridgeItems = async () => {
+      if (!user.token) return;
       try {
         const response = await fetch(
           `${BACKEND_URL}/users/fetchIngredients/${user.token}`
@@ -91,6 +94,17 @@ export default function Fridge() {
   const searchRecipesFromIngredientsSelected = async () => {
     const selectedIgredients = ingredients.filter((item) => item.checked);
     setSelectedIngredients(selectedIgredients);
+    if (selectedIgredients.length === 0) {
+      toast.show("Please select at least one ingredient", {
+        type: "warning",
+        placement: "top",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
+      return;
+    }
 
     const query = selectedIgredients.map((item) => item.name).join(",");
     navigation.navigate("recipesFromFridge", { searchQuery: query });
@@ -98,6 +112,17 @@ export default function Fridge() {
 
   // Autocomplete search ingredient
   const autocompleteSearchIngredient = async (query) => {
+    if (query.length === 0) {
+      toast.show("Please enter an ingredient", {
+        type: "warning",
+        placement: "top",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
+      return;
+    }
     try {
       const response = await fetch(
         `${BACKEND_URL}/recipes/autocompleteIngredients?query=${query}`
@@ -112,7 +137,7 @@ export default function Fridge() {
       if (data.length === 0) {
         toast.show("No ingredients found", {
           type: "warning",
-          placement: "center",
+          placement: "top",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -164,7 +189,7 @@ export default function Fridge() {
             .join("")} is already in your fridge`,
           {
             type: "warning",
-            placement: "center",
+            placement: "top",
             duration: 2000,
             animationType: "zoom-in",
             swipeEnabled: true,
@@ -204,7 +229,7 @@ export default function Fridge() {
 
         toast.show("New ingredient(s) added successfully", {
           type: "success",
-          placement: "center",
+          placement: "top",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -308,9 +333,9 @@ export default function Fridge() {
               dispatch(removeIngredient(selectedToRemove));
               setSelectedToRemove([]);
 
-              toast.show("Ingredients deleted successfully", {
+              toast.show("Ingredient(s) deleted successfully", {
                 type: "success",
-                placement: "center",
+                placement: "top",
                 duration: 2000,
                 animationType: "zoom-in",
                 swipeEnabled: true,
@@ -319,9 +344,9 @@ export default function Fridge() {
                 ),
               });
             } catch (error) {
-              toast.show("Failed to delete ingredients", {
+              toast.show("Failed to delete ingredient(s)", {
                 type: "danger",
-                placement: "center",
+                placement: "top",
                 duration: 2000,
                 animationType: "zoom-in",
                 swipeEnabled: true,
@@ -414,54 +439,43 @@ export default function Fridge() {
         </Text>
       </View>
 
-      <View className="flex-1 justify-center items-center">
-        {/* Search Recipes Button and Remove Ingredients Buttons */}
-        <View className="flex flex-row justify-center items-center">
-          <View className="flex justify-center items-center my-2">
-            {ingredients.length > 0 &&
-              ingredients.some((item) => item.checked) && (
+      <View className="flex-1 justify-around items-center">
+        {/* User not logged in, fridge items empty, fridge items */}
+        {!user.token ? (
+          <View className="relative">
+            <View
+              className="absolute bg-[#FF9B50] rounded-2xl -right-1.5 -bottom-1.5"
+              style={{
+                width: screenWidth - 65,
+                height: 300,
+                ...styles.shadow,
+              }}
+            ></View>
+            <View
+              className="flex justify-center items-center bg-white rounded-2xl"
+              style={{
+                width: screenWidth - 60,
+                height: 300,
+              }}
+            >
+              <View className="flex items-center justify-center">
                 <TouchableOpacity
-                  onPress={searchRecipesFromIngredientsSelected}
-                  className="relative flex justify-center items-center"
-                >
-                  <Image
-                    source={require("@/assets/images/button/button9.png")}
-                    alt="button"
-                    className="w-40 h-12"
-                  />
-                  <Text
-                    className="text-lg text-white absolute font-Nobile"
-                    style={styles.shadow}
-                  >
-                    Search Recipes
-                  </Text>
-                </TouchableOpacity>
-              )}
-          </View>
-          <View className="flex justify-center items-center my-2">
-            {selectedToRemove.length > 0 && (
-              <TouchableOpacity
-                onPress={removeSelectedIngredients}
-                className="relative flex justify-center items-center"
-              >
-                <Image
-                  source={require("@/assets/images/button/button5.png")}
-                  alt="button"
-                  className="w-40 h-12"
-                />
-                <Text
-                  className="text-lg text-white absolute font-Nobile"
+                  onPress={() => navigation.navigate("authentication")}
                   style={styles.shadow}
                 >
-                  Remove
+                  <Image
+                    source={require("../../assets/images/keyholeSecurity.png")}
+                    className="w-16 h-16"
+                  />
+                </TouchableOpacity>
+                <Text className="font-CreamyCookies text-2xl text-center mx-10 my-4">
+                  Log into your account to see your saved ingredients
                 </Text>
-              </TouchableOpacity>
-            )}
+              </View>
+            </View>
           </View>
-        </View>
-
-        {/* No Fridge Items */}
-        {fridgeItems.length === 0 && (
+        ) : user.token && fridgeItems.length === 0 ? (
+          // User is logged in but fridge is empty
           <View className="flex justify-center items-center mx-20">
             <Text className="font-CreamyCookies text-3xl text-center">
               You don't have any ingredients in your kitchen yet. Add some now!
@@ -475,193 +489,252 @@ export default function Fridge() {
               <Text className="font-CreamyCookies text-2xl">Search</Text>
             </View>
           </View>
+        ) : (
+          user.token &&
+          fridgeItems.length > 0 && (
+            // User is logged in and fridge items are displayed
+            <View className="border-2 border-slate-400 h-[550] p-1 rounded-3xl mt-2">
+              <ScrollView className="flex-1">
+                <View className="flex justify-center items-center mb-2">
+                  {fridgeItems &&
+                    fridgeItems.map((item, index) => (
+                      <View key={index} className="relative p-1 m-1 ">
+                        <View
+                          className="absolute bg-[#FF9B50] rounded-2xl -right-0.5 -bottom-0.5"
+                          style={{
+                            width: screenWidth - 45,
+                            height: 60,
+                            ...styles.shadow,
+                          }}
+                        ></View>
+                        <View
+                          className="flex flex-row justify-between items-center bg-white rounded-2xl p-2"
+                          style={{
+                            width: screenWidth - 40,
+                            height: 60,
+                          }}
+                        >
+                          <View className="w-5/6">
+                            <BouncyCheckbox
+                              size={25}
+                              fillColor="#FF9B50"
+                              unFillColor="#e2e8f0"
+                              textComponent={
+                                <ScrollView horizontal={true}>
+                                  <View className="flex-row justify-center items-center ml-2">
+                                    <Text className="text-lg text-slate-600">
+                                      {item.name.charAt(0).toUpperCase() +
+                                        item.name.slice(1)}
+                                    </Text>
+                                    <Text className="text-base text-slate-500">
+                                      {" (" +
+                                        moment(item.dateAdded)
+                                          .startOf("hour")
+                                          .fromNow() +
+                                        ")"}
+                                    </Text>
+                                  </View>
+                                </ScrollView>
+                              }
+                              textStyle={{
+                                fontFamily: "Nobile",
+                                textDecorationLine: "none",
+                              }}
+                              iconStyle={{ borderColor: "#FF9B50" }}
+                              isChecked={item.checked}
+                              onPress={(isChecked) => {
+                                const updatedItems = fridgeItems.map((i) =>
+                                  i.name === item.name
+                                    ? { ...i, checked: isChecked }
+                                    : i
+                                );
+                                setFridgeItems(updatedItems);
+                                dispatch(updateIngredients(updatedItems));
+                              }}
+                            />
+                            <RNBounceable
+                              className="flex justify-center items-center"
+                              onPress={() => {
+                                const updatedItems = fridgeItems.filter(
+                                  (i) => i.name !== item.name
+                                );
+                                setFridgeItems(updatedItems);
+                                // dispatch(updateIngredients(updatedItems));
+                              }}
+                            ></RNBounceable>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() =>
+                              toggleIngredientSelectedToRemove(item.name)
+                            }
+                            className="absolute right-9"
+                          >
+                            {selectedToRemove.includes(item.name) ? (
+                              <Feather
+                                name="check-square"
+                                size={20}
+                                color="#FF003D"
+                              />
+                            ) : (
+                              <Feather name="square" size={20} color="grey" />
+                            )}
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            className="absolute right-2"
+                            onPress={() =>
+                              toggleIngredientSelectedToRemove(item.name)
+                            }
+                          >
+                            <Image
+                              source={require("../../assets/images/trash2.png")}
+                              className="w-6 h-6"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                </View>
+              </ScrollView>
+            </View>
+          )
         )}
 
-        {/* Fridge Items */}
-        {fridgeItems.length > 0 && (
-          <View className="border-2 border-slate-400 flex-1 p-1 rounded-3xl">
-            <ScrollView>
-              <View className="flex justify-center items-center">
-                {fridgeItems &&
-                  fridgeItems.map((item, index) => (
-                    <View key={index} className="relative p-1 m-1 ">
-                      <View
-                        className="absolute bg-[#FF9B50] rounded-2xl -right-0.5 -bottom-0.5"
-                        style={{
-                          width: screenWidth - 45,
-                          minHeight: 60,
-                          ...styles.shadow,
-                        }}
-                      ></View>
-                      <View
-                        className="flex flex-row justify-between items-center bg-white rounded-2xl p-2"
-                        style={{
-                          width: screenWidth - 40,
-                          minHeight: 60,
-                        }}
-                      >
-                        <BouncyCheckbox
-                          size={25}
-                          fillColor="#FF9B50"
-                          unFillColor="#e2e8f0"
-                          text={
-                            item.name.charAt(0).toUpperCase() +
-                            item.name.slice(1) +
-                            " (" +
-                            moment(item.dateAdded).startOf("hour").fromNow() +
-                            ")"
-                          }
-                          textStyle={{
-                            fontFamily: "Nobile",
-                            textDecorationLine: "none",
-                          }}
-                          iconStyle={{ borderColor: "#FF9B50" }}
-                          isChecked={item.checked}
-                          onPress={(isChecked) => {
-                            const updatedItems = fridgeItems.map((i) =>
-                              i.name === item.name
-                                ? { ...i, checked: isChecked }
-                                : i
-                            );
-                            setFridgeItems(updatedItems);
-                            dispatch(updateIngredients(updatedItems));
-                          }}
-                        />
-                        <RNBounceable
-                          className="flex justify-center items-center"
-                          onPress={() => {
-                            const updatedItems = fridgeItems.filter(
-                              (i) => i.name !== item.name
-                            );
-                            setFridgeItems(updatedItems);
-                            // dispatch(updateIngredients(updatedItems));
-                          }}
-                        ></RNBounceable>
-                        <TouchableOpacity
-                          onPress={() =>
-                            toggleIngredientSelectedToRemove(item.name)
-                          }
-                          className="absolute right-9"
-                        >
-                          {selectedToRemove.includes(item.name) ? (
-                            <Feather
-                              name="check-square"
-                              size={20}
-                              color="#FF003D"
-                            />
-                          ) : (
-                            <Feather name="square" size={20} color="grey" />
-                          )}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          className="absolute right-2"
-                          onPress={() =>
-                            toggleIngredientSelectedToRemove(item.name)
-                          }
-                        >
-                          <Image
-                            source={require("../../assets/images/trash2.png")}
-                            className="w-6 h-6"
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
-              </View>
-            </ScrollView>
+        {/* Search Recipes Button and Remove Ingredients Buttons */}
+        {user.token && ingredients.length > 0 && (
+          <View className="flex flex-row justify-center items-center">
+            <View className="flex justify-center items-center">
+              <TouchableOpacity
+                onPress={searchRecipesFromIngredientsSelected}
+                className="relative flex justify-center items-center"
+              >
+                <Image
+                  source={require("@/assets/images/button/button9.png")}
+                  alt="button"
+                  className="w-40 h-12"
+                />
+                <Text
+                  className="text-lg text-white absolute font-Nobile"
+                  style={styles.shadow}
+                >
+                  Search Recipes
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View className="flex justify-center items-center">
+              {selectedToRemove.length > 0 && (
+                <TouchableOpacity
+                  onPress={removeSelectedIngredients}
+                  className="relative flex justify-center items-center"
+                >
+                  <Image
+                    source={require("@/assets/images/button/button5.png")}
+                    alt="button"
+                    className="w-40 h-12"
+                  />
+                  <Text
+                    className="text-lg text-white absolute font-Nobile"
+                    style={styles.shadow}
+                  >
+                    Remove
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
 
-        {/* Search Bar and Filter Button */}
-        <View className="flex flex-row justify-center items-center mt-2">
-          <View className="flex justify-center items-center mx-2">
-            <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
-            >
-              <View className="items-center justify-center relative w-full">
-                <TextInput
-                  placeholder="Add ingredients"
-                  placeholderTextColor={"gray"}
-                  value={search}
-                  onChangeText={setSearch}
-                  onSubmitEditing={() => {
+        {/* Search Bar, Filter Button and go back to recipe button */}
+        {user.token && (
+          <View className="flex flex-row justify-center items-center mt-2">
+            <View className="flex justify-center items-center mx-2">
+              <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+              >
+                <View className="items-center justify-center relative w-full">
+                  <TextInput
+                    placeholder="Add ingredients"
+                    placeholderTextColor={"gray"}
+                    value={search}
+                    onChangeText={setSearch}
+                    onSubmitEditing={() => {
+                      autocompleteSearchIngredient(search);
+                      setIsSearchModalVisible(true);
+                    }}
+                    className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-60 h-10 font-Nobile"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setSearch("")}
+                    style={{
+                      position: "absolute",
+                      right: 10,
+                      top: "50%",
+                      transform: [{ translateY: -12.5 }],
+                    }}
+                  >
+                    <Image
+                      source={require("@/assets/images/redCross.png")}
+                      alt="clear"
+                      className="w-6 h-6"
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => {
                     autocompleteSearchIngredient(search);
                     setIsSearchModalVisible(true);
                   }}
-                  className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-60 h-10 font-Nobile"
-                />
-                <TouchableOpacity
-                  onPress={() => setSearch("")}
                   style={{
                     position: "absolute",
-                    right: 10,
+                    right: 45,
                     top: "50%",
                     transform: [{ translateY: -12.5 }],
                   }}
                 >
                   <Image
-                    source={require("@/assets/images/redCross.png")}
-                    alt="clear"
+                    source={require("@/assets/images/search2.png")}
+                    alt="search"
                     className="w-6 h-6"
                   />
                 </TouchableOpacity>
-              </View>
+              </KeyboardAvoidingView>
+            </View>
 
-              <TouchableOpacity
-                onPress={() => {
-                  autocompleteSearchIngredient(search);
-                  setIsSearchModalVisible(true);
-                }}
-                style={{
-                  position: "absolute",
-                  right: 45,
-                  top: "50%",
-                  transform: [{ translateY: -12.5 }],
-                }}
-              >
-                <Image
-                  source={require("@/assets/images/search2.png")}
-                  alt="search"
-                  className="w-6 h-6"
-                />
-              </TouchableOpacity>
-            </KeyboardAvoidingView>
+            {fridgeItems.length > 0 && (
+              <>
+                {/* Filter button */}
+                <TouchableOpacity
+                  onPress={() => setIsFilterModalVisible(!isFilterModalVisible)}
+                  className="mx-1"
+                  style={styles.shadow}
+                >
+                  <Image
+                    source={require("@/assets/images/filter5.png")}
+                    alt="button"
+                    className="w-10 h-10"
+                  />
+                </TouchableOpacity>
+
+                {/* Back to recipes button */}
+                <TouchableOpacity
+                  onPress={goBackToRecipesFromFridge}
+                  className="mx-1"
+                  style={styles.shadow}
+                >
+                  <Image
+                    source={require("@/assets/images/backToRecipeFridge2.png")}
+                    alt="button"
+                    className="w-14 h-12"
+                  />
+                </TouchableOpacity>
+              </>
+            )}
           </View>
-
-          {fridgeItems.length > 0 && (
-            <>
-              {/* Filter button */}
-              <TouchableOpacity
-                onPress={() => setIsFilterModalVisible(!isFilterModalVisible)}
-                className="mx-1"
-                style={styles.shadow}
-              >
-                <Image
-                  source={require("@/assets/images/filter5.png")}
-                  alt="button"
-                  className="w-10 h-10"
-                />
-              </TouchableOpacity>
-
-              {/* Back to recipes button */}
-              <TouchableOpacity
-                onPress={goBackToRecipesFromFridge}
-                className="mx-1"
-                style={styles.shadow}
-              >
-                <Image
-                  source={require("@/assets/images/backToRecipeFridge.png")}
-                  alt="button"
-                  className="w-12 h-12"
-                />
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
+        )}
       </View>
 
       {/* Take a picture arrow */}
-      {fridgeItems.length === 0 && (
+      {user.token && fridgeItems.length === 0 && (
         <View className="flex m-10 justify-center items-center">
           <Text className="font-CreamyCookies text-2xl text-center">
             Or take a picture
