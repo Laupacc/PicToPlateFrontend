@@ -3,13 +3,13 @@ import { View, Dimensions } from "react-native";
 import Svg, { Line } from "react-native-svg";
 
 export default function Background({ cellSize }) {
-  const { width, height } = Dimensions.get("window");
+  const { width, height } = Dimensions.get("screen");
   const numberOfVerticalLines = Math.ceil(width / cellSize);
   const numberOfHorizontalLines = Math.ceil(height / cellSize);
 
   return (
     <View style={{ position: "absolute", width, height }}>
-      <Svg height="100%" width="100%">
+      <Svg height={height} width={width}>
         {Array.from({ length: numberOfVerticalLines }).map((_, index) => (
           <Line
             key={`v-${index}`}

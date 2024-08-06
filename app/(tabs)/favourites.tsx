@@ -17,11 +17,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchRecipeInformation, randomStickerImage } from "@/apiFunctions";
 import { useRoute } from "@react-navigation/native";
 import { useToast } from "react-native-toast-notifications";
+import LottieView from "lottie-react-native";
 import {
   removeFromFavouriteRecipes,
   updateFavouriteRecipes,
 } from "@/store/recipes";
 import { Ionicons } from "@expo/vector-icons";
+import { Surface } from "react-native-paper";
 
 export default function Favourites() {
   const navigation = useNavigation();
@@ -32,20 +34,15 @@ export default function Favourites() {
   const favourites = useSelector((state) => state.recipes.favourites);
 
   const [favouriteRecipes, setFavouriteRecipes] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
-  const cachedFavorites = useRef<any[]>([]);
   useEffect(() => {
     const fetchFavouriteRecipes = async () => {
       if (!user.token) return;
       try {
-        // Check if favorites are already cached
-        // if (cachedFavorites.current.length > 0) {
-        //   setFavouriteRecipes(cachedFavorites.current);
-        //   return;
-        // }
-
+        setLoading(true);
         const response = await fetch(
           `${BACKEND_URL}/users/fetchFavourites/${user.token}`
         );
@@ -53,18 +50,32 @@ export default function Favourites() {
           throw new Error("Failed to fetch favourite recipes");
         }
         const data = await response.json();
+        console.log("Fetched favourite recipe IDs:", data.favourites);
 
-        const recipes = await Promise.all(
-          data.favourites.map((recipeId) => fetchRecipeInformation(recipeId))
-        );
+        const fetchInBatches = async (ids) => {
+          const results = [];
+          for (let i = 0; i < ids.length; i += 5) {
+            const batch = ids.slice(i, i + 5);
+            const batchResults = await Promise.all(
+              batch.map((recipeId) => fetchRecipeInformation(recipeId))
+            );
+            results.push(...batchResults);
+            if (i + 5 < ids.length) {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+          return results;
+        };
+
+        const recipes = await fetchInBatches(data.favourites);
         console.log("Favourite recipes:", recipes.length);
 
         dispatch(updateFavouriteRecipes(recipes));
         setFavouriteRecipes(recipes);
-
-        // cachedFavorites.current = recipes;
       } catch (error) {
         console.error(error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -83,7 +94,7 @@ export default function Favourites() {
         console.log("Error removing recipe from favourites");
         toast.show("Error removing recipe from favourites", {
           type: "danger",
-          placement: "top",
+          placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -97,7 +108,7 @@ export default function Favourites() {
       console.log("Recipe removed from favourites:", recipeId);
       toast.show("Recipe removed from favourites", {
         type: "success",
-        placement: "top",
+        placement: "center",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -145,6 +156,18 @@ export default function Favourites() {
               </Text>
             </View>
           </View>
+        ) : loading ? (
+          <LottieView
+            source={require("../../assets/images/animations/Animation1722874174540.json")}
+            autoPlay
+            loop
+            style={{
+              width: 360,
+              height: 360,
+              position: "absolute",
+              top: 80,
+            }}
+          />
         ) : user.token && favouriteRecipes.length === 0 ? (
           <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
             <Image
@@ -193,7 +216,11 @@ export default function Favourites() {
                       className="flex items-center justify-center"
                     >
                       <Image
-                        source={{ uri: recipe.image }}
+                        source={
+                          recipe.image
+                            ? { uri: recipe.image }
+                            : require("../../assets/images/picMissing.png")
+                        }
                         className="rounded-xl w-[200] h-[200] right-4"
                       />
                       <View className="flex items-center justify-center max-w-[200] mt-4">
@@ -221,6 +248,19 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 6,
+    // elevation: 5,
   },
+  // shadow: {
+  //   ...Platform.select({
+  //     ios: {
+  //       shadowColor: "#000",
+  //       shadowOffset: { width: 2, height: 2 },
+  //       shadowOpacity: 0.25,
+  //       shadowRadius: 4,
+  //     },
+  //     android: {
+  //       elevation: 20,
+  //     },
+  //   }),
+  // },
 });

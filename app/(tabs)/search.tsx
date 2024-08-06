@@ -6,13 +6,12 @@ import {
   Text,
   StatusBar,
   TouchableOpacity,
-  Modal,
   ScrollView,
   TextInput,
   KeyboardAvoidingView,
   Dimensions,
-  Animated,
 } from "react-native";
+import { Modal } from "react-native-paper";
 import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addToFavouriteRecipes } from "@/store/recipes";
@@ -20,8 +19,6 @@ import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
 import Background from "@/components/Background";
 import BouncingImage from "@/components/Bounce";
 import { fetchRandomRecipe } from "@/apiFunctions";
@@ -29,6 +26,8 @@ import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
 import RNPickerSelect from "react-native-picker-select";
 import { useToast } from "react-native-toast-notifications";
+import { List } from "react-native-paper";
+import { Entypo } from "@expo/vector-icons";
 
 export default function Search() {
   const navigation = useNavigation();
@@ -37,7 +36,7 @@ export default function Search() {
   const user = useSelector((state) => state.user.value);
 
   const [trivia, setTrivia] = useState("");
-  const [joke, setJoke] = useState("");
+  const [showTrivia, setShowTrivia] = useState(false);
   const [recipe, setRecipe] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [numberOfRecipes, setNumberOfRecipes] = useState(10);
@@ -51,8 +50,14 @@ export default function Search() {
   const [showMaxReadyTime, setShowMaxReadyTime] = useState(false);
   const [showDiet, setShowDiet] = useState(false);
   const [showIntolerances, setShowIntolerances] = useState(false);
+
+  const [selectedDiet, setSelectedDiet] = useState([]);
+  const [selectedIntolerance, setSelectedIntolerance] = useState([]);
+  const [selectedMaxReadyTime, setSelectedMaxReadyTime] = useState(null);
+
   const isInitialMount = useRef(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [openFilterModal, setOpenFilterModal] = useState(false);
   const [isFavourite, setIsFavourite] = useState(false);
 
   const [ingredientName, setIngredientName] = useState("");
@@ -69,19 +74,14 @@ export default function Search() {
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
-  // const fetchTrivia = async () => {
-  //   const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
-  //   const data = await response.json();
-  //   console.log(data);
-  //   setTrivia(data.text);
-  // };
+  // Fetch Trivia useEffect
 
-  // const fetchJoke = async () => {
-  //   const response = await fetch(`${BACKEND_URL}/recipes/joke`);
-  //   const data = await response.json();
-  //   console.log(data);
-  //   setJoke(data.text);
-  // };
+  const fetchTrivia = async () => {
+    const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
+    const data = await response.json();
+    console.log(data);
+    setTrivia(data.text);
+  };
 
   const handleFetchRandomRecipe = async () => {
     const recipe = await fetchRandomRecipe();
@@ -144,7 +144,7 @@ export default function Search() {
       console.error("Error fetching recipes:", error);
       toast.show("Error fetching recipes", {
         type: "warning",
-        placement: "top",
+        placement: "center",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -166,7 +166,7 @@ export default function Search() {
         console.log("Error adding recipe to favourites");
         toast.show("Error adding recipe to favourites", {
           type: "danger",
-          placement: "top",
+          placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -180,7 +180,7 @@ export default function Search() {
       console.log("Recipe added to favourites:", recipe.id);
       toast.show("Recipe added to favourites", {
         type: "success",
-        placement: "top",
+        placement: "center",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -226,26 +226,41 @@ export default function Search() {
 
   const toggleDiet = (item: string) => {
     if (diet.includes(item)) {
-      setDiet(diet.filter((x) => x !== item));
-    } else {
-      setDiet([...diet, item]);
+      setSelectedDiet(selectedDiet.filter((x) => x !== item));
+    }
+    if (!diet.includes(item)) {
+      setSelectedDiet([...selectedDiet, item]);
     }
   };
 
   const toggleIntolerances = (item: string) => {
     if (intolerances.includes(item)) {
-      setIntolerances(intolerances.filter((x) => x !== item));
-    } else {
-      setIntolerances([...intolerances, item]);
+      setSelectedIntolerance(selectedIntolerance.filter((x) => x !== item));
+    }
+    if (!intolerances.includes(item)) {
+      setSelectedIntolerance([...selectedIntolerance, item]);
     }
   };
 
   const toggleMaxReadyTime = (time: number) => {
     if (maxReadyTime === time) {
-      setMaxReadyTime(null);
+      setSelectedMaxReadyTime(null);
     } else {
-      setMaxReadyTime(time);
+      setSelectedMaxReadyTime(time);
     }
+  };
+
+  const handleOkPress = () => {
+    setDiet(selectedDiet);
+    setIntolerances(selectedIntolerance);
+    setMaxReadyTime(selectedMaxReadyTime);
+    setOpenFilterModal(false);
+  };
+
+  const handleResetFilters = () => {
+    setSelectedDiet([]);
+    setSelectedIntolerance([]);
+    setSelectedMaxReadyTime(null);
   };
 
   const handleClearSearch = () => {
@@ -344,73 +359,46 @@ export default function Search() {
           source={require("../../assets/images/logo8.png")}
           className="w-60 h-14"
         />
-        <View className="w-72 h-[1] bg-slate-400"></View>
+        {/* <View className="w-72 h-[1] bg-slate-400"></View> */}
       </View>
 
-      <Text className="text-center font-Nobile text-lg text-[#475569] my-2">
-        Turn your pantry into delicious meals!
-      </Text>
-
-      <View className="flex flex-row justify-center items-center mb-2">
-        {/* Search bar, by Ingredients */}
-        <View className="flex justify-center items-center mx-2">
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+      {/* Three Top Buttons */}
+      <View className="flex-row justify-between items-center">
+        {/* Open Trivia */}
+        <View className="flex-row justify-center items-center mx-1 ">
+          <TouchableOpacity
+            onPress={() => {
+              setShowTrivia(!showTrivia);
+              fetchTrivia();
+            }}
+            className="flex justify-center items-center m-1 p-2 rounded-lg bg-[#1c79b2]"
+            style={styles.shadow}
           >
-            <View className="relative items-center w-full justify-center">
-              <TextInput
-                placeholder="Search for recipes"
-                placeholderTextColor={"gray"}
-                value={search}
-                onChangeText={(text) => setSearch(text)}
-                onSubmitEditing={() =>
-                  search.trim() &&
-                  complexSearchByIngredients(
-                    search,
-                    diet,
-                    intolerances,
-                    maxReadyTime,
-                    numberOfRecipes
-                  )
-                }
-                className="border border-gray-400 rounded-lg pl-4 w-60 h-10 bg-[#e2e8f0] font-Nobile"
-              />
-              <TouchableOpacity
-                onPress={() => handleClearSearch()}
-                className="absolute right-2.5 top-2 -translate-y-3.125"
-              >
-                <Image
-                  source={require("@/assets/images/redCross.png")}
-                  alt="clear"
-                  className="w-6 h-6"
-                />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              onPress={() =>
-                search.trim() &&
-                complexSearchByIngredients(
-                  search,
-                  diet,
-                  intolerances,
-                  maxReadyTime,
-                  numberOfRecipes
-                )
-              }
-              className="absolute right-11 top-2 -translate-y-3.125"
-            >
-              <Image
-                source={require("@/assets/images/search2.png")}
-                alt="search"
-                className="w-6 h-6"
-              />
-            </TouchableOpacity>
-          </KeyboardAvoidingView>
+            <Text className="text-md text-white text-center font-Nobile">
+              Trivia
+            </Text>
+          </TouchableOpacity>
+          {/* Unit Converter Button */}
+          <TouchableOpacity
+            onPress={() => {
+              setShowConversion(!showConversion);
+              setShowFilters(false);
+              setShowDiet(false);
+              setShowIntolerances(false);
+              setShowMaxReadyTime(false);
+            }}
+            className="flex justify-center items-center m-1 p-2 rounded-lg bg-[#1c79b2]"
+            style={styles.shadow}
+          >
+            <Text className="text-md text-white text-center font-Nobile">
+              Unit Converter
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Radom Recipe Button */}
         <View
-          className="flex justify-center items-center mx-2"
+          className="flex justify-between items-center"
           style={styles.shadow}
         >
           <View className="flex justify-center items-center">
@@ -435,56 +423,7 @@ export default function Search() {
         </View>
       </View>
 
-      {/* Filters and Conversion Buttons */}
-      <View className="flex flex-row justify-center items-center">
-        <TouchableOpacity
-          onPress={() => {
-            setShowFilters(!showFilters);
-            setShowConversion(false);
-            setShowDiet(false);
-            setShowIntolerances(false);
-            setShowMaxReadyTime(false);
-          }}
-          className="flex justify-center items-center relative mx-2"
-          style={styles.shadow}
-        >
-          <Image
-            source={require("@/assets/images/button/button9.png")}
-            alt="button"
-            className="w-40 h-12"
-          />
-          <Text
-            className="text-lg text-white absolute text-center font-Nobile"
-            style={styles.shadow}
-          >
-            Filters
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            setShowConversion(!showConversion);
-            setShowFilters(false);
-            setShowDiet(false);
-            setShowIntolerances(false);
-            setShowMaxReadyTime(false);
-          }}
-          className="flex justify-center items-center relative mx-2"
-          style={styles.shadow}
-        >
-          <Image
-            source={require("@/assets/images/button/button3.png")}
-            alt="button"
-            className="w-40 h-12"
-          />
-          <Text
-            className="text-lg text-white absolute text-center font-Nobile"
-            style={styles.shadow}
-          >
-            Unit Converter
-          </Text>
-        </TouchableOpacity>
-      </View>
-
+      {/* Show Unit Converter */}
       {showConversion && (
         <View>
           <View className="flex justify-center items-center my-3">
@@ -550,10 +489,7 @@ export default function Search() {
                 alt="button"
                 className="w-36 h-12"
               />
-              <Text
-                className="text-lg text-white absolute text-center font-Nobile"
-                style={styles.shadow}
-              >
+              <Text className="text-lg text-white absolute text-center font-Nobile">
                 Convert
               </Text>
             </TouchableOpacity>
@@ -570,14 +506,11 @@ export default function Search() {
               style={styles.shadow}
             >
               <Image
-                source={require("@/assets/images/button/button12.png")}
+                source={require("@/assets/images/button/button11.png")}
                 alt="button"
                 className="w-28 h-10"
               />
-              <Text
-                className="text-lg text-white absolute text-center font-Nobile"
-                style={styles.shadow}
-              >
+              <Text className="text-lg text-white absolute text-center font-Nobile">
                 Clear
               </Text>
             </TouchableOpacity>
@@ -607,169 +540,79 @@ export default function Search() {
         </View>
       )}
 
-      {/* Filters */}
-      {showFilters && (
-        <View className="flex flex-row justify-center items-center my-3">
+      {/* Search bar and filter button*/}
+      <View className="flex flex-row justify-center items-center mb-2">
+        {/* Search bar */}
+        <View className="flex justify-center items-center mx-2">
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <View className="relative items-center w-full justify-center">
+              <TextInput
+                placeholder="Search for recipes"
+                placeholderTextColor={"gray"}
+                value={search}
+                onChangeText={(text) => setSearch(text)}
+                onSubmitEditing={() =>
+                  search.trim() &&
+                  complexSearchByIngredients(
+                    search,
+                    diet,
+                    intolerances,
+                    maxReadyTime,
+                    numberOfRecipes
+                  )
+                }
+                className="border border-gray-400 rounded-lg pl-4 w-60 h-10 bg-[#e2e8f0] font-Nobile"
+              />
+              <TouchableOpacity
+                onPress={() => handleClearSearch()}
+                className="absolute right-2.5 top-2 -translate-y-3.125"
+              >
+                <Image
+                  source={require("@/assets/images/redCross.png")}
+                  alt="clear"
+                  className="w-6 h-6"
+                />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              onPress={() =>
+                search.trim() &&
+                complexSearchByIngredients(
+                  search,
+                  diet,
+                  intolerances,
+                  maxReadyTime,
+                  numberOfRecipes
+                )
+              }
+              className="absolute right-11 top-2 -translate-y-3.125"
+            >
+              <Image
+                source={require("@/assets/images/search2.png")}
+                alt="search"
+                className="w-6 h-6"
+              />
+            </TouchableOpacity>
+          </KeyboardAvoidingView>
+        </View>
+
+        {/* Filter Button */}
+        <View className="flex flex-row justify-center items-center">
           <TouchableOpacity
-            onPress={() => {
-              setShowDiet(!showDiet);
-              setShowIntolerances(false);
-              setShowMaxReadyTime(false);
-            }}
-            className="flex justify-center items-center relative w-20 h-10 mx-2"
+            onPress={() => setOpenFilterModal(!openFilterModal)}
+            className="flex justify-center items-center relative mx-2"
             style={styles.shadow}
           >
             <Image
-              source={require("../../assets/images/stickers/yellowTape2.png")}
-              className="absolute inset-0 w-full h-full"
-            ></Image>
-            <Text className="text-center font-Nobile">Diet</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setShowIntolerances(!showIntolerances);
-              setShowDiet(false);
-              setShowMaxReadyTime(false);
-            }}
-            className="flex justify-center items-center relative w-32 h-10 mx-2"
-            style={styles.shadow}
-          >
-            <Image
-              source={require("../../assets/images/stickers/yellowTape1.png")}
-              className="absolute inset-0 w-full h-full"
-            ></Image>
-            <Text className="text-center font-Nobile">Intolerances</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setShowMaxReadyTime(!showMaxReadyTime);
-              setShowDiet(false);
-              setShowIntolerances(false);
-            }}
-            className="flex justify-center items-center relative w-28 h-10 mx-2"
-            style={styles.shadow}
-          >
-            <Image
-              source={require("../../assets/images/stickers/yellowTape1.png")}
-              className="absolute inset-0 w-full h-full"
+              source={require("@/assets/images/filter5.png")}
+              alt="button"
+              className="w-10 h-10"
             />
-            <Text className="text-center font-Nobile">Max Time</Text>
           </TouchableOpacity>
         </View>
-      )}
-
-      {/* Diet and Intolerances Checkbox */}
-      <View className="flex flex-row justify-center items-start mb-2">
-        {showDiet && (
-          <View className="relative mx-3">
-            <View
-              className="absolute bg-[#64E6A6] rounded-lg -right-2 -bottom-2 w-[200] h-[330]"
-              style={styles.shadow}
-            ></View>
-            <View className="bg-white w-[200] p-2 rounded-lg">
-              {dietOptions.map((option) => (
-                <View
-                  key={option.key}
-                  className="flex-row m-0.5 ml-2 items-center"
-                >
-                  <BouncyCheckbox
-                    onPress={() => toggleDiet(option.key)}
-                    isChecked={diet.includes(option.key)}
-                    size={25}
-                    text={option.label}
-                    textStyle={{
-                      fontFamily: "Nobile",
-                      color: "green",
-                      fontSize: 14,
-                      textDecorationLine: "none",
-                    }}
-                    fillColor={"green"}
-                    unFillColor={"transparent"}
-                    innerIconStyle={{ borderWidth: 2, borderColor: "green" }}
-                    bounceEffectIn={0.6}
-                  />
-                  <RNBounceable
-                    onPress={() => toggleDiet(option.key)}
-                  ></RNBounceable>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-        {showIntolerances && (
-          <View className="relative mx-3">
-            <View
-              className="absolute bg-[#FF9B50] rounded-lg -right-2 -bottom-2 w-[140] h-[360]"
-              style={styles.shadow}
-            ></View>
-            <View className="bg-white w-[140] p-2 rounded-lg">
-              {intolerancesOptions.map((option) => (
-                <View
-                  key={option.key}
-                  className="flex-row m-0.5 ml-2 items-center"
-                >
-                  <BouncyCheckbox
-                    onPress={() => toggleIntolerances(option.key)}
-                    isChecked={intolerances.includes(option.key)}
-                    size={25}
-                    text={option.label}
-                    textStyle={{
-                      fontFamily: "Nobile",
-                      color: "orange",
-                      fontSize: 14,
-                      textDecorationLine: "none",
-                    }}
-                    fillColor={"orange"}
-                    unFillColor={"transparent"}
-                    innerIconStyle={{ borderWidth: 2, borderColor: "orange" }}
-                    bounceEffectIn={0.6}
-                  />
-                  <RNBounceable
-                    onPress={() => toggleIntolerances(option.key)}
-                  ></RNBounceable>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-        {showMaxReadyTime && (
-          <View className="relative mx-3">
-            <View
-              className="absolute bg-[#0098a3] rounded-lg -right-2 -bottom-2 w-[140] h-[240]"
-              style={styles.shadow}
-            ></View>
-            <View className="bg-white w-[140] p-2 rounded-lg">
-              {maxReadyTimeOptions.map((time) => (
-                <View key={time} className="flex-row m-0.5 ml-2 items-center">
-                  <BouncyCheckbox
-                    onPress={() => toggleMaxReadyTime(time)}
-                    isChecked={maxReadyTime === time}
-                    size={25}
-                    text={`${time} mins`}
-                    textStyle={{
-                      fontFamily: "Nobile",
-                      color: "#0098a3",
-                      fontSize: 14,
-                      textDecorationLine: "none",
-                    }}
-                    fillColor={"#0098a3"}
-                    unFillColor={"transparent"}
-                    innerIconStyle={{
-                      borderWidth: 2,
-                      borderColor: "#0098a3",
-                    }}
-                    bounceEffectIn={0.6}
-                  />
-                  <RNBounceable
-                    onPress={() => toggleMaxReadyTime(time)}
-                  ></RNBounceable>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
       </View>
-      <View className="w-72 h-[1] bg-slate-500 mt-3"></View>
 
       {/* Recipe Results */}
       <ScrollView className="flex-1 m-2">
@@ -877,25 +720,240 @@ export default function Search() {
         )}
       </ScrollView>
 
-      {/* Modal for Joke */}
+      {/* Trivia Modal */}
+      <Modal visible={showTrivia} onDismiss={() => setShowTrivia(false)}>
+        <View className="flex justify-center items-center">
+          <View className="flex justify-center items-center bg-slate-100 rounded-lg p-3 w-[80%]">
+            <View>
+              <TouchableOpacity
+                onPress={() => setShowTrivia(false)}
+                className="items-end"
+              >
+                <Image
+                  source={require("../../assets/images/cross.png")}
+                  className="w-6 h-6"
+                />
+              </TouchableOpacity>
+              <Text className="text-center font-Nobile text-2xl text-[#475569]">
+                Did you know?
+              </Text>
+              <Text className="text-center font-Nobile text-lg text-[#475569] m-8 mb-10">
+                {trivia}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Filter Modal */}
       <Modal
-        animationType="slide"
-        transparent={true}
-        visible={joke !== ""}
-        onRequestClose={() => {
-          setJoke("");
-        }}
+        visible={openFilterModal}
+        onDismiss={() => setOpenFilterModal(false)}
       >
-        <ScrollView className="flex-1">
-          <View className="flex-1 items-center justify-center">
-            <View className="bg-white p-4 rounded-lg">
-              <Text>{joke}</Text>
-              <TouchableOpacity onPress={() => setJoke("")}>
-                <Text>Close</Text>
+        {/* Filters */}
+        <View className="flex justify-center items-center">
+          <View className="bg-slate-100 rounded-2xl p-12">
+            <TouchableOpacity
+              onPress={() => setOpenFilterModal(false)}
+              className="absolute top-2 right-2 p-1"
+            >
+              <Image
+                source={require("../../assets/images/cross.png")}
+                className="w-6 h-6"
+              />
+            </TouchableOpacity>
+
+            <View className="flex justify-center items-center">
+              {/* Diet Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowDiet(!showDiet);
+                  setShowIntolerances(false);
+                  setShowMaxReadyTime(false);
+                }}
+                className="flex-row justify-between items-center my-2 p-2 bg-[#64E6A6] rounded-lg w-44"
+                style={styles.shadow}
+              >
+                <Text className="text-center font-Nobile ml-4 text-slate-800">
+                  Diet
+                </Text>
+                <Entypo name="chevron-down" size={24} color="#1e293b" />
+              </TouchableOpacity>
+
+              {/* Diet Options */}
+              {showDiet && (
+                <View className="relative mb-3">
+                  <View
+                    className="absolute bg-[#64E6A6] rounded-lg -right-2 -bottom-2 w-[180] h-[330]"
+                    style={styles.shadow}
+                  ></View>
+                  <View className="bg-white w-[185] p-2 rounded-lg">
+                    {dietOptions.map((option) => (
+                      <View
+                        key={option.key}
+                        className="flex-row m-0.5 ml-2 items-center"
+                      >
+                        <BouncyCheckbox
+                          onPress={() => toggleDiet(option.key)}
+                          isChecked={selectedDiet.includes(option.key)}
+                          size={25}
+                          text={option.label}
+                          textStyle={{
+                            fontFamily: "Nobile",
+                            color: "#58ca91",
+                            fontSize: 14,
+                            textDecorationLine: "none",
+                          }}
+                          fillColor={"#58ca91"}
+                          unFillColor={"transparent"}
+                          innerIconStyle={{
+                            borderWidth: 2,
+                            borderColor: "#64E6A6",
+                          }}
+                          bounceEffectIn={0.6}
+                        />
+                        <RNBounceable
+                          onPress={() => toggleDiet(option.key)}
+                        ></RNBounceable>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* Intolerances Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowIntolerances(!showIntolerances);
+                  setShowDiet(false);
+                  setShowMaxReadyTime(false);
+                }}
+                className="flex-row justify-between items-center my-2 bg-[#fa9c55] rounded-lg p-2 w-44"
+                style={styles.shadow}
+              >
+                <Text className="text-center font-Nobile ml-4 text-slate-800">
+                  Intolerances
+                </Text>
+                <Entypo name="chevron-down" size={24} color="#1e293b" />
+              </TouchableOpacity>
+
+              {/* Intolerances Options */}
+              {showIntolerances && (
+                <View className="relative mb-3">
+                  <View
+                    className="absolute bg-[#fa9c55] rounded-lg -right-2 -bottom-2 w-[185] h-[360]"
+                    style={styles.shadow}
+                  ></View>
+                  <View className="bg-white w-[185] p-2 rounded-lg">
+                    {intolerancesOptions.map((option) => (
+                      <View
+                        key={option.key}
+                        className="flex-row m-0.5 ml-2 items-center"
+                      >
+                        <BouncyCheckbox
+                          onPress={() => toggleIntolerances(option.key)}
+                          isChecked={selectedIntolerance.includes(option.key)}
+                          size={25}
+                          text={option.label}
+                          textStyle={{
+                            fontFamily: "Nobile",
+                            color: "#f38028",
+                            fontSize: 14,
+                            textDecorationLine: "none",
+                          }}
+                          fillColor={"#f38028"}
+                          unFillColor={"transparent"}
+                          innerIconStyle={{
+                            borderWidth: 2,
+                            borderColor: "#fa9c55",
+                          }}
+                          bounceEffectIn={0.6}
+                        />
+                        <RNBounceable
+                          onPress={() => toggleIntolerances(option.key)}
+                        ></RNBounceable>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* Max Ready Time Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowMaxReadyTime(!showMaxReadyTime);
+                  setShowDiet(false);
+                  setShowIntolerances(false);
+                }}
+                className="flex-row justify-between items-center my-2 bg-[#0cbac7] rounded-lg p-2 w-44"
+                style={styles.shadow}
+              >
+                <Text className="text-center font-Nobile ml-4 text-slate-800">
+                  Max Time
+                </Text>
+                <Entypo name="chevron-down" size={24} color="#1e293b" />
+              </TouchableOpacity>
+
+              {/* Max Ready Time Options */}
+              {showMaxReadyTime && (
+                <View className="relative mb-3">
+                  <View
+                    className="absolute bg-[#0cbac7] rounded-lg -right-2 -bottom-2 w-[185] h-[240]"
+                    style={styles.shadow}
+                  ></View>
+                  <View className="bg-white w-[185] p-2 rounded-lg">
+                    {maxReadyTimeOptions.map((time) => (
+                      <View
+                        key={time}
+                        className="flex-row m-0.5 ml-2 items-center"
+                      >
+                        <BouncyCheckbox
+                          onPress={() => toggleMaxReadyTime(time)}
+                          isChecked={selectedMaxReadyTime === time}
+                          size={25}
+                          text={`${time} mins`}
+                          textStyle={{
+                            fontFamily: "Nobile",
+                            color: "#0098a3",
+                            fontSize: 14,
+                            textDecorationLine: "none",
+                          }}
+                          fillColor={"#0098a3"}
+                          unFillColor={"transparent"}
+                          innerIconStyle={{
+                            borderWidth: 2,
+                            borderColor: "#0cbac7",
+                          }}
+                          bounceEffectIn={0.6}
+                        />
+                        <RNBounceable
+                          onPress={() => toggleMaxReadyTime(time)}
+                        ></RNBounceable>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              <TouchableOpacity
+                onPress={handleOkPress}
+                className="flex justify-center items-center my-4"
+                style={styles.shadow}
+              >
+                <Text className="text-2xl font-Nobile text-slate-800">OK</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleResetFilters}
+                className="absolute -bottom-10"
+                style={styles.shadow}
+              >
+                <Text className="text-base font-Nobile text-slate-800">
+                  Reset Options
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
-        </ScrollView>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -910,7 +968,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 8,
+    elevation: 4,
   },
 });
 

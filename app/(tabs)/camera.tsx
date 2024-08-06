@@ -33,7 +33,6 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
-import { ViewBase } from "react-native";
 
 const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
 const USER_ID = "clarifai";
@@ -53,6 +52,7 @@ export default function Camera() {
   const cameraRef = useRef<CameraView>(null);
   const pinchRef = useRef(null);
   const [selectedIngredients, setSelectedIngredients] = useState([]);
+  const [addedIngredients, setAddedIngredients] = useState([]);
 
   const dispatch = useDispatch();
   const route = useRoute();
@@ -250,7 +250,7 @@ export default function Camera() {
     if (selectedIngredients.length === 0) {
       toast.show("Please select ingredients to add", {
         type: "warning",
-        placement: "top",
+        placement: "center",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -280,7 +280,7 @@ export default function Camera() {
       if (newIngredients.length === 0) {
         toast.show(`This ingredient is already in your kitchen`, {
           type: "warning",
-          placement: "top",
+          placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -306,29 +306,37 @@ export default function Camera() {
       console.log("Ingredients added:", responseData);
       dispatch(updateIngredients(newIngredients));
 
-      toast.show(
-        `${
-          newIngredients[0].name.charAt(0).toUpperCase() +
-          newIngredients[0].name.slice(1)
-        } has been added successfully`,
-        {
-          type: "success",
-          placement: "top",
-          duration: 2000,
-          animationType: "zoom-in",
-          swipeEnabled: true,
-          icon: (
-            <Ionicons name="checkmark-circle-outline" size={24} color="white" />
-          ),
-        }
-      );
+      const ingredientNames = newIngredients
+        .map(
+          (ingredient) =>
+            ingredient.name.charAt(0).toUpperCase() + ingredient.name.slice(1)
+        )
+        .join(", ");
 
+      toast.show(`${ingredientNames} have been added successfully`, {
+        type: "success",
+        placement: "center",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: (
+          <Ionicons name="checkmark-circle-outline" size={24} color="white" />
+        ),
+      });
+      setTimeout(() => {
+        navigation.navigate("fridge");
+      }, 2000);
+
+      setAddedIngredients((prev) => [
+        ...prev,
+        ...newIngredients.map((i) => i.name),
+      ]);
       setSelectedIngredients([]);
     } catch (error) {
       console.error("Failed to add ingredients:", error);
       toast.show("Failed to add ingredients. Please try again.", {
         type: "danger",
-        placement: "top",
+        placement: "center",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -339,8 +347,8 @@ export default function Camera() {
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center bg-slate-600 pb-16">
-      <StatusBar barStyle="light-content" />
       <Background cellSize={25} />
+      <StatusBar barStyle="light-content" />
 
       <View className="flex justify-center items-center m-2">
         {!cameraOpen && (
@@ -467,7 +475,10 @@ export default function Camera() {
                 >
                   <BouncyCheckbox
                     onPress={() => toggleIngredient(prediction)}
-                    isChecked={selectedIngredients.includes(prediction)}
+                    isChecked={
+                      addedIngredients.includes(prediction.name) ||
+                      selectedIngredients.includes(prediction)
+                    }
                     text={
                       prediction.name.charAt(0).toUpperCase() +
                       prediction.name.slice(1) +
@@ -477,8 +488,11 @@ export default function Camera() {
                     }
                     textStyle={{
                       fontFamily: "SpaceMono",
-                      textDecorationLine: "none",
-                      color: "#334155",
+                      textDecorationLine: addedIngredients.includes(
+                        prediction.name
+                      )
+                        ? "line-through"
+                        : "none",
                     }}
                     fillColor="#FED400"
                     unFillColor="#e2e8f0"
@@ -494,6 +508,7 @@ export default function Camera() {
               <TouchableOpacity
                 onPress={addIngredients}
                 className="relative flex justify-center items-center"
+                style={styles.shadow}
               >
                 <Image
                   source={require("../../assets/images/button/button7.png")}

@@ -33,7 +33,6 @@ import {
   FontAwesome,
   AntDesign,
 } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { FlatList, ScrollView } from "react-native-gesture-handler";
 
 export default function Profile() {
@@ -55,6 +54,8 @@ export default function Profile() {
   const [oldIngredients, setOldIngredients] = useState([{}]);
   const [isAvatarPickerVisible, setIsAvatarPickerVisible] = useState(false);
   // const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [joke, setJoke] = useState("");
+  const [jokeModalVisible, setJokeModalVisible] = useState(false);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -69,7 +70,7 @@ export default function Profile() {
     dispatch(logout());
     toast.show("Logged out successfully", {
       type: "normal",
-      placement: "top",
+      placement: "center",
       duration: 2000,
       animationType: "zoom-in",
       swipeEnabled: true,
@@ -104,7 +105,7 @@ export default function Profile() {
     if (!newUsername) {
       toast.show("Please enter a new username", {
         type: "warning",
-        placement: "top",
+        placement: "center",
       });
       return;
     }
@@ -138,7 +139,10 @@ export default function Profile() {
 
               const data = await response.json();
               if (!response.ok) {
-                toast.show(data.message, { type: "danger", placement: "top" });
+                toast.show(data.message, {
+                  type: "danger",
+                  placement: "center",
+                });
                 return;
               }
 
@@ -149,18 +153,21 @@ export default function Profile() {
                 }));
                 setNewUsername("");
                 setIsUpdateInfoModalVisible(false);
-                toast.show(data.message, { type: "success", placement: "top" });
+                toast.show(data.message, {
+                  type: "success",
+                  placement: "center",
+                });
               } else {
                 toast.show("Failed to update username", {
                   type: "danger",
-                  placement: "top",
+                  placement: "center",
                 });
               }
             } catch (error) {
               console.error("Error updating username:", error);
               toast.show("An error occurred. Please try again.", {
                 type: "warning",
-                placement: "top",
+                placement: "center",
               });
             }
           },
@@ -174,7 +181,7 @@ export default function Profile() {
     if (!newPassword) {
       toast.show("Please enter a new password", {
         type: "warning",
-        placement: "top",
+        placement: "center",
       });
       return;
     }
@@ -206,17 +213,23 @@ export default function Profile() {
               );
               const data = await response.json();
               if (response.ok) {
-                toast.show(data.message, { type: "success", placement: "top" });
+                toast.show(data.message, {
+                  type: "success",
+                  placement: "center",
+                });
                 setNewPassword("");
                 setIsUpdateInfoModalVisible(false);
               } else {
-                toast.show(data.message, { type: "danger", placement: "top" });
+                toast.show(data.message, {
+                  type: "danger",
+                  placement: "center",
+                });
               }
             } catch (error) {
               console.error("Error updating password:", error);
               toast.show("An error occurred. Please try again.", {
                 type: "danger",
-                placement: "top",
+                placement: "center",
               });
             }
           },
@@ -230,7 +243,7 @@ export default function Profile() {
     if (!newEmail) {
       toast.show("Please enter a new email", {
         type: "warning",
-        placement: "top",
+        placement: "center",
       });
       return;
     }
@@ -259,17 +272,23 @@ export default function Profile() {
               });
               const data = await response.json();
               if (response.ok) {
-                toast.show(data.message, { type: "success", placement: "top" });
+                toast.show(data.message, {
+                  type: "success",
+                  placement: "center",
+                });
                 setNewEmail("");
                 setIsUpdateInfoModalVisible(false);
               } else {
-                toast.show(data.message, { type: "danger", placement: "top" });
+                toast.show(data.message, {
+                  type: "danger",
+                  placement: "center",
+                });
               }
             } catch (error) {
               console.error("Error updating email:", error);
               toast.show("An error occurred. Please try again.", {
                 type: "danger",
-                placement: "top",
+                placement: "center",
               });
             }
           },
@@ -305,6 +324,13 @@ export default function Profile() {
 
   const toggleIsNewPasswordVisible = () => {
     setIsNewPasswordVisible(!isNewPasswordVisible);
+  };
+
+  const fetchJoke = async () => {
+    const response = await fetch(`${BACKEND_URL}/recipes/joke`);
+    const data = await response.json();
+    console.log(data);
+    setJoke(data.text);
   };
 
   const avatarImages = [
@@ -382,6 +408,22 @@ export default function Profile() {
                   </TouchableOpacity>
                 </View>
               )}
+
+              <View className="absolute top-12 right-3 flex-row">
+                <TouchableOpacity
+                  onPress={() => {
+                    setJokeModalVisible(true);
+                    fetchJoke();
+                  }}
+                  className="flex justify-center items-center relative mx-2"
+                >
+                  {/* <FontAwesome5 name="laugh-squint" size={26} color="#4b5563" /> */}
+                  <Image
+                    source={require("../../assets/images/laughingSmiley.png")}
+                    className="w-12 h-12"
+                  />
+                </TouchableOpacity>
+              </View>
 
               {/* Avatar */}
               <TouchableOpacity onPress={() => setIsAvatarPickerVisible(true)}>
@@ -530,15 +572,15 @@ export default function Profile() {
                       <View className="flex-row justify-center items-center w-full p-2 bg-[#f03838e9] rounded-t-2xl mb-2">
                         <Image
                           source={require("../../assets/images/warning.png")}
-                          className="w-8 h-8"
+                          className="w-8 h-8 mr-1"
                         />
                         <Text className="text-center text-base text-slate-900 font-Maax">
-                          You have {oldIngredients.length} ingredient(s) older
-                          than a week :
+                          {oldIngredients.length} ingredient(s) added over a
+                          week ago
                         </Text>
                       </View>
                       <ScrollView className="flex-1">
-                        <View className="flex justify-center items-start">
+                        <View className="p-1 flex justify-center items-center w-[370]">
                           {oldIngredients.map((item, index) => (
                             <BouncyCheckbox
                               isChecked={true}
@@ -548,26 +590,20 @@ export default function Profile() {
                                 fontFamily: "SpaceMono",
                                 textDecorationLine: "none",
                                 color: "#334155",
+                                paddingHorizontal: 3,
+                                paddingVertical: 5,
                               }}
                               fillColor="#FED400"
                               unFillColor="#e2e8f0"
                               innerIconStyle={{ borderColor: "#334155" }}
                               bounceEffectIn={0.6}
-                              textComponent={
-                                <View className="flex-row justify-center items-center p-2">
-                                  <Text className="text-lg font-SpaceMono">
-                                    {item.name &&
-                                      item.name.charAt(0).toUpperCase() +
-                                        item.name.slice(1)}
-                                  </Text>
-                                  <Text className="text-md ">
-                                    {" (added on " +
-                                      moment(item.dateAdded).format(
-                                        "MMM Do YYYY"
-                                      ) +
-                                      ")"}
-                                  </Text>
-                                </View>
+                              text={
+                                item.name &&
+                                item.name.charAt(0).toUpperCase() +
+                                  item.name.slice(1) +
+                                  " (added on " +
+                                  moment(item.dateAdded).format("MMM Do YYYY") +
+                                  ")"
                               }
                             />
                           ))}
@@ -579,13 +615,13 @@ export default function Profile() {
                       <View className="flex-row justify-center items-center w-full p-2 bg-[#6deb84] rounded-t-2xl mb-2">
                         <Image
                           source={require("../../assets/images/checkGreen.png")}
-                          className="w-8 h-8 mr-2"
+                          className="w-8 h-8 mr-1"
                         />
                         <Text className="text-center text-base text-slate-900 font-Maax">
-                          No ingredients older than a week!
+                          No ingredients added over a week ago
                         </Text>
                       </View>
-                      <View className="flex justify-center items-center mt-2">
+                      <View className="flex justify-center items-center flex-1">
                         <Text className="text-xl font-Flux text-slate-700">
                           Well done!
                         </Text>
@@ -627,7 +663,7 @@ export default function Profile() {
                 </Text>
               </View>
             </View>
-            <View className="flex justify-center items-center mt-6 mb-10">
+            <View className="flex justify-center items-center mt-6 mb-10 mx-6">
               <Text className="font-SpaceMono text-xl text-center">
                 Snap a picture of your ingredients and get started!
               </Text>
@@ -648,10 +684,21 @@ export default function Profile() {
         onDismiss={() => setIsUpdateInfoModalVisible(false)}
       >
         <View className="flex justify-center items-center">
-          <View
-            className="flex justify-around items-center bg-slate-50 rounded-lg p-6"
-            style={styles.shadow}
-          >
+          <View className="flex justify-around items-center bg-slate-50 rounded-lg p-8">
+            <TouchableOpacity
+              onPress={() => {
+                setIsUpdateInfoModalVisible(false);
+                setNewPassword("");
+                setNewUsername("");
+                setNewEmail("");
+              }}
+              className="absolute top-2 right-2 p-1"
+            >
+              <Image
+                source={require("../../assets/images/cross.png")}
+                className="w-6 h-6"
+              />
+            </TouchableOpacity>
             <Text className="text-xl text-center font-Nobile mb-4">
               Update Information
             </Text>
@@ -724,18 +771,6 @@ export default function Profile() {
                 </View>
               </View>
             </View>
-            <TouchableOpacity
-              onPress={() => {
-                setIsUpdateInfoModalVisible(false);
-                setNewPassword("");
-                setNewUsername("");
-                setNewEmail("");
-              }}
-            >
-              <Text className="text-lg text-center mt-4 font-Nobile">
-                Close
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -766,6 +801,34 @@ export default function Profile() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal for Joke */}
+      <Modal
+        visible={jokeModalVisible}
+        onDismiss={() => setJokeModalVisible(false)}
+      >
+        <View className="flex justify-center items-center">
+          <View className="bg-slate-100 rounded-2xl p-2 w-[80%] max-h-[500]">
+            <TouchableOpacity
+              onPress={() => setJokeModalVisible(false)}
+              className="items-end p-1"
+            >
+              <Image
+                source={require("../../assets/images/cross.png")}
+                className="w-6 h-6"
+              />
+            </TouchableOpacity>
+            <Text className="text-center text-2xl font-Nobile text-[#475569] mb-2">
+              Random Joke
+            </Text>
+            <ScrollView>
+            <Text className="text-center font-Nobile text-lg text-[#475569] my-4 mx-6">
+                {joke}
+              </Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -774,11 +837,11 @@ const styles = StyleSheet.create({
   shadow: {
     shadowColor: "#000",
     shadowOffset: {
-      width: 2,
-      height: 2,
+      width: 3,
+      height: 3,
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 6,
+    elevation: 4,
   },
 });

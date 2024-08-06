@@ -98,7 +98,7 @@ export default function recipesFromFridge() {
         console.log("Error adding recipe to favourites");
         toast.show("Error adding recipe to favourites", {
           type: "warning",
-          placement: "top",
+          placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -114,7 +114,7 @@ export default function recipesFromFridge() {
 
       toast.show("Recipe added to favourites", {
         type: "success",
-        placement: "top",
+        placement: "center",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -137,7 +137,7 @@ export default function recipesFromFridge() {
       if (!response.ok) {
         toast.show("Error removing recipe from favourites", {
           type: "warning",
-          placement: "top",
+          placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -153,7 +153,7 @@ export default function recipesFromFridge() {
 
       toast.show("Recipe removed from favourites", {
         type: "success",
-        placement: "top",
+        placement: "center",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -236,7 +236,11 @@ export default function recipesFromFridge() {
                       className="flex items-center justify-center"
                     >
                       <Image
-                        source={{ uri: recipe.image }}
+                        source={
+                          recipe.image
+                            ? { uri: recipe.image }
+                            : require("../../assets/images/picMissing.png")
+                        }
                         className="rounded-xl w-[200] h-[200] right-4"
                       />
                       <View className="flex items-center justify-center max-w-[200] mt-4">

@@ -218,7 +218,7 @@ export default function RecipeCard() {
         console.log("Error adding recipe to favourites");
         toast.show("Error adding recipe to favourites", {
           type: "warning",
-          placement: "top",
+          placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -233,7 +233,7 @@ export default function RecipeCard() {
 
       toast.show("Recipe added to favourites", {
         type: "success",
-        placement: "top",
+        placement: "center",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -256,7 +256,7 @@ export default function RecipeCard() {
       if (!response.ok) {
         toast.show("Error removing recipe from favourites", {
           type: "warning",
-          placement: "top",
+          placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
@@ -272,7 +272,7 @@ export default function RecipeCard() {
 
       toast.show("Recipe removed from favourites", {
         type: "success",
-        placement: "top",
+        placement: "center",
         duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
@@ -300,16 +300,6 @@ export default function RecipeCard() {
     pescatarian: require("../../assets/images/diets/pescatarian.png"),
   };
 
-  const randomMissingMainImage = () => {
-    const images = [
-      require("../../assets/images/waiterTray/waiterTray1.png"),
-      require("../../assets/images/waiterTray/waiterTray2.png"),
-      require("../../assets/images/waiterTray/waiterTray3.png"),
-      require("../../assets/images/waiterTray/waiterTray4.png"),
-    ];
-    return images[Math.floor(Math.random() * images.length)];
-  };
-
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <StatusBar barStyle="dark-content" />
@@ -331,7 +321,7 @@ export default function RecipeCard() {
                 style={{
                   width: Math.min(screenWidth, calculatedHeight),
                   height: Math.min(screenWidth, calculatedHeight),
-                  borderRadius: 120,
+                  borderRadius: recipe.image ? 120 : 0,
                   overflow: "hidden",
                 }}
               >
@@ -339,9 +329,13 @@ export default function RecipeCard() {
                   source={
                     recipe.image
                       ? { uri: recipe.image }
-                      : randomMissingMainImage()
+                      : require("../../assets/images/picMissing.png")
                   }
-                  className="w-full h-full"
+                  className={
+                    recipe.image
+                      ? "w-full h-full"
+                      : "w-44 h-44 top-0 bootom-0 right-0 left-0 m-auto"
+                  }
                 />
               </View>
             </View>
@@ -959,22 +953,22 @@ export default function RecipeCard() {
         )}
       </ScrollView>
 
-      {/* Nutritional Modal */}
+      {/* Nutritional Value Modal */}
       <Modal visible={showNutrition} onDismiss={() => setShowNutrition(false)}>
-        <View className="flex justify-center items-center ">
-          <View
-            style={styles.shadow}
-            className="bg-slate-300 rounded-2xl p-2 items-center justify-center max-h-[720] w-[90%] bottom-10"
-          >
+        <View className="flex justify-center items-center">
+          <View className="bg-slate-300 rounded-2xl p-2 w-[90%]">
             {recipe && (
-              <ScrollView>
+              <>
                 <TouchableOpacity
                   onPress={() => setShowNutrition(false)}
-                  className="items-end"
+                  className="items-end p-1"
                 >
-                  <AntDesign name="close" size={30} color={"#64748b"} />
+                  <Image
+                    source={require("../../assets/images/cross.png")}
+                    className="w-6 h-6"
+                  />
                 </TouchableOpacity>
-                <View className="items-center">
+                <View className="items-center mx-4 mt-2">
                   <Text className="font-SpaceMono text-lg text-center">
                     Nutritional Values for {recipe.title} recipe
                   </Text>
@@ -993,35 +987,42 @@ export default function RecipeCard() {
                     </DataTable.Title>
                   </DataTable.Header>
 
-                  {recipe.nutrition.nutrients &&
-                    recipe.nutrition.nutrients.map((nutrient, index) => (
-                      <DataTable.Row
-                        key={index}
-                        style={
-                          index % 2 === 0
-                            ? { backgroundColor: "#f1f5f9" }
-                            : { backgroundColor: "#e2e8f0" }
-                        }
-                      >
-                        <DataTable.Cell className="justify-center">
-                          <Text numberOfLines={2} className="text-center">
-                            {nutrient.name}
-                          </Text>
-                        </DataTable.Cell>
-                        <DataTable.Cell className="justify-center">
-                          <Text numberOfLines={1}>
-                            {nutrient.amount} {nutrient.unit}
-                          </Text>
-                        </DataTable.Cell>
-                        <DataTable.Cell className="justify-center">
-                          <Text numberOfLines={1}>
-                            {nutrient.percentOfDailyNeeds}%
-                          </Text>
-                        </DataTable.Cell>
-                      </DataTable.Row>
-                    ))}
+                  <ScrollView
+                    style={{
+                      maxHeight: 350,
+                      width: "100%",
+                    }}
+                  >
+                    {recipe.nutrition.nutrients &&
+                      recipe.nutrition.nutrients.map((nutrient, index) => (
+                        <DataTable.Row
+                          key={index}
+                          style={
+                            index % 2 === 0
+                              ? { backgroundColor: "#f1f5f9" }
+                              : { backgroundColor: "#e2e8f0" }
+                          }
+                        >
+                          <DataTable.Cell className="justify-center">
+                            <Text numberOfLines={2} className="text-center">
+                              {nutrient.name}
+                            </Text>
+                          </DataTable.Cell>
+                          <DataTable.Cell className="justify-center">
+                            <Text numberOfLines={1}>
+                              {nutrient.amount} {nutrient.unit}
+                            </Text>
+                          </DataTable.Cell>
+                          <DataTable.Cell className="justify-center">
+                            <Text numberOfLines={1}>
+                              {nutrient.percentOfDailyNeeds}%
+                            </Text>
+                          </DataTable.Cell>
+                        </DataTable.Row>
+                      ))}
+                  </ScrollView>
                 </DataTable>
-              </ScrollView>
+              </>
             )}
           </View>
         </View>
@@ -1033,47 +1034,52 @@ export default function RecipeCard() {
         onDismiss={() => setIngredientModalVisible(false)}
       >
         <View className="flex justify-center items-center">
-          <View
-            style={styles.shadow}
-            className="bg-slate-300 rounded-2xl p-2 justify-center items-center max-h-[720] w-[90%] bottom-10"
-          >
-            <ScrollView>
-              <TouchableOpacity
-                onPress={() => setIngredientModalVisible(false)}
-                className="items-end"
-              >
-                <AntDesign name="close" size={30} color={"#64748b"} />
-              </TouchableOpacity>
+          <View className="bg-slate-300 rounded-2xl p-2 w-[90%]">
+            {selectedIngredientNutrition && (
+              <>
+                <TouchableOpacity
+                  onPress={() => setIngredientModalVisible(false)}
+                  className="items-end p-1"
+                >
+                  <Image
+                    source={require("../../assets/images/cross.png")}
+                    className="w-6 h-6"
+                  />
+                </TouchableOpacity>
 
-              {selectedIngredientNutrition && (
-                <View>
-                  <View>
-                    <Text className="font-SpaceMono text-[20px] text-center">
-                      {`Nutritional Values for ${
-                        selectedIngredientNutrition.amount
-                      } ${
-                        selectedIngredientNutrition.unit
-                      } of ${selectedIngredientNutrition.name
-                        .charAt(0)
-                        .toUpperCase()}${selectedIngredientNutrition.name.slice(
-                        1
-                      )}`}
-                    </Text>
-                  </View>
+                <View className="items-center mx-4 mt-2">
+                  <Text className="font-SpaceMono text-lg text-center">
+                    {`Nutritional Values for ${
+                      selectedIngredientNutrition.amount
+                    } ${
+                      selectedIngredientNutrition.unit
+                    } of ${selectedIngredientNutrition.name
+                      .charAt(0)
+                      .toUpperCase()}${selectedIngredientNutrition.name.slice(
+                      1
+                    )}`}
+                  </Text>
+                </View>
 
-                  <DataTable className="w-max my-3">
-                    <DataTable.Header>
-                      <DataTable.Title className="justify-center">
-                        <Text>Nutrient</Text>
-                      </DataTable.Title>
-                      <DataTable.Title className="justify-center">
-                        Amount
-                      </DataTable.Title>
-                      <DataTable.Title className="justify-center">
-                        Daily needs
-                      </DataTable.Title>
-                    </DataTable.Header>
+                <DataTable className="w-max my-3">
+                  <DataTable.Header>
+                    <DataTable.Title className="justify-center">
+                      <Text>Nutrient</Text>
+                    </DataTable.Title>
+                    <DataTable.Title className="justify-center">
+                      Amount
+                    </DataTable.Title>
+                    <DataTable.Title className="justify-center">
+                      Daily needs
+                    </DataTable.Title>
+                  </DataTable.Header>
 
+                  <ScrollView
+                    style={{
+                      maxHeight: 350,
+                      width: "100%",
+                    }}
+                  >
                     {selectedIngredientNutrition.nutrients.map(
                       (nutrient, index) => (
                         <DataTable.Row
@@ -1102,10 +1108,10 @@ export default function RecipeCard() {
                         </DataTable.Row>
                       )
                     )}
-                  </DataTable>
-                </View>
-              )}
-            </ScrollView>
+                  </ScrollView>
+                </DataTable>
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -1117,16 +1123,16 @@ export default function RecipeCard() {
         style={{ width: "100%" }}
       >
         <View className="flex justify-center items-center">
-          <View
-            style={styles.shadow}
-            className="bg-slate-200 rounded-2xl p-2 justify-center items-center max-h-[720] w-[90%] bottom-10"
-          >
+          <View className="bg-slate-200 rounded-2xl p-2 justify-center items-center max-h-[720] w-[90%] bottom-10">
             <ScrollView>
               <TouchableOpacity
                 onPress={() => setShowSubstitutes(false)}
-                className="items-end"
+                className="items-end p-1"
               >
-                <AntDesign name="close" size={30} color={"#64748b"} />
+                <Image
+                  source={require("../../assets/images/cross.png")}
+                  className="w-6 h-6"
+                />
               </TouchableOpacity>
               <View className="flex flex-row flex-wrap justify-center items-center mb-4">
                 {(() => {
@@ -1239,6 +1245,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 8,
+    elevation: 5,
   },
 });
