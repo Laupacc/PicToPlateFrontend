@@ -14,7 +14,10 @@ import {
 import { Modal } from "react-native-paper";
 import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { addToFavouriteRecipes } from "@/store/recipes";
+import {
+  addToFavouriteRecipes,
+  removeFromFavouriteRecipes,
+} from "@/store/recipes";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
@@ -44,6 +47,7 @@ export default function Search() {
   const [recipesFromIngredients, setRecipesFromIngredients] = useState<any[]>(
     []
   );
+  const [hasMoreResults, setHasMoreResults] = useState(false);
   const [maxReadyTime, setMaxReadyTime] = useState<number | null>(null);
   const [diet, setDiet] = useState([]);
   const [intolerances, setIntolerances] = useState([]);
@@ -68,14 +72,47 @@ export default function Search() {
   const [showConversion, setShowConversion] = useState(false);
   const [showConversionResult, setShowConversionResult] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [userInfo, setUserInfo] = useState({});
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
-  // Fetch Trivia useEffect
+  // fetch user info
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (user.token) {
+        const response = await fetch(
+          `${BACKEND_URL}/users/userInformation/${user.token}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
+        const data = await response.json();
+        setUserInfo(data);
+      }
+    };
+    fetchUser();
+  }, [user.token]);
 
+  // update favourites state
+  useEffect(() => {
+    if (userInfo.favourites) {
+      const favourites = userInfo.favourites;
+      const favouritesObj = {};
+      for (const id of favourites) {
+        favouritesObj[id] = true;
+      }
+      setIsFavourite(favouritesObj);
+    }
+  }, [userInfo.favourites]);
+
+  // Fetch Trivia useEffect
   const fetchTrivia = async () => {
     const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
     const data = await response.json();
@@ -140,6 +177,12 @@ export default function Search() {
       setMaxReadyTime(maxReadyTime);
       setSearchPerformed(true);
       setNumberOfRecipes(number + offset);
+
+      if (recipe.totalResults && recipe.totalResults > number + offset) {
+        setHasMoreResults(true);
+      } else {
+        setHasMoreResults(false);
+      }
     } catch (error) {
       console.error("Error fetching recipes:", error);
       toast.show("Error fetching recipes", {
@@ -175,7 +218,7 @@ export default function Search() {
       }
 
       dispatch(addToFavouriteRecipes(recipe));
-      setIsFavourite(true);
+      setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
 
       console.log("Recipe added to favourites:", recipe.id);
       toast.show("Recipe added to favourites", {
@@ -188,6 +231,45 @@ export default function Search() {
       });
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  // Remove recipe from favourites list
+  const removeRecipeFromFavourites = async (recipeId) => {
+    try {
+      const token = user.token;
+      const response = await fetch(
+        `${BACKEND_URL}/users/removeFavourite/${recipeId}/${token}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        toast.show("Error removing recipe from favourites", {
+          type: "warning",
+          placement: "center",
+          duration: 2000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="warning" size={24} color="white" />,
+        });
+        console.log("Error removing recipe from favourites");
+      }
+
+      const data = await response.json();
+      console.log(data);
+      dispatch(removeFromFavouriteRecipes(recipe));
+      setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
+
+      toast.show("Recipe removed from favourites", {
+        type: "success",
+        placement: "center",
+        duration: 2000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+      });
+    } catch (error) {
+      console.error("Error removing recipe from favourites:", error.message);
     }
   };
 
@@ -363,21 +445,22 @@ export default function Search() {
       </View>
 
       {/* Three Top Buttons */}
-      <View className="flex-row justify-between items-center">
-        {/* Open Trivia */}
-        <View className="flex-row justify-center items-center mx-1 ">
+      <View className="flex-row justify-center items-center mb-3">
+        {/* Open Trivia Button */}
+        <View className="flex-row justify-center items-center mx-1 flex-grow">
           <TouchableOpacity
             onPress={() => {
               setShowTrivia(!showTrivia);
               fetchTrivia();
             }}
-            className="flex justify-center items-center m-1 p-2 rounded-lg bg-[#1c79b2]"
+            className="flex justify-center items-center m-2 p-3 rounded-lg bg-[#1c79b2]"
             style={styles.shadow}
           >
             <Text className="text-md text-white text-center font-Nobile">
               Trivia
             </Text>
           </TouchableOpacity>
+
           {/* Unit Converter Button */}
           <TouchableOpacity
             onPress={() => {
@@ -387,7 +470,7 @@ export default function Search() {
               setShowIntolerances(false);
               setShowMaxReadyTime(false);
             }}
-            className="flex justify-center items-center m-1 p-2 rounded-lg bg-[#1c79b2]"
+            className="flex justify-center items-center m-2 p-3 rounded-lg bg-[#1c79b2]"
             style={styles.shadow}
           >
             <Text className="text-md text-white text-center font-Nobile">
@@ -398,7 +481,7 @@ export default function Search() {
 
         {/* Radom Recipe Button */}
         <View
-          className="flex justify-between items-center"
+          className="flex justify-between items-center right-8"
           style={styles.shadow}
         >
           <View className="flex justify-center items-center">
@@ -426,7 +509,7 @@ export default function Search() {
       {/* Show Unit Converter */}
       {showConversion && (
         <View>
-          <View className="flex justify-center items-center my-3">
+          <View className="flex justify-center items-center mb-6 p-5 bg-slate-200 rounded-lg border border-slate-400">
             <View className="flex flex-row justify-center items-center m-2">
               <TextInput
                 placeholder="Ingredient"
@@ -481,7 +564,7 @@ export default function Search() {
                 );
                 setShowConversionResult(true);
               }}
-              className="flex justify-center items-center relative mx-2"
+              className="flex justify-center items-center relative my-2"
               style={styles.shadow}
             >
               <Image
@@ -501,6 +584,7 @@ export default function Search() {
                 setTargetUnit("");
                 setConvertedAmount("");
                 setShowConversionResult(false);
+                setErrorMessage("");
               }}
               className="flex justify-center items-center relative mx-2"
               style={styles.shadow}
@@ -514,18 +598,17 @@ export default function Search() {
                 Clear
               </Text>
             </TouchableOpacity>
+
+            {errorMessage !== "" && (
+              <View className="flex justify-center items-center mt-4">
+                <Text className="text-center font-Nobile text-red-500 text-[16px]">
+                  {errorMessage}
+                </Text>
+              </View>
+            )}
           </View>
-
-          {errorMessage !== "" && (
-            <View className="flex justify-center items-center">
-              <Text className="text-center font-Nobile text-red-500 text-[16px]">
-                {errorMessage}
-              </Text>
-            </View>
-          )}
-
           {showConversionResult && !errorMessage && (
-            <View className="relative">
+            <View className="relative mb-6">
               <View
                 className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1 w-[350px] h-[50px]"
                 style={styles.shadow}
@@ -543,13 +626,13 @@ export default function Search() {
       {/* Search bar and filter button*/}
       <View className="flex flex-row justify-center items-center mb-2">
         {/* Search bar */}
-        <View className="flex justify-center items-center mx-2">
+        <View className="flex justify-center items-center mx-3">
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
           >
             <View className="relative items-center w-full justify-center">
               <TextInput
-                placeholder="Search for recipes"
+                placeholder="Search by ingredients"
                 placeholderTextColor={"gray"}
                 value={search}
                 onChangeText={(text) => setSearch(text)}
@@ -563,7 +646,7 @@ export default function Search() {
                     numberOfRecipes
                   )
                 }
-                className="border border-gray-400 rounded-lg pl-4 w-60 h-10 bg-[#e2e8f0] font-Nobile"
+                className="border border-gray-400 rounded-lg pl-4 w-64 h-10 bg-[#e2e8f0] font-Nobile"
               />
               <TouchableOpacity
                 onPress={() => handleClearSearch()}
@@ -630,13 +713,17 @@ export default function Search() {
               />
               <TouchableOpacity
                 className="absolute top-20 right-4"
-                onPress={() => addRecipeToFavourites(recipe.id)}
+                onPress={() =>
+                  isFavourite[recipe.id]
+                    ? removeRecipeFromFavourites(recipe.id)
+                    : addRecipeToFavourites(recipe.id)
+                }
               >
                 <Image
                   source={
-                    isFavourite
-                      ? require("../../assets/images/heart1.png")
-                      : require("../../assets/images/heart3.png")
+                    isFavourite[recipe.id]
+                      ? require("../../assets/images/heart4.png")
+                      : require("../../assets/images/heart5.png")
                   }
                   className="w-8 h-8"
                 />
@@ -651,7 +738,11 @@ export default function Search() {
                   className="flex items-center justify-center"
                 >
                   <Image
-                    source={{ uri: recipe.image }}
+                    source={
+                      recipe.image
+                        ? { uri: recipe.image }
+                        : require("../../assets/images/picMissing.png")
+                    }
                     className="rounded-xl w-[200] h-[200] right-4"
                   />
 
@@ -666,7 +757,7 @@ export default function Search() {
           ))}
 
         {/* Load more recipes button */}
-        {recipesFromIngredients.length > 0 && (
+        {hasMoreResults && (
           <View className="flex justify-center items-center mb-4">
             <TouchableOpacity
               onPress={loadMoreRecipes}
@@ -968,7 +1059,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 10,
   },
 });
 
@@ -982,7 +1073,7 @@ const pickerSelectStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "gray",
     borderRadius: 4,
-    paddingRight: 30,
+    paddingRight: 40,
     marginHorizontal: 10,
   },
   inputIOS: {
@@ -994,12 +1085,12 @@ const pickerSelectStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "gray",
     borderRadius: 4,
-    paddingRight: 30,
+    paddingRight: 40,
     marginHorizontal: 10,
   },
   iconContainer: {
     position: "absolute",
-    top: "50%",
-    left: "60%",
+    top: 10,
+    right: 12,
   },
 });

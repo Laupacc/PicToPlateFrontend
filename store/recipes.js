@@ -17,7 +17,6 @@ export const recipesSlice = createSlice({
         updateFavouriteRecipes: (state, action) => {
             state.favourites = action.payload;
         },
-
     },
 });
 

@@ -254,56 +254,6 @@ export default function Fridge() {
     }
   };
 
-  // const removeIngredientFromFridge = async (ingredient) => {
-  //   try {
-  //     const response = await fetch(
-  //       `${BACKEND_URL}/users/removeIngredient/${user.token}`,
-  //       {
-  //         method: "DELETE",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           ingredient: ingredient,
-  //         }),
-  //       }
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new Error("Failed to remove ingredient from fridge");
-  //     }
-  //     const data = await response.json();
-  //     console.log("Removed ingredient from fridge:", data);
-
-  //     dispatch(removeIngredient(ingredient));
-  //     setFridgeItems((prev) =>
-  //       prev.filter((item) => item.name !== ingredient.name)
-  //     );
-
-  //     toast.show("Ingredient deleted successfully", {
-  //       type: "success",
-  //       placement: "center",
-  //       duration: 2000,
-  //       animationType: "zoom-in",
-  //       swipeEnabled: true,
-  //       icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-  //     });
-  //   } catch (error) {
-  //     if (error) {
-  //       toast.show("Failed to delete ingredient", {
-  //         type: "danger",
-  //         placement: "center",
-  //         duration: 2000,
-  //         animationType: "zoom-in",
-  //         swipeEnabled: true,
-  //         icon: <Ionicons name="close-circle" size={24} color="white" />,
-  //       });
-  //     } else {
-  //       console.error("Error removing ingredient from fridge:", error.message);
-  //     }
-  //   }
-  // };
-
   // Remove selected ingredients
   const removeSelectedIngredients = async () => {
     Alert.alert(

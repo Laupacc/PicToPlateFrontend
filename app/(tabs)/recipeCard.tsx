@@ -32,7 +32,9 @@ import { useToast } from "react-native-toast-notifications";
 import {
   addToFavouriteRecipes,
   removeFromFavouriteRecipes,
+  isFavourite,
 } from "@/store/recipes";
+import Favourites from "./favourites";
 
 export default function RecipeCard() {
   const dispatch = useDispatch();
@@ -58,6 +60,7 @@ export default function RecipeCard() {
   const [showMacros, setShowMacros] = useState(false);
   const [showSubstitutes, setShowSubstitutes] = useState(false);
   const [isFavourite, setIsFavourite] = useState({});
+  const [userInfo, setUserInfo] = useState({});
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
@@ -96,6 +99,52 @@ export default function RecipeCard() {
     };
     fetchRecipeData();
   }, [recipeId]);
+
+  // fetch user info
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (user.token) {
+        const response = await fetch(
+          `${BACKEND_URL}/users/userInformation/${user.token}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
+        const data = await response.json();
+        setUserInfo(data);
+      }
+    };
+    fetchUser();
+  }, [user.token]);
+
+  // check if recipe is in favourites
+  useEffect(() => {
+    if (!recipe) {
+      console.log("recipe is null or undefined");
+      return;
+    }
+  
+    console.log("recipe id for favs", recipe.id);
+    console.log("userInfo", userInfo);
+    if (userInfo && userInfo.favourites) {
+      console.log("userInfo.favourites", userInfo.favourites);
+      console.log("Type of recipe.id:", typeof recipe.id);
+      console.log("Type of userInfo.favourites[0]:", typeof userInfo.favourites[0]);
+      if (userInfo.favourites.includes(String(recipe.id))) {
+        console.log("Setting favourite to true for recipe id", recipe.id);
+        setIsFavourite((prev) => ({ ...prev, [recipe.id]: true }));
+      } else {
+        console.log("Setting favourite to false for recipe id", recipe.id);
+        setIsFavourite((prev) => ({ ...prev, [recipe.id]: false }));
+      }
+    } else {
+      console.log("userInfo or userInfo.favourites is undefined");
+    }
+  }, [userInfo, recipe]);
 
   // Fetch ingredient substitutes
   const cachedIngredientSubstitutes = useRef<any>({});
@@ -360,7 +409,7 @@ export default function RecipeCard() {
             >
               <BouncingImage>
                 <Image
-                  source={require("../../assets/images/surprise.png")}
+                  source={require("../../assets/images/surprise2.png")}
                   className="w-12 h-12"
                 />
               </BouncingImage>
@@ -376,14 +425,16 @@ export default function RecipeCard() {
                 }}
                 className="absolute top-4 right-4"
               >
-                <Image
-                  source={
-                    isFavourite[recipe.id]
-                      ? require("../../assets/images/heart4.png")
-                      : require("../../assets/images/heart5.png")
-                  }
-                  className="w-10 h-10"
-                />
+                {
+                  <Image
+                    source={
+                      isFavourite[recipe.id]
+                        ? require("../../assets/images/heart4.png")
+                        : require("../../assets/images/heart5.png")
+                    }
+                    className="w-10 h-10"
+                  />
+                }
               </TouchableOpacity>
             )}
 
@@ -818,75 +869,78 @@ export default function RecipeCard() {
             })()}
 
             {/* Equipment */}
-            {recipe.analyzedInstructions[0].steps.some(
-              (step) => step.equipment.length > 0
-            ) && (
-              <View className="relative">
-                <View
-                  className="absolute bg-[#f9f927] rounded-2xl right-0.5 bottom-0.5"
-                  style={{
-                    width: screenWidth - 40,
-                    height: dynamicHeightEquipment,
-                    ...styles.shadow,
-                  }}
-                ></View>
-                <View
-                  className="flex justify-center items-center bg-white rounded-2xl m-2 p-3"
-                  style={{
-                    width: screenWidth - 40,
-                  }}
-                  onLayout={(event) => {
-                    const { height } = event.nativeEvent.layout;
-                    setDynamicHeightEquipment(height);
-                  }}
-                >
-                  <View className="relative justify-center items-center my-3">
-                    <Image
-                      source={require("../../assets/images/stickers/tape5.png")}
-                      className="w-40 h-10 absolute"
-                    />
-                    <Text className="font-SpaceMono text-lg text-center">
-                      Kitchenware
-                    </Text>
-                  </View>
-                  <View className="flex-row flex-wrap justify-center items-center m-2">
-                    {(() => {
-                      const displayedEquipment = new Set();
-                      return recipe.analyzedInstructions[0].steps.map(
-                        (step, stepIndex) =>
-                          step.equipment.map((equipment, index) => {
-                            if (displayedEquipment.has(equipment.name)) {
-                              return null;
-                            }
-                            displayedEquipment.add(equipment.name);
-                            return (
-                              <View
-                                key={`${stepIndex}-${index}`}
-                                className="flex justify-center items-center m-1"
-                              >
-                                <Image
-                                  source={
-                                    equipment.image
-                                      ? { uri: equipment.image }
-                                      : require("../../assets/images/questionMark.png")
-                                  }
-                                  className="w-16 h-16"
-                                  resizeMode="contain"
-                                />
+            {recipe.analyzedInstructions &&
+              recipe.analyzedInstructions[0] &&
+              recipe.analyzedInstructions[0].steps &&
+              recipe.analyzedInstructions[0].steps.some(
+                (step) => step.equipment.length > 0
+              ) && (
+                <View className="relative">
+                  <View
+                    className="absolute bg-[#f9f927] rounded-2xl right-0.5 bottom-0.5"
+                    style={{
+                      width: screenWidth - 40,
+                      height: dynamicHeightEquipment,
+                      ...styles.shadow,
+                    }}
+                  ></View>
+                  <View
+                    className="flex justify-center items-center bg-white rounded-2xl m-2 p-3"
+                    style={{
+                      width: screenWidth - 40,
+                    }}
+                    onLayout={(event) => {
+                      const { height } = event.nativeEvent.layout;
+                      setDynamicHeightEquipment(height);
+                    }}
+                  >
+                    <View className="relative justify-center items-center my-3">
+                      <Image
+                        source={require("../../assets/images/stickers/tape5.png")}
+                        className="w-40 h-10 absolute"
+                      />
+                      <Text className="font-SpaceMono text-lg text-center">
+                        Kitchenware
+                      </Text>
+                    </View>
+                    <View className="flex-row flex-wrap justify-center items-center m-2">
+                      {(() => {
+                        const displayedEquipment = new Set();
+                        return recipe.analyzedInstructions[0].steps.map(
+                          (step, stepIndex) =>
+                            step.equipment.map((equipment, index) => {
+                              if (displayedEquipment.has(equipment.name)) {
+                                return null;
+                              }
+                              displayedEquipment.add(equipment.name);
+                              return (
+                                <View
+                                  key={`${stepIndex}-${index}`}
+                                  className="flex justify-center items-center m-1"
+                                >
+                                  <Image
+                                    source={
+                                      equipment.image
+                                        ? { uri: equipment.image }
+                                        : require("../../assets/images/questionMark.png")
+                                    }
+                                    className="w-16 h-16"
+                                    resizeMode="contain"
+                                  />
 
-                                <Text className="font-SpaceMono text-xs">
-                                  {equipment.name.charAt(0).toUpperCase() +
-                                    equipment.name.slice(1)}
-                                </Text>
-                              </View>
-                            );
-                          })
-                      );
-                    })()}
+                                  <Text className="font-SpaceMono text-xs">
+                                    {equipment.name.charAt(0).toUpperCase() +
+                                      equipment.name.slice(1)}
+                                  </Text>
+                                </View>
+                              );
+                            })
+                        );
+                      })()}
+                    </View>
                   </View>
                 </View>
-              </View>
-            )}
+              )}
 
             {/* Instructions */}
             <View className="relative mb-5">

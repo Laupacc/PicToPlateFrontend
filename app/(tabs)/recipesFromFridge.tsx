@@ -25,6 +25,7 @@ export default function recipesFromFridge() {
   const [numberOfRecipes, setNumberOfRecipes] = useState(10);
   const [offset, setOffset] = useState(0);
   const [isFavourite, setIsFavourite] = useState({});
+  const [userInfo, setUserInfo] = useState({});
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
@@ -164,6 +165,39 @@ export default function recipesFromFridge() {
     }
   };
 
+  // fetch user info
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (user.token) {
+        const response = await fetch(
+          `${BACKEND_URL}/users/userInformation/${user.token}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
+        const data = await response.json();
+        setUserInfo(data);
+      }
+    };
+    fetchUser();
+  }, [user.token]);
+
+  // update favourites state
+  useEffect(() => {
+    if (userInfo.favourites) {
+      const favourites = userInfo.favourites;
+      const favouritesObj = {};
+      for (const id of favourites) {
+        favouritesObj[id] = true;
+      }
+      setIsFavourite(favouritesObj);
+    }
+  }, [userInfo.favourites]);
+  
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <Background cellSize={25} />
