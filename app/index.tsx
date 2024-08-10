@@ -8,12 +8,34 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React from "react";
-import { Link } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import * as SecureStore from "expo-secure-store";
+import { useDispatch } from "react-redux";
+import { login } from "@/store/user";
 
 export default function Index() {
+  const navigation = useNavigation();
+  const dispatch = useDispatch();
+
+  // Check if token exists in SecureStore and logs in automatically or navigates to authentication screen
+  const checkTokenOrLogin = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("token");
+      if (token) {
+        dispatch(login({ token }));
+        console.log("Token found, navigating to search screen");
+        navigation.navigate("(tabs)", { screen: "search" });
+      } else {
+        navigation.navigate("authentication");
+        console.log("No token found");
+      }
+    } catch (error) {
+      console.error("Error retrieving token:", error);
+    }
+  };
+
+  // Function to return a random background image
   const randomBackgroundImages = () => {
     const images = [
       require("../assets/images/backgrounds/background1.jpg"),
@@ -37,6 +59,7 @@ export default function Index() {
     return images[Math.floor(Math.random() * images.length)];
   };
 
+  // Function to return a random catch phrase
   const randomCatchPhrases = () => {
     const catchPhrases = [
       "From Pantry to Plate",
@@ -47,6 +70,7 @@ export default function Index() {
     return catchPhrases[Math.floor(Math.random() * catchPhrases.length)];
   };
 
+  // Function to return a random enter phrase in the button
   const randomEnterPhrases = () => {
     const enterPhrases = [
       "Get Sizzlin'",
@@ -77,12 +101,13 @@ export default function Index() {
         </View>
 
         <View className="absolute bottom-32">
-          <TouchableOpacity className="border-2 border-sky-700 p-4 rounded-xl">
-            <Link href="/authentication">
-              <Text className="text-3xl text-sky-700 text-center font-Nobile">
-                {randomEnterPhrases()}
-              </Text>
-            </Link>
+          <TouchableOpacity
+            className="border-2 border-sky-700 p-4 rounded-xl"
+            onPress={checkTokenOrLogin}
+          >
+            <Text className="text-3xl text-sky-700 text-center font-Nobile">
+              {randomEnterPhrases()}
+            </Text>
           </TouchableOpacity>
         </View>
         <View className="absolute bottom-10">

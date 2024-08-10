@@ -32,9 +32,7 @@ import { useToast } from "react-native-toast-notifications";
 import {
   addToFavouriteRecipes,
   removeFromFavouriteRecipes,
-  isFavourite,
 } from "@/store/recipes";
-import Favourites from "./favourites";
 
 export default function RecipeCard() {
   const dispatch = useDispatch();
@@ -44,6 +42,7 @@ export default function RecipeCard() {
   const route = useRoute();
 
   const { recipeId } = route.params as { recipeId: number };
+  const { passedRecipe } = route.params as { passedRecipe: object };
   const [recipe, setRecipe] = useState<any>(null);
   const [servings, setServings] = useState(0);
   const [unitSystem, setUnitSystem] = useState("us");
@@ -60,49 +59,17 @@ export default function RecipeCard() {
   const [showMacros, setShowMacros] = useState(false);
   const [showSubstitutes, setShowSubstitutes] = useState(false);
   const [isFavourite, setIsFavourite] = useState({});
-  const [userInfo, setUserInfo] = useState({});
+  const [userFavourites, setUserFavourites] = useState([]);
+  const cachedIngredientSubstitutes = useRef<any>({});
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  // Fetch full recipe data
-  const cachedRecipe = useRef<any>(null);
+  // fetch favourite recipes lists from user
   useEffect(() => {
-    const fetchRecipeData = async () => {
-      if (cachedRecipe.current && cachedRecipe.current.id === recipeId) {
-        setRecipe(cachedRecipe.current);
-        setServings(cachedRecipe.current.servings);
-        return;
-      }
-
-      try {
-        const recipeData = await fetchRecipeInformation(recipeId);
-        const instructions = await fetchAnalyzedInstructions(recipeId);
-        if (recipeData && instructions) {
-          const fullRecipeData = {
-            ...recipeData,
-            analyzedInstructions: instructions,
-          };
-          setRecipe(fullRecipeData);
-          setServings(recipeData.servings);
-
-          cachedRecipe.current = fullRecipeData;
-
-          console.log("recipe data", recipeData);
-          console.log("instruction data", instructions);
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    };
-    fetchRecipeData();
-  }, [recipeId]);
-
-  // fetch user info
-  useEffect(() => {
-    const fetchUser = async () => {
+    const fetchFavourites = async () => {
       if (user.token) {
         const response = await fetch(
           `${BACKEND_URL}/users/userInformation/${user.token}`,
@@ -115,39 +82,89 @@ export default function RecipeCard() {
           }
         );
         const data = await response.json();
-        setUserInfo(data);
+        console.log("User favourites:", data.favourites.length);
+        setUserFavourites(data.favourites);
       }
     };
-    fetchUser();
+    fetchFavourites();
   }, [user.token]);
 
-  // check if recipe is in favourites
+  // Fetch full recipe data from API or database
   useEffect(() => {
-    if (!recipe) {
-      console.log("recipe is null or undefined");
-      return;
-    }
-  
-    console.log("recipe id for favs", recipe.id);
-    console.log("userInfo", userInfo);
-    if (userInfo && userInfo.favourites) {
-      console.log("userInfo.favourites", userInfo.favourites);
-      console.log("Type of recipe.id:", typeof recipe.id);
-      console.log("Type of userInfo.favourites[0]:", typeof userInfo.favourites[0]);
-      if (userInfo.favourites.includes(String(recipe.id))) {
-        console.log("Setting favourite to true for recipe id", recipe.id);
-        setIsFavourite((prev) => ({ ...prev, [recipe.id]: true }));
-      } else {
-        console.log("Setting favourite to false for recipe id", recipe.id);
-        setIsFavourite((prev) => ({ ...prev, [recipe.id]: false }));
+    const fetchRecipeData = async () => {
+      try {
+        let currentRecipeId = recipeId;
+        let recipeData = null;
+
+        // Check if the recipe was passed so exists in the database
+        if (passedRecipe) {
+          recipeData = passedRecipe.additionalData;
+          currentRecipeId = passedRecipe.id;
+          console.log("Passed recipe");
+
+          // Fetch the recipe data from the API
+        } else {
+          const fetchedRecipeData = await fetchRecipeInformation(recipeId);
+          const instructions = await fetchAnalyzedInstructions(recipeId);
+
+          if (fetchedRecipeData && instructions) {
+            recipeData = {
+              ...fetchedRecipeData,
+              analyzedInstructions: instructions,
+            };
+            setServings(fetchedRecipeData.servings);
+            console.log("New recipe fetched");
+
+            // Add the recipe to the Recipe collection
+            await addRecipeToCollection(recipeData);
+          }
+        }
+
+        if (recipeData) {
+          setRecipe(recipeData);
+        }
+
+        // Check if the recipe is already in the user's favourites list
+        if (userFavourites && currentRecipeId) {
+          const isFavourite = userFavourites.some(
+            (fav) => fav.id === String(currentRecipeId)
+          );
+          setIsFavourite((prev) => ({
+            ...prev,
+            [currentRecipeId]: isFavourite,
+          }));
+        } else {
+          console.log("User favourites not found or no recipe ID");
+        }
+      } catch (error) {
+        console.log("Error fetching recipe data:", error.message);
       }
-    } else {
-      console.log("userInfo or userInfo.favourites is undefined");
-    }
-  }, [userInfo, recipe]);
+    };
+
+    // Function to add the recipe to the Recipe collection
+    const addRecipeToCollection = async (recipe) => {
+      try {
+        const response = await fetch(
+          `${BACKEND_URL}/users/addRecipeToCollection`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ recipe }),
+          }
+        );
+        const data = await response.json();
+        console.log(data.message);
+      } catch (error) {
+        console.log("Error adding recipe to collection:", error.message);
+      }
+    };
+
+    fetchRecipeData();
+  }, [recipeId, passedRecipe, userFavourites]);
 
   // Fetch ingredient substitutes
-  const cachedIngredientSubstitutes = useRef<any>({});
   const fetchIngredientSubstitution = async (id) => {
     if (
       cachedIngredientSubstitutes.current &&
@@ -253,54 +270,75 @@ export default function RecipeCard() {
     }
   }, [selectedIngredientNutrition]);
 
-  // Add or remove recipe from favourites
-  const addRecipeToFavourites = async () => {
+  // Add recipe to favourites list
+  const addRecipeToFavourites = async (recipeId) => {
+    if (!user.token) {
+      return;
+    }
     try {
-      const recipeId = recipe.id;
-      const token = user.token;
-      const response = await fetch(
-        `${BACKEND_URL}/users/addFavourite/${recipeId}/${token}`,
-        { method: "POST" }
-      );
+      console.log("Recipe ID before fetch:", recipeId);
 
-      if (!response.ok) {
-        console.log("Error adding recipe to favourites");
-        toast.show("Error adding recipe to favourites", {
-          type: "warning",
+      const token = user.token;
+      const recipeData = await fetchRecipeInformation(recipeId);
+      const instructions = await fetchAnalyzedInstructions(recipeId);
+      if (recipeData && instructions) {
+        const fullRecipeData = {
+          ...recipeData,
+          analyzedInstructions: instructions,
+        };
+
+        const response = await fetch(
+          `${BACKEND_URL}/users/addFavourite/${token}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ recipe: fullRecipeData }),
+          }
+        );
+
+        const data = await response.json();
+        if (!response.ok) {
+          toast.show("Error adding recipe to favourites", {
+            type: "warning",
+            placement: "center",
+            duration: 2000,
+            animationType: "zoom-in",
+            swipeEnabled: true,
+            icon: <Ionicons name="warning" size={24} color="white" />,
+          });
+          console.log("Error adding recipe to favourites");
+          throw new Error(data.message || "Error adding recipe to favourites");
+        }
+
+        dispatch(addToFavouriteRecipes(fullRecipeData));
+        setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
+
+        toast.show("Recipe added to favourites", {
+          type: "success",
           placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
-          icon: <Ionicons name="warning" size={24} color="white" />,
+          icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
         });
       }
-
-      const data = await response.json();
-      console.log(data);
-      setIsFavourite((prev) => ({ ...prev, [recipe.id]: true }));
-      dispatch(addToFavouriteRecipes(recipeId));
-
-      toast.show("Recipe added to favourites", {
-        type: "success",
-        placement: "center",
-        duration: 2000,
-        animationType: "zoom-in",
-        swipeEnabled: true,
-        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-      });
     } catch (error) {
       console.error("Error adding recipe to favourites:", error.message);
     }
   };
 
-  const removeRecipeFromFavourites = async () => {
+  // Remove recipe from favourites list
+  const removeRecipeFromFavourites = async (recipeId) => {
     try {
-      const recipeId = recipe.id;
       const token = user.token;
       const response = await fetch(
-        `${BACKEND_URL}/users/removeFavourite/${recipeId}/${token}`,
+        `${BACKEND_URL}/users/removeFavourite/${token}/${recipeId}`,
         { method: "DELETE" }
       );
+      const data = await response.json();
 
       if (!response.ok) {
         toast.show("Error removing recipe from favourites", {
@@ -311,13 +349,12 @@ export default function RecipeCard() {
           swipeEnabled: true,
           icon: <Ionicons name="warning" size={24} color="white" />,
         });
-        console.log("Error removing recipe from favourites");
+        console.log("Error adding recipe to favourites");
+        throw new Error(data.message || "Error adding recipe to favourites");
       }
 
-      const data = await response.json();
-      console.log(data);
       dispatch(removeFromFavouriteRecipes(recipeId));
-      setIsFavourite((prev) => ({ ...prev, [recipe.id]: false }));
+      setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
 
       toast.show("Recipe removed from favourites", {
         type: "success",

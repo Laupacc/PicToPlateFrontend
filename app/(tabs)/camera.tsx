@@ -141,6 +141,7 @@ export default function Camera() {
     );
   }
 
+  // Handle pinch gesture to zoom in/out
   const handlePinch = ({ nativeEvent }) => {
     if (nativeEvent.state === State.ACTIVE) {
       const newZoom = Math.min(
@@ -151,6 +152,7 @@ export default function Camera() {
     }
   };
 
+  // Classify the image using the Clarifai API
   const classifyImage = async (imageUri) => {
     try {
       setPredictionLoading(true);
@@ -206,6 +208,7 @@ export default function Camera() {
     }
   };
 
+  // Convert a blob to base64
   const blobToBase64 = (blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -215,6 +218,7 @@ export default function Camera() {
     });
   };
 
+  // Toggle the selected ingredient
   const toggleIngredient = (prediction) => {
     setSelectedIngredients((prev) => {
       if (prev.includes(prediction)) {
@@ -225,12 +229,12 @@ export default function Camera() {
     });
   };
 
-  // Add the selected ingredients to the user.ingredients array
+  // Add the selected ingredients to the user's kitchen
   const addIngredients = async () => {
     if (!user.token) {
       Alert.alert(
-        "Authentication Required",
-        "Please log in to add ingredients",
+        "Login Required",
+        "Please log in to add ingredients to your kitchen",
         [
           {
             text: "No thanks",
@@ -345,6 +349,17 @@ export default function Camera() {
     }
   };
 
+  // Random Lottie loading animation
+  const randomLoadingAnimation = () => {
+    const animations = [
+      require("../../assets/images/animations/Animation1723027836457.json"),
+      require("../../assets/images/animations/Animation1722874735851.json"),
+      require("../../assets/images/animations/Animation1720193319067.json"),
+      require("../../assets/images/animations/Animation1720193239255.json"),
+    ];
+    return animations[Math.floor(Math.random() * animations.length)];
+  };
+
   return (
     <SafeAreaView className="flex-1 items-center justify-center bg-slate-600 pb-16">
       <Background cellSize={25} />
@@ -433,14 +448,12 @@ export default function Camera() {
 
       {isPredictionLoading && (
         <LottieView
-          source={require("../../assets/images/animations/Animation1720193319067.json")}
+          source={randomLoadingAnimation()}
           autoPlay
           loop
           style={{
             width: "60%",
             height: "40%",
-            // position: "absolute",
-            // top: "55%",
           }}
         />
       )}

@@ -48,25 +48,7 @@ export default function Authentication() {
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
-  // Check if token exists
-  useEffect(() => {
-    const checkToken = async () => {
-      try {
-        const token = await SecureStore.getItemAsync("token");
-        if (token) {
-          dispatch(login({ token }));
-          console.log("Token found, navigating to search screen");
-          navigation.navigate("(tabs)", { screen: "search" });
-        } else {
-          console.log("No token found");
-        }
-      } catch (error) {
-        console.error("Error retrieving token:", error);
-      }
-    };
-    checkToken();
-  }, []);
-
+  // Check if email is in a valid format
   const validateEmail = (email) => {
     const regex = /\S+@\S+\.\S+/;
     return regex.test(email);
@@ -104,27 +86,45 @@ export default function Authentication() {
       });
 
       const data = await response.json();
-      console.log("Response data:", data);
-
       if (!response.ok) {
         alert(data.message);
         return;
       }
 
-      if (data.token) {
-        // const { token, username } = data;
-        console.log("User signed up successfully", data);
+      if (data) {
+        // Dispatch sign-up action
         dispatch(login(data));
-
-        // await SecureStore.setItemAsync("token", data.token);
-        // console.log("Token stored successfully");
-
-        console.log("Navigation object:", navigation);
-        navigation.navigate("(tabs)", { screen: "profile" });
+        console.log("User signed up successfully", data);
 
         setSignUpUsername("");
         setSignUpEmail("");
         setSignUpPassword("");
+
+        // Automatically log in the user after successful sign-up
+        const loginResponse = await fetch(`${BACKEND_URL}/users/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: signUpUsername,
+            password: signUpPassword,
+          }),
+        });
+
+        const loginData = await loginResponse.json();
+        if (!loginResponse.ok) {
+          throw new Error(loginData.message || "Login failed");
+        }
+
+        if (rememberMe) {
+          await SecureStore.setItemAsync("token", data.token);
+          console.log("Token stored successfully");
+        }
+
+        // Dispatch login action and navigate
+        dispatch(login(loginData));
+        navigation.navigate("(tabs)", { screen: "profile" });
         alert("Signed up successfully");
       }
     } catch (error) {
@@ -176,13 +176,14 @@ export default function Authentication() {
         // Dispatch login action
         dispatch(login(data));
 
-        navigation.navigate("(tabs)", { screen: "profile" });
         setLoginUsername("");
         setLoginPassword("");
+        navigation.navigate("(tabs)", { screen: "profile" });
         alert("Logged in successfully");
       }
     } catch (error) {
       console.error("Error:", error);
+      alert("An error occured when logging in");
     }
   };
 
@@ -244,6 +245,7 @@ export default function Authentication() {
     );
   };
 
+  // Continue as Guest
   const continueAsGuest = () => {
     Alert.alert(
       "Continue as a guest",
@@ -265,6 +267,21 @@ export default function Authentication() {
     );
   };
 
+  // Eye icon to toggle password visibility Sign Up
+  const toggleSignUpPasswordVisibility = () => {
+    setIsSignUpPasswordHidden(!isSignUpPasswordHidden);
+  };
+
+  // Eye icon to toggle password visibility Login
+  const toggleLoginPasswordVisibility = () => {
+    setIsLoginPasswordHidden(!isloginPasswordHidden);
+  };
+
+  // Open Forgot Password Modal
+  const toggleForgotPasswordModal = () => {
+    setForgotPasswordModal(!forgotPasswordModal);
+  };
+
   // async function getValueFor(key) {
   //   const result = await SecureStore.getItemAsync(key);
   //   if (result) {
@@ -273,17 +290,6 @@ export default function Authentication() {
   //     alert("No values stored under that key.");
   //   }
   // }
-
-  const toggleSignUpPasswordVisibility = () => {
-    setIsSignUpPasswordHidden(!isSignUpPasswordHidden);
-  };
-  const toggleLoginPasswordVisibility = () => {
-    setIsLoginPasswordHidden(!isloginPasswordHidden);
-  };
-
-  const toggleForgotPasswordModal = () => {
-    setForgotPasswordModal(!forgotPasswordModal);
-  };
 
   return (
     <View className="flex-1 justify-center items-center">
@@ -468,6 +474,20 @@ export default function Authentication() {
             {signUpPasswordEmpty && (
               <Text className="text-red-500">Password cannot be empty</Text>
             )}
+
+            <View className="right-6 mt-3">
+              <TouchableOpacity onPress={() => setRememberMe(!rememberMe)}>
+                <View className="flex-row justify-center items-center ">
+                  {rememberMe ? (
+                    <Feather name="check-square" size={20} />
+                  ) : (
+                    <Feather name="square" size={20} />
+                  )}
+                  <Text className="ml-1 text-base">Remember me</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity
               className="relative flex justify-center items-center top-4"
               onPress={handleSignUp}
@@ -481,7 +501,7 @@ export default function Authentication() {
                 Sign Up ✔︎
               </Text>
             </TouchableOpacity>
-            <View className="flex justify-center items-center top-12">
+            <View className="flex justify-center items-center top-8">
               <Text>Already have an account?</Text>
               <TouchableOpacity onPress={() => setSignUpVisible(false)}>
                 <Text className="text-lg">Login</Text>
@@ -501,6 +521,18 @@ export default function Authentication() {
             className="flex justify-around items-center bg-slate-100 rounded-lg p-10"
             style={styles.shadow}
           >
+            <TouchableOpacity
+              onPress={() => {
+                toggleForgotPasswordModal();
+                setEmail("");
+              }}
+              className="absolute top-2 right-2 p-1"
+            >
+              <Image
+                source={require("../assets/images/cross.png")}
+                className="w-6 h-6"
+              />
+            </TouchableOpacity>
             <Text className="text-lg text-center font-Nobile mb-4">
               Reset Password
             </Text>
@@ -527,11 +559,6 @@ export default function Authentication() {
           </View>
         </View>
       </Modal>
-
-      {/* <TouchableOpacity onPress={() => getValueFor("token")}>
-        <Text className="text-lg text-red-500">Get Token</Text>
-      </TouchableOpacity> */}
-      {/* </ImageBackground> */}
     </View>
   );
 }

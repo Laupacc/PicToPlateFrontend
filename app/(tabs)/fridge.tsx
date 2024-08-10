@@ -10,6 +10,7 @@ import {
   ImageBackground,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Modal } from "react-native-paper";
 import React from "react";
@@ -58,6 +59,9 @@ export default function Fridge() {
   const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
   const [searchMessage, setSearchMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const [lastSearchQuery, setLastSearchQuery] = useState<string | null>(null);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -67,6 +71,7 @@ export default function Fridge() {
     const fetchFridgeItems = async () => {
       if (!user.token) return;
       try {
+        setLoading(true);
         const response = await fetch(
           `${BACKEND_URL}/users/fetchIngredients/${user.token}`
         );
@@ -74,7 +79,10 @@ export default function Fridge() {
           throw new Error("Failed to fetch fridge items");
         }
         const data = await response.json();
-        console.log("Fridge items:", data.ingredients);
+        console.log(
+          "Fridge items:",
+          data.ingredients.map((item) => item.name)
+        );
 
         const allItems = data.ingredients.map((item) => ({
           name: item.name,
@@ -84,6 +92,7 @@ export default function Fridge() {
 
         dispatch(updateIngredients(allItems));
         setFridgeItems(allItems);
+        setLoading(false);
       } catch (error) {
         console.error(error);
       }
@@ -108,6 +117,7 @@ export default function Fridge() {
     }
 
     const query = selectedIgredients.map((item) => item.name).join(",");
+    setLastSearchQuery(query);
     navigation.navigate("recipesFromFridge", { searchQuery: query });
   };
 
@@ -367,10 +377,18 @@ export default function Fridge() {
 
   // Go back to recipesFromFridge screen if there has already been a search query
   const goBackToRecipesFromFridge = () => {
+    const currentQuery = selectedIngredients.map((item) => item.name).join(",");
     if (selectedIngredients.length > 0) {
-      navigation.navigate("recipesFromFridge", {
-        searchQuery: selectedIngredients.map((item) => item.name).join(","),
-      });
+      if (currentQuery === lastSearchQuery) {
+        // Use cached results
+        navigation.navigate("recipesFromFridge", {
+          searchQuery: lastSearchQuery,
+        });
+      } else {
+        // Perform a new search
+        setLastSearchQuery(currentQuery);
+        navigation.navigate("recipesFromFridge", { searchQuery: currentQuery });
+      }
     } else {
       toast.show("No recipes generated yet", {
         type: "warning",
@@ -435,6 +453,8 @@ export default function Fridge() {
               </View>
             </View>
           </View>
+        ) : loading ? (
+          <ActivityIndicator size="large" color="#237CB0" className="flex-1" />
         ) : user.token && fridgeItems.length === 0 ? (
           // User is logged in but fridge is empty
           <View className="flex justify-center items-center mx-20">
@@ -604,7 +624,7 @@ export default function Fridge() {
         )}
 
         {/* Search Bar, Filter Button and go back to recipe button */}
-        {user.token && (
+        {user.token && !loading && (
           <View
             className={
               fridgeItems.length === 0
@@ -700,7 +720,7 @@ export default function Fridge() {
       </View>
 
       {/* Take a picture arrow */}
-      {user.token && fridgeItems.length === 0 && (
+      {user.token && !loading && fridgeItems.length === 0 && (
         <View className="flex m-10 justify-center items-center">
           <Text className="font-CreamyCookies text-2xl text-center">
             Or take a picture

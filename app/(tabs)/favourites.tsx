@@ -18,12 +18,12 @@ import { fetchRecipeInformation, randomStickerImage } from "@/apiFunctions";
 import { useRoute } from "@react-navigation/native";
 import { useToast } from "react-native-toast-notifications";
 import LottieView from "lottie-react-native";
-import {
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
+import recipes, {
   removeFromFavouriteRecipes,
   updateFavouriteRecipes,
 } from "@/store/recipes";
-import { Ionicons } from "@expo/vector-icons";
-import { Surface } from "react-native-paper";
 
 export default function Favourites() {
   const navigation = useNavigation();
@@ -38,9 +38,11 @@ export default function Favourites() {
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
+  // Fetch favourite recipes from the backend
   useEffect(() => {
     const fetchFavouriteRecipes = async () => {
       if (!user.token) return;
+
       try {
         setLoading(true);
         const response = await fetch(
@@ -50,62 +52,48 @@ export default function Favourites() {
           throw new Error("Failed to fetch favourite recipes");
         }
         const data = await response.json();
-        console.log("Fetched favourite recipe IDs:", data.favourites);
+        console.log(
+          "Fetched favourite recipe IDs:",
+          data.favourites.map((r) => r.id)
+        );
 
-        const fetchInBatches = async (ids) => {
-          const results = [];
-          for (let i = 0; i < ids.length; i += 5) {
-            const batch = ids.slice(i, i + 5);
-            const batchResults = await Promise.all(
-              batch.map((recipeId) => fetchRecipeInformation(recipeId))
-            );
-            results.push(...batchResults);
-            if (i + 5 < ids.length) {
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-            }
-          }
-          return results;
-        };
-
-        const recipes = await fetchInBatches(data.favourites);
-        console.log("Favourite recipes:", recipes.length);
-
-        dispatch(updateFavouriteRecipes(recipes));
-        setFavouriteRecipes(recipes);
+        dispatch(updateFavouriteRecipes(data.favourites));
+        setFavouriteRecipes(data.favourites);
       } catch (error) {
-        console.error(error);
+        console.error("Failed to fetch favourite recipes at the end", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchFavouriteRecipes();
   }, [user.token, favourites.length]);
 
+  // Remove recipe from favourites list
   const removeRecipeFromFavourites = async (recipeId) => {
     try {
       const token = user.token;
       const response = await fetch(
-        `${BACKEND_URL}/users/removeFavourite/${recipeId}/${token}`,
+        `${BACKEND_URL}/users/removeFavourite/${token}/${recipeId}`,
         { method: "DELETE" }
       );
+      const data = await response.json();
 
       if (!response.ok) {
-        console.log("Error removing recipe from favourites");
         toast.show("Error removing recipe from favourites", {
-          type: "danger",
+          type: "warning",
           placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
-          icon: <Ionicons name="close-circle" size={24} color="white" />,
+          icon: <Ionicons name="warning" size={24} color="white" />,
         });
+        console.log("Error adding recipe to favourites");
+        throw new Error(data.message || "Error adding recipe to favourites");
       }
 
       dispatch(removeFromFavouriteRecipes(recipeId));
       setFavouriteRecipes(favouriteRecipes.filter((r) => r.id !== recipeId));
 
-      console.log("Recipe removed from favourites:", recipeId);
       toast.show("Recipe removed from favourites", {
         type: "success",
         placement: "center",
@@ -115,7 +103,7 @@ export default function Favourites() {
         icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
       });
     } catch (error) {
-      console.error(error);
+      console.error("Error removing recipe from favourites:", error.message);
     }
   };
 
@@ -209,7 +197,7 @@ export default function Favourites() {
                       onPress={() =>
                         navigation.navigate("recipeCard", {
                           recipeId: recipe.id,
-                          refresh: true,
+                          passedRecipe: recipe,
                         })
                       }
                       key={recipe.id}
@@ -217,8 +205,8 @@ export default function Favourites() {
                     >
                       <Image
                         source={
-                          recipe.image
-                            ? { uri: recipe.image }
+                          recipe.additionalData.image
+                            ? { uri: recipe.additionalData.image }
                             : require("../../assets/images/picMissing.png")
                         }
                         className="rounded-xl w-[200] h-[200] right-4"
@@ -248,7 +236,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    // elevation: 5,
+    elevation: 5,
   },
   // shadow: {
   //   ...Platform.select({

@@ -24,7 +24,11 @@ import { useNavigation } from "expo-router";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Background from "@/components/Background";
 import BouncingImage from "@/components/Bounce";
-import { fetchRandomRecipe } from "@/apiFunctions";
+import {
+  fetchRandomRecipe,
+  fetchRecipeInformation,
+  fetchAnalyzedInstructions,
+} from "@/apiFunctions";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
 import RNPickerSelect from "react-native-picker-select";
@@ -72,16 +76,23 @@ export default function Search() {
   const [showConversion, setShowConversion] = useState(false);
   const [showConversionResult, setShowConversionResult] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [userInfo, setUserInfo] = useState({});
+  const [userFavourites, setUserFavourites] = useState([]);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
-  // fetch user info
+  // Fetch Random Recipe
+  const handleFetchRandomRecipe = async () => {
+    const recipe = await fetchRandomRecipe();
+    setRecipe(recipe);
+    navigation.navigate("recipeCard", { recipeId: recipe.id });
+  };
+
+  // Fetch favourites from user
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchFavourites = async () => {
       if (user.token) {
         const response = await fetch(
           `${BACKEND_URL}/users/userInformation/${user.token}`,
@@ -94,37 +105,11 @@ export default function Search() {
           }
         );
         const data = await response.json();
-        setUserInfo(data);
+        setUserFavourites(data.favourites);
       }
     };
-    fetchUser();
+    fetchFavourites();
   }, [user.token]);
-
-  // update favourites state
-  useEffect(() => {
-    if (userInfo.favourites) {
-      const favourites = userInfo.favourites;
-      const favouritesObj = {};
-      for (const id of favourites) {
-        favouritesObj[id] = true;
-      }
-      setIsFavourite(favouritesObj);
-    }
-  }, [userInfo.favourites]);
-
-  // Fetch Trivia useEffect
-  const fetchTrivia = async () => {
-    const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
-    const data = await response.json();
-    console.log(data);
-    setTrivia(data.text);
-  };
-
-  const handleFetchRandomRecipe = async () => {
-    const recipe = await fetchRandomRecipe();
-    setRecipe(recipe);
-    navigation.navigate("recipeCard", { recipeId: recipe.id });
-  };
 
   // Search for recipes by ingredients
   const complexSearchByIngredients = async (
@@ -159,16 +144,39 @@ export default function Search() {
     try {
       const response = await fetch(URL);
       console.log(URL);
-      console.log(response);
-      const recipe = await response.json();
 
+      const recipe = await response.json();
+      let results = recipe.results;
+
+      // Check if the recipes are in the user favourites
+      if (userFavourites.length > 0 && results.length > 0) {
+        const recipeIds = userFavourites.map((fav) => fav.id);
+
+        results = results.map((recipe) => {
+          const recipeIdString = String(recipe.id);
+
+          if (recipeIds.includes(recipeIdString)) {
+            setIsFavourite((prev) => ({ ...prev, [recipe.id]: true }));
+          }
+          return recipe;
+        });
+      }
+
+      // check if there are any results
       if (offset === 0) {
-        setRecipesFromIngredients(recipe.results);
+        setRecipesFromIngredients(results);
       } else {
         setRecipesFromIngredients((prevRecipes) => [
           ...prevRecipes,
-          ...recipe.results,
+          ...results,
         ]);
+      }
+
+      // check if there are more results
+      if (recipe.totalResults && recipe.totalResults > number + offset) {
+        setHasMoreResults(true);
+      } else {
+        setHasMoreResults(false);
       }
 
       setSearch(search);
@@ -177,12 +185,6 @@ export default function Search() {
       setMaxReadyTime(maxReadyTime);
       setSearchPerformed(true);
       setNumberOfRecipes(number + offset);
-
-      if (recipe.totalResults && recipe.totalResults > number + offset) {
-        setHasMoreResults(true);
-      } else {
-        setHasMoreResults(false);
-      }
     } catch (error) {
       console.error("Error fetching recipes:", error);
       toast.show("Error fetching recipes", {
@@ -196,41 +198,87 @@ export default function Search() {
     }
   };
 
-  // Add recipe to favourites list
-  const addRecipeToFavourites = async (recipeId) => {
+  // Go to recipe card
+  const goToRecipeCard = async (recipeId) => {
     try {
-      const token = user.token;
-      const response = await fetch(
-        `${BACKEND_URL}/users/addFavourite/${recipeId}/${token}`,
-        { method: "POST" }
-      );
+      const response = await fetch(`${BACKEND_URL}/users/fetchAllRecipes`);
 
       if (!response.ok) {
-        console.log("Error adding recipe to favourites");
-        toast.show("Error adding recipe to favourites", {
-          type: "danger",
+        throw new Error("Failed to fetch recipes");
+      }
+
+      const data = await response.json();
+      const existingRecipe = data.recipes.find(
+        (recipe) => recipe.id === String(recipeId)
+      );
+
+      if (existingRecipe) {
+        navigation.navigate("recipeCard", { passedRecipe: existingRecipe });
+      } else {
+        navigation.navigate("recipeCard", { recipeId: recipeId });
+      }
+    } catch (error) {
+      console.error("Error navigating to recipe card:", error.message);
+    }
+  };
+
+  // Add recipe to favourites list
+  const addRecipeToFavourites = async (recipeId) => {
+    if (!user.token) {
+      return;
+    }
+    try {
+      console.log("Recipe ID before fetch:", recipeId);
+
+      const token = user.token;
+      const recipeData = await fetchRecipeInformation(recipeId);
+      const instructions = await fetchAnalyzedInstructions(recipeId);
+      if (recipeData && instructions) {
+        const fullRecipeData = {
+          ...recipeData,
+          analyzedInstructions: instructions,
+        };
+
+        const response = await fetch(
+          `${BACKEND_URL}/users/addFavourite/${token}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ recipe: fullRecipeData }),
+          }
+        );
+
+        const data = await response.json();
+        if (!response.ok) {
+          toast.show("Error adding recipe to favourites", {
+            type: "warning",
+            placement: "center",
+            duration: 2000,
+            animationType: "zoom-in",
+            swipeEnabled: true,
+            icon: <Ionicons name="warning" size={24} color="white" />,
+          });
+          console.log("Error adding recipe to favourites");
+          throw new Error(data.message || "Error adding recipe to favourites");
+        }
+
+        dispatch(addToFavouriteRecipes(fullRecipeData));
+        setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
+
+        toast.show("Recipe added to favourites", {
+          type: "success",
           placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
-          icon: <Ionicons name="close-circle" size={24} color="white" />,
+          icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
         });
       }
-
-      dispatch(addToFavouriteRecipes(recipe));
-      setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
-
-      console.log("Recipe added to favourites:", recipe.id);
-      toast.show("Recipe added to favourites", {
-        type: "success",
-        placement: "center",
-        duration: 2000,
-        animationType: "zoom-in",
-        swipeEnabled: true,
-        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-      });
     } catch (error) {
-      console.error(error);
+      console.error("Error adding recipe to favourites:", error.message);
     }
   };
 
@@ -239,9 +287,10 @@ export default function Search() {
     try {
       const token = user.token;
       const response = await fetch(
-        `${BACKEND_URL}/users/removeFavourite/${recipeId}/${token}`,
+        `${BACKEND_URL}/users/removeFavourite/${token}/${recipeId}`,
         { method: "DELETE" }
       );
+      const data = await response.json();
 
       if (!response.ok) {
         toast.show("Error removing recipe from favourites", {
@@ -252,12 +301,11 @@ export default function Search() {
           swipeEnabled: true,
           icon: <Ionicons name="warning" size={24} color="white" />,
         });
-        console.log("Error removing recipe from favourites");
+        console.log("Error adding recipe to favourites");
+        throw new Error(data.message || "Error adding recipe to favourites");
       }
 
-      const data = await response.json();
-      console.log(data);
-      dispatch(removeFromFavouriteRecipes(recipe));
+      dispatch(removeFromFavouriteRecipes(recipeId));
       setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
 
       toast.show("Recipe removed from favourites", {
@@ -332,6 +380,7 @@ export default function Search() {
     }
   };
 
+  // Handle Ok Press in Filter Modal
   const handleOkPress = () => {
     setDiet(selectedDiet);
     setIntolerances(selectedIntolerance);
@@ -351,6 +400,14 @@ export default function Search() {
     setIntolerances([]);
     setMaxReadyTime(null);
     complexSearchByIngredients("", [], [], null, 0);
+  };
+
+  // Fetch Trivia useEffect
+  const fetchTrivia = async () => {
+    const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
+    const data = await response.json();
+    console.log(data);
+    setTrivia(data.text);
   };
 
   const randomRecipeIcon = () => {
@@ -731,9 +788,7 @@ export default function Search() {
 
               <View className="flex items-center justify-center">
                 <TouchableOpacity
-                  onPress={() =>
-                    navigation.navigate("recipeCard", { recipeId: recipe.id })
-                  }
+                  onPress={() => goToRecipeCard(recipe.id)}
                   key={recipe.id}
                   className="flex items-center justify-center"
                 >
@@ -812,12 +867,21 @@ export default function Search() {
       </ScrollView>
 
       {/* Trivia Modal */}
-      <Modal visible={showTrivia} onDismiss={() => setShowTrivia(false)}>
+      <Modal
+        visible={showTrivia}
+        onDismiss={() => {
+          setShowTrivia(false);
+          setTrivia("");
+        }}
+      >
         <View className="flex justify-center items-center">
           <View className="flex justify-center items-center bg-slate-100 rounded-lg p-3 w-[80%]">
             <View>
               <TouchableOpacity
-                onPress={() => setShowTrivia(false)}
+                onPress={() => {
+                  setShowTrivia(false);
+                  setTrivia("");
+                }}
                 className="items-end"
               >
                 <Image

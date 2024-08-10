@@ -7,6 +7,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Background from "@/components/Background";
 import { useDispatch, useSelector } from "react-redux";
 import {
+  fetchRecipeInformation,
+  fetchAnalyzedInstructions,
+} from "@/apiFunctions";
+import {
   addToFavouriteRecipes,
   removeFromFavouriteRecipes,
 } from "@/store/recipes";
@@ -25,9 +29,32 @@ export default function recipesFromFridge() {
   const [numberOfRecipes, setNumberOfRecipes] = useState(10);
   const [offset, setOffset] = useState(0);
   const [isFavourite, setIsFavourite] = useState({});
-  const [userInfo, setUserInfo] = useState({});
+  const [userFavourites, setUserFavourites] = useState([]);
+  const [hasMoreResults, setHasMoreResults] = useState(false);
 
   const BACKEND_URL = "http://192.168.1.34:3000";
+
+  // Fetch favourites from user
+  useEffect(() => {
+    const fetchFavourites = async () => {
+      if (user.token) {
+        const response = await fetch(
+          `${BACKEND_URL}/users/userInformation/${user.token}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
+        const data = await response.json();
+
+        setUserFavourites(data.favourites);
+      }
+    };
+    fetchFavourites();
+  }, [user.token]);
 
   // Search for recipes from kitchen ingredients
   useEffect(() => {
@@ -41,32 +68,52 @@ export default function recipesFromFridge() {
           .split(" ")
           .join(",");
 
+        if (offset === 0) {
+          setRecipes([]); // Clear previous search results
+        }
+
         const fetchRecipes = async (ingredients, number, offset = 0) => {
           const response = await fetch(
             `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${number}&offset=${offset}`
           );
-          console.log("Search response:", response);
+          console.log("Search response:", response.url);
           if (!response.ok) {
             throw new Error("Failed to search recipes");
           }
           const data = await response.json();
-          console.log("Search results:", data);
-          return data.results;
+          console.log("Search results:", data.totalResults);
+          return data;
         };
 
-        let results = await fetchRecipes(search, numberOfRecipes, offset);
+        const data = await fetchRecipes(search, numberOfRecipes, offset);
 
-        if (results.length === 0) {
-          const individualSearches = search.split(",");
-          results = [];
-          for (const ingredient of individualSearches) {
-            const individualResults = await fetchRecipes(
-              ingredient,
-              numberOfRecipes,
-              offset
-            );
-            results = results.concat(individualResults);
-          }
+        let results = data.results;
+
+        // if (results.length === 0) {
+        //   const individualSearches = search.split(",");
+        //   results = [];
+        //   for (const ingredient of individualSearches) {
+        //     const individualResults = await fetchRecipes(
+        //       ingredient,
+        //       numberOfRecipes,
+        //       offset
+        //     );
+        //     results = results.concat(individualResults);
+        //   }
+        // }
+
+        // Check if the recipes are in the user favourites
+        if (userFavourites.length > 0 && results.length > 0) {
+          const recipeIds = userFavourites.map((fav) => fav.id);
+
+          results = results.map((recipe) => {
+            const recipeIdString = String(recipe.id);
+
+            if (recipeIds.includes(recipeIdString)) {
+              setIsFavourite((prev) => ({ ...prev, [recipe.id]: true }));
+            }
+            return recipe;
+          });
         }
 
         // If offset is 0, replace the recipes, otherwise append to the existing ones
@@ -75,12 +122,19 @@ export default function recipesFromFridge() {
         } else {
           setRecipes((prevRecipes) => [...prevRecipes, ...results]);
         }
+
+        // Check if there are more results to load
+        if (data.totalResults && data.totalResults > numberOfRecipes + offset) {
+          setHasMoreResults(true);
+        } else {
+          setHasMoreResults(false);
+        }
       } catch (error) {
         console.error(error);
       }
     };
     searchRecipesFromFridge();
-  }, [searchQuery, numberOfRecipes, offset]);
+  }, [searchQuery, numberOfRecipes, offset, userFavourites]);
 
   const loadMoreRecipes = () => {
     setOffset((prevOffset) => prevOffset + 10);
@@ -88,39 +142,59 @@ export default function recipesFromFridge() {
 
   // Add recipe to favourites list
   const addRecipeToFavourites = async (recipeId) => {
+    if (!user.token) {
+      return;
+    }
     try {
-      const token = user.token;
-      const response = await fetch(
-        `${BACKEND_URL}/users/addFavourite/${recipeId}/${token}`,
-        { method: "POST" }
-      );
+      console.log("Recipe ID before fetch:", recipeId);
 
-      if (!response.ok) {
-        console.log("Error adding recipe to favourites");
-        toast.show("Error adding recipe to favourites", {
-          type: "warning",
+      const token = user.token;
+      const recipeData = await fetchRecipeInformation(recipeId);
+      const instructions = await fetchAnalyzedInstructions(recipeId);
+      if (recipeData && instructions) {
+        const fullRecipeData = {
+          ...recipeData,
+          analyzedInstructions: instructions,
+        };
+
+        const response = await fetch(
+          `${BACKEND_URL}/users/addFavourite/${token}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ recipe: fullRecipeData }),
+          }
+        );
+
+        const data = await response.json();
+        if (!response.ok) {
+          toast.show("Error adding recipe to favourites", {
+            type: "warning",
+            placement: "center",
+            duration: 2000,
+            animationType: "zoom-in",
+            swipeEnabled: true,
+            icon: <Ionicons name="warning" size={24} color="white" />,
+          });
+          console.log("Error adding recipe to favourites");
+          throw new Error(data.message || "Error adding recipe to favourites");
+        }
+
+        dispatch(addToFavouriteRecipes(fullRecipeData));
+        setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
+
+        toast.show("Recipe added to favourites", {
+          type: "success",
           placement: "center",
           duration: 2000,
           animationType: "zoom-in",
           swipeEnabled: true,
-          icon: <Ionicons name="warning" size={24} color="white" />,
+          icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
         });
       }
-
-      const data = await response.json();
-      console.log(data);
-      console.log("Recipe added to favourites:", recipes);
-      dispatch(addToFavouriteRecipes(recipeId));
-      setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
-
-      toast.show("Recipe added to favourites", {
-        type: "success",
-        placement: "center",
-        duration: 2000,
-        animationType: "zoom-in",
-        swipeEnabled: true,
-        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-      });
     } catch (error) {
       console.error("Error adding recipe to favourites:", error.message);
     }
@@ -131,9 +205,10 @@ export default function recipesFromFridge() {
     try {
       const token = user.token;
       const response = await fetch(
-        `${BACKEND_URL}/users/removeFavourite/${recipeId}/${token}`,
+        `${BACKEND_URL}/users/removeFavourite/${token}/${recipeId}`,
         { method: "DELETE" }
       );
+      const data = await response.json();
 
       if (!response.ok) {
         toast.show("Error removing recipe from favourites", {
@@ -144,11 +219,10 @@ export default function recipesFromFridge() {
           swipeEnabled: true,
           icon: <Ionicons name="warning" size={24} color="white" />,
         });
-        console.log("Error removing recipe from favourites");
+        console.log("Error adding recipe to favourites");
+        throw new Error(data.message || "Error adding recipe to favourites");
       }
 
-      const data = await response.json();
-      console.log(data);
       dispatch(removeFromFavouriteRecipes(recipeId));
       setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
 
@@ -165,39 +239,30 @@ export default function recipesFromFridge() {
     }
   };
 
-  // fetch user info
-  useEffect(() => {
-    const fetchUser = async () => {
-      if (user.token) {
-        const response = await fetch(
-          `${BACKEND_URL}/users/userInformation/${user.token}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${user.token}`,
-            },
-          }
-        );
-        const data = await response.json();
-        setUserInfo(data);
-      }
-    };
-    fetchUser();
-  }, [user.token]);
+  // Go to recipe card
+  const goToRecipeCard = async (recipeId) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/users/fetchAllRecipes`);
 
-  // update favourites state
-  useEffect(() => {
-    if (userInfo.favourites) {
-      const favourites = userInfo.favourites;
-      const favouritesObj = {};
-      for (const id of favourites) {
-        favouritesObj[id] = true;
+      if (!response.ok) {
+        throw new Error("Failed to fetch recipes");
       }
-      setIsFavourite(favouritesObj);
+
+      const data = await response.json();
+      const existingRecipe = data.recipes.find(
+        (recipe) => recipe.id === String(recipeId)
+      );
+
+      if (existingRecipe) {
+        navigation.navigate("recipeCard", { passedRecipe: existingRecipe });
+      } else {
+        navigation.navigate("recipeCard", { recipeId: recipeId });
+      }
+    } catch (error) {
+      console.error("Error navigating to recipe card:", error.message);
     }
-  }, [userInfo.favourites]);
-  
+  };
+
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <Background cellSize={25} />
@@ -261,11 +326,7 @@ export default function recipesFromFridge() {
                   </TouchableOpacity>
                   <View className="flex items-center justify-center">
                     <TouchableOpacity
-                      onPress={() =>
-                        navigation.navigate("recipeCard", {
-                          recipeId: recipe.id,
-                        })
-                      }
+                      onPress={() => goToRecipeCard(recipe.id)}
                       key={recipe.id}
                       className="flex items-center justify-center"
                     >
@@ -286,24 +347,26 @@ export default function recipesFromFridge() {
                   </View>
                 </View>
               ))}
-            <View className="flex justify-center items-center mb-4">
-              <TouchableOpacity
-                onPress={loadMoreRecipes}
-                className="relative flex justify-center items-center"
-              >
-                <Image
-                  source={require("@/assets/images/button/button9.png")}
-                  alt="button"
-                  className="w-40 h-12"
-                />
-                <Text
-                  className="text-lg text-white absolute font-Nobile"
-                  style={styles.shadow}
+            {hasMoreResults && (
+              <View className="flex justify-center items-center mb-4">
+                <TouchableOpacity
+                  onPress={loadMoreRecipes}
+                  className="relative flex justify-center items-center"
                 >
-                  Load more
-                </Text>
-              </TouchableOpacity>
-            </View>
+                  <Image
+                    source={require("@/assets/images/button/button9.png")}
+                    alt="button"
+                    className="w-40 h-12"
+                  />
+                  <Text
+                    className="text-lg text-white absolute font-Nobile"
+                    style={styles.shadow}
+                  >
+                    Load more
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
         )}
       </View>
