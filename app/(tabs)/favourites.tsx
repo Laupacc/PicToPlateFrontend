@@ -62,7 +62,7 @@ export default function Favourites() {
       } catch (error) {
         console.error("Failed to fetch favourite recipes at the end", error);
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 1500);
       }
     };
     fetchFavouriteRecipes();
@@ -82,7 +82,7 @@ export default function Favourites() {
         toast.show("Error removing recipe from favourites", {
           type: "warning",
           placement: "center",
-          duration: 2000,
+          duration: 1000,
           animationType: "zoom-in",
           swipeEnabled: true,
           icon: <Ionicons name="warning" size={24} color="white" />,
@@ -97,7 +97,7 @@ export default function Favourites() {
       toast.show("Recipe removed from favourites", {
         type: "success",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
@@ -153,7 +153,7 @@ export default function Favourites() {
               width: 360,
               height: 360,
               position: "absolute",
-              top: 80,
+              top: 100,
             }}
           />
         ) : user.token && favouriteRecipes.length === 0 ? (

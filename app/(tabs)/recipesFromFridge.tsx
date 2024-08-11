@@ -1,4 +1,11 @@
-import { Image, StyleSheet, View, Text, TouchableOpacity } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import React, { useEffect, useState, useRef } from "react";
 import { useRoute } from "@react-navigation/native";
@@ -31,6 +38,7 @@ export default function recipesFromFridge() {
   const [isFavourite, setIsFavourite] = useState({});
   const [userFavourites, setUserFavourites] = useState([]);
   const [hasMoreResults, setHasMoreResults] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const BACKEND_URL = "http://192.168.1.34:3000";
 
@@ -59,6 +67,10 @@ export default function recipesFromFridge() {
   // Search for recipes from kitchen ingredients
   useEffect(() => {
     const searchRecipesFromFridge = async () => {
+      if (!searchQuery) {
+        return;
+      }
+      setLoading(true);
       try {
         const search = searchQuery
           .toLowerCase()
@@ -129,6 +141,8 @@ export default function recipesFromFridge() {
         } else {
           setHasMoreResults(false);
         }
+
+        setLoading(false);
       } catch (error) {
         console.error(error);
       }
@@ -174,7 +188,7 @@ export default function recipesFromFridge() {
           toast.show("Error adding recipe to favourites", {
             type: "warning",
             placement: "center",
-            duration: 2000,
+            duration: 1000,
             animationType: "zoom-in",
             swipeEnabled: true,
             icon: <Ionicons name="warning" size={24} color="white" />,
@@ -189,7 +203,7 @@ export default function recipesFromFridge() {
         toast.show("Recipe added to favourites", {
           type: "success",
           placement: "center",
-          duration: 2000,
+          duration: 1000,
           animationType: "zoom-in",
           swipeEnabled: true,
           icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
@@ -214,7 +228,7 @@ export default function recipesFromFridge() {
         toast.show("Error removing recipe from favourites", {
           type: "warning",
           placement: "center",
-          duration: 2000,
+          duration: 1000,
           animationType: "zoom-in",
           swipeEnabled: true,
           icon: <Ionicons name="warning" size={24} color="white" />,
@@ -229,7 +243,7 @@ export default function recipesFromFridge() {
       toast.show("Recipe removed from favourites", {
         type: "success",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
@@ -280,96 +294,100 @@ export default function recipesFromFridge() {
         </Text>
       </View>
 
-      <View className="flex flex-1 items-center justify-center">
-        {recipes.length === 0 ? (
-          <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
-            <Image
-              source={require("../../assets/images/recipeBack/recipeBack4.png")}
-              className="absolute inset-0 w-full h-full"
-              style={styles.shadow}
-            />
-            <View className="flex items-center justify-center max-w-[180]">
-              <Text className="font-CreamyCookies text-center text-3xl">
-                No recipes found with these ingredients
-              </Text>
+      {loading ? (
+        <ActivityIndicator size="large" color="#237CB0" className="flex-1" />
+      ) : (
+        <View className="flex flex-1 items-center justify-center">
+          {recipes.length === 0 ? (
+            <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
+              <Image
+                source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                className="absolute inset-0 w-full h-full"
+                style={styles.shadow}
+              />
+              <View className="flex items-center justify-center max-w-[180]">
+                <Text className="font-CreamyCookies text-center text-3xl">
+                  No recipes found with these ingredients
+                </Text>
+              </View>
             </View>
-          </View>
-        ) : (
-          <ScrollView>
-            {recipes &&
-              recipes.map((recipe) => (
-                <View
-                  className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
-                  key={recipe.id}
-                >
-                  <Image
-                    source={require("../../assets/images/recipeBack/recipeBack4.png")}
-                    className="absolute inset-0 w-full h-full"
-                    style={styles.shadow}
-                  />
-                  <TouchableOpacity
-                    className="absolute top-20 right-4"
-                    onPress={() => {
-                      isFavourite[recipe.id]
-                        ? removeRecipeFromFavourites(recipe.id)
-                        : addRecipeToFavourites(recipe.id);
-                    }}
+          ) : (
+            <ScrollView>
+              {recipes &&
+                recipes.map((recipe) => (
+                  <View
+                    className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
+                    key={recipe.id}
                   >
                     <Image
-                      source={
-                        isFavourite[recipe.id]
-                          ? require("../../assets/images/heart4.png")
-                          : require("../../assets/images/heart5.png")
-                      }
-                      className="w-8 h-8"
+                      source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                      className="absolute inset-0 w-full h-full"
+                      style={styles.shadow}
                     />
-                  </TouchableOpacity>
-                  <View className="flex items-center justify-center">
                     <TouchableOpacity
-                      onPress={() => goToRecipeCard(recipe.id)}
-                      key={recipe.id}
-                      className="flex items-center justify-center"
+                      className="absolute top-20 right-4"
+                      onPress={() => {
+                        isFavourite[recipe.id]
+                          ? removeRecipeFromFavourites(recipe.id)
+                          : addRecipeToFavourites(recipe.id);
+                      }}
                     >
                       <Image
                         source={
-                          recipe.image
-                            ? { uri: recipe.image }
-                            : require("../../assets/images/picMissing.png")
+                          isFavourite[recipe.id]
+                            ? require("../../assets/images/heart4.png")
+                            : require("../../assets/images/heart5.png")
                         }
-                        className="rounded-xl w-[200] h-[200] right-4"
+                        className="w-8 h-8"
                       />
-                      <View className="flex items-center justify-center max-w-[200] mt-4">
-                        <Text className="text-center font-Flux text-[15px]">
-                          {recipe.title}
-                        </Text>
-                      </View>
                     </TouchableOpacity>
+                    <View className="flex items-center justify-center">
+                      <TouchableOpacity
+                        onPress={() => goToRecipeCard(recipe.id)}
+                        key={recipe.id}
+                        className="flex items-center justify-center"
+                      >
+                        <Image
+                          source={
+                            recipe.image
+                              ? { uri: recipe.image }
+                              : require("../../assets/images/picMissing.png")
+                          }
+                          className="rounded-xl w-[200] h-[200] right-4"
+                        />
+                        <View className="flex items-center justify-center max-w-[200] mt-4">
+                          <Text className="text-center font-Flux text-[15px]">
+                            {recipe.title}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              ))}
-            {hasMoreResults && (
-              <View className="flex justify-center items-center mb-4">
-                <TouchableOpacity
-                  onPress={loadMoreRecipes}
-                  className="relative flex justify-center items-center"
-                >
-                  <Image
-                    source={require("@/assets/images/button/button9.png")}
-                    alt="button"
-                    className="w-40 h-12"
-                  />
-                  <Text
-                    className="text-lg text-white absolute font-Nobile"
-                    style={styles.shadow}
+                ))}
+              {hasMoreResults && (
+                <View className="flex justify-center items-center mb-4">
+                  <TouchableOpacity
+                    onPress={loadMoreRecipes}
+                    className="relative flex justify-center items-center"
                   >
-                    Load more
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </ScrollView>
-        )}
-      </View>
+                    <Image
+                      source={require("@/assets/images/button/button9.png")}
+                      alt="button"
+                      className="w-40 h-12"
+                    />
+                    <Text
+                      className="text-lg text-white absolute font-Nobile"
+                      style={styles.shadow}
+                    >
+                      Load more
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

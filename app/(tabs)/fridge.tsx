@@ -108,7 +108,7 @@ export default function Fridge() {
       toast.show("Please select at least one ingredient", {
         type: "warning",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="warning" size={24} color="white" />,
@@ -127,7 +127,7 @@ export default function Fridge() {
       toast.show("Please enter an ingredient", {
         type: "warning",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="warning" size={24} color="white" />,
@@ -159,7 +159,7 @@ export default function Fridge() {
         toast.show("No ingredients found", {
           type: "warning",
           placement: "center",
-          duration: 2000,
+          duration: 1000,
           animationType: "zoom-in",
           swipeEnabled: true,
           icon: <Ionicons name="warning" size={24} color="white" />,
@@ -211,7 +211,7 @@ export default function Fridge() {
           {
             type: "warning",
             placement: "center",
-            duration: 2000,
+            duration: 1000,
             animationType: "zoom-in",
             swipeEnabled: true,
             icon: <Ionicons name="warning" size={24} color="white" />,
@@ -251,7 +251,7 @@ export default function Fridge() {
         toast.show("New ingredient(s) added successfully", {
           type: "success",
           placement: "center",
-          duration: 2000,
+          duration: 1000,
           animationType: "zoom-in",
           swipeEnabled: true,
           icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
@@ -307,7 +307,7 @@ export default function Fridge() {
               toast.show("Ingredient(s) deleted successfully", {
                 type: "success",
                 placement: "center",
-                duration: 2000,
+                duration: 1000,
                 animationType: "zoom-in",
                 swipeEnabled: true,
                 icon: (
@@ -318,7 +318,7 @@ export default function Fridge() {
               toast.show("Failed to delete ingredient(s)", {
                 type: "danger",
                 placement: "center",
-                duration: 2000,
+                duration: 1000,
                 animationType: "zoom-in",
                 swipeEnabled: true,
                 icon: <Ionicons name="close-circle" size={24} color="white" />,
@@ -390,10 +390,10 @@ export default function Fridge() {
         navigation.navigate("recipesFromFridge", { searchQuery: currentQuery });
       }
     } else {
-      toast.show("No recipes generated yet", {
+      toast.show("No recipe searches performed yet", {
         type: "warning",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="warning" size={24} color="white" />,
@@ -646,7 +646,7 @@ export default function Fridge() {
                       autocompleteSearchIngredient(search);
                       setIsSearchModalVisible(true);
                     }}
-                    className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-60 h-10 font-Nobile"
+                    className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-64 h-10 font-Nobile"
                   />
                   <TouchableOpacity
                     onPress={() => setSearch("")}
@@ -808,7 +808,7 @@ export default function Fridge() {
         onDismiss={() => setIsFilterModalVisible(false)}
       >
         <View className="flex justify-center items-center">
-          <View className=" bg-slate-50 rounded-lg p-10 items-center justify-center">
+          <View className="bg-white rounded-2xl p-10 items-center justify-center">
             <TouchableOpacity
               onPress={() => setIsFilterModalVisible(false)}
               className="absolute top-3 right-3"
@@ -818,100 +818,127 @@ export default function Fridge() {
                 className="w-6 h-6"
               />
             </TouchableOpacity>
-            <List.Section className="flex justify-center items-center bg-slate-50">
+            <List.Section className="flex justify-center items-center">
               <List.Accordion
-                className="flex justify-center items-center w-48 bg-slate-50"
+                className="flex justify-center items-center w-48 border-2 border-[#64E6A6] rounded-lg h-16 mb-2"
                 id={1}
                 title="Name"
                 titleStyle={{
                   fontFamily: "Nobile",
                   color: "#475569",
-                  fontSize: 18,
+                  fontSize: 15,
                 }}
                 left={(props) => (
                   <MaterialCommunityIcons
                     {...props}
                     name="sort-alphabetical-variant"
-                    size={26}
-                    color={"#FF9B50"}
+                    size={24}
+                    // color={"#FF9B50"}
                   />
                 )}
               >
                 <List.Item
                   title="⚬ A → Z"
-                  onPress={() => filterIngredients("name", "asc")}
+                  onPress={() => {
+                    filterIngredients("name", "asc");
+                    setIsFilterModalVisible(false);
+                  }}
+                  // className="bg-[#affbd5] rounded-t-lg"
                 />
                 <List.Item
                   title="⚬ Z → A"
-                  onPress={() => filterIngredients("name", "desc")}
+                  onPress={() => {
+                    filterIngredients("name", "desc");
+                    setIsFilterModalVisible(false);
+                  }}
+                  // className="bg-[#affbd5] rounded-b-lg mb-2"
                 />
               </List.Accordion>
               <List.Accordion
-                className="flex justify-center items-center w-48 bg-slate-50"
+                className="flex justify-center items-center w-48 border-2 border-[#fa9c55] rounded-lg h-16 mb-2"
                 id={2}
                 title="Selected"
                 titleStyle={{
                   fontFamily: "Nobile",
                   color: "#475569",
-                  fontSize: 18,
+                  fontSize: 15,
                 }}
                 left={(props) => (
                   <MaterialCommunityIcons
                     {...props}
                     name="target"
-                    size={26}
-                    color={"#FF9B50"}
+                    size={24}
+                    // color={"#FF9B50"}
                   />
                 )}
               >
                 <List.Item
                   title="⚬ ⬜️ to ☑️"
-                  onPress={() => filterIngredients("checked", "asc")}
+                  onPress={() => {
+                    filterIngredients("checked", "asc");
+                    setIsFilterModalVisible(false);
+                  }}
+                  // className="bg-[#feb883ae] rounded-t-lg"
                 />
                 <List.Item
                   title="⚬ ☑️ to ⬜️"
-                  onPress={() => filterIngredients("checked", "desc")}
+                  onPress={() => {
+                    filterIngredients("checked", "desc");
+                    setIsFilterModalVisible(false);
+                  }}
+                  // className="bg-[#feb883ae] rounded-b-lg mb-2"
                 />
               </List.Accordion>
               <List.Accordion
-                className="flex justify-center items-center w-48 bg-slate-50"
+                className="flex justify-center items-center w-48 border-2 border-[#0cbac7] rounded-lg h-16 mb-2"
                 id={3}
                 title="Date"
                 titleStyle={{
                   fontFamily: "Nobile",
                   color: "#475569",
-                  fontSize: 18,
+                  fontSize: 15,
                 }}
                 left={(props) => (
                   <MaterialCommunityIcons
                     {...props}
                     name="calendar-month-outline"
-                    size={26}
-                    color={"#FF9B50"}
+                    size={24}
+                    // color={"#FF9B50"}
                   />
                 )}
               >
                 <List.Item
                   title="⚬ Old → New"
-                  onPress={() => filterIngredients("dateAdded", "asc")}
+                  onPress={() => {
+                    filterIngredients("dateAdded", "asc");
+                    setIsFilterModalVisible(false);
+                  }}
+                  // className="bg-[#aef0f4] rounded-t-lg"
                 />
                 <List.Item
                   title="⚬ New → Old"
-                  onPress={() => filterIngredients("dateAdded", "desc")}
+                  onPress={() => {
+                    filterIngredients("dateAdded", "desc");
+                    setIsFilterModalVisible(false);
+                  }}
+                  // className="bg-[#aef0f4] rounded-b-lg mb-2"
                 />
               </List.Accordion>
             </List.Section>
             <TouchableOpacity
-              onPress={clearFilters}
-              className="relative flex justify-center items-center top-4"
+              onPress={() => {
+                clearFilters();
+                setIsFilterModalVisible(false);
+              }}
+              className="relative flex justify-center items-center top-3"
               style={styles.shadow}
             >
-              <Image
+              {/* <Image
                 source={require("@/assets/images/button/button11.png")}
                 alt="button"
                 className="w-36 h-12"
-              />
-              <Text className="text-lg text-white absolute font-Nobile">
+              /> */}
+              <Text className="text-lg font-Nobile text-slate-800">
                 Clear Sort
               </Text>
             </TouchableOpacity>

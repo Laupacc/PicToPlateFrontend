@@ -255,7 +255,7 @@ export default function Camera() {
       toast.show("Please select ingredients to add", {
         type: "warning",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="warning-outline" size={24} color="white" />,
@@ -285,7 +285,7 @@ export default function Camera() {
         toast.show(`This ingredient is already in your kitchen`, {
           type: "warning",
           placement: "center",
-          duration: 2000,
+          duration: 1000,
           animationType: "zoom-in",
           swipeEnabled: true,
           icon: <Ionicons name="warning-outline" size={24} color="white" />,
@@ -320,7 +320,7 @@ export default function Camera() {
       toast.show(`${ingredientNames} have been added successfully`, {
         type: "success",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: (
@@ -341,7 +341,7 @@ export default function Camera() {
       toast.show("Failed to add ingredients. Please try again.", {
         type: "danger",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="close-circle-outline" size={24} color="white" />,
@@ -366,6 +366,7 @@ export default function Camera() {
       <StatusBar barStyle="light-content" />
 
       <View className="flex justify-center items-center m-2">
+        {/* Main screen */}
         {!cameraOpen && (
           <View className="flex justify-center items-center">
             <View className="m-4 flex flex-row justify-center items-center">
@@ -446,6 +447,7 @@ export default function Camera() {
         )}
       </View>
 
+      {/* Loading animation while predicting */}
       {isPredictionLoading && (
         <LottieView
           source={randomLoadingAnimation()}
@@ -458,6 +460,7 @@ export default function Camera() {
         />
       )}
 
+      {/* Prediction results */}
       {!cameraOpen && image && !isPredictionLoading && predictions && (
         <View className="relative">
           <View
@@ -537,6 +540,7 @@ export default function Camera() {
         </View>
       )}
 
+      {/* Camera view */}
       {cameraOpen && (
         <PinchGestureHandler
           ref={pinchRef}
@@ -548,7 +552,7 @@ export default function Camera() {
             facing={facing}
             flash={flash}
             zoom={zoom}
-            className="flex-1 w-full"
+            className="w-full h-full"
           >
             <View className="absolute top-0 left-0 right-0 flex flex-row justify-between p-4">
               <TouchableOpacity onPress={toggleCameraFacing}>

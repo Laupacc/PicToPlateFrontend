@@ -55,6 +55,9 @@ export default function Profile() {
   const [joke, setJoke] = useState("");
   const [jokeModalVisible, setJokeModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [openMenu, setOpenMenu] = useState(false);
+  const [jokeLoading, setJokeLoading] = useState(false);
+  const [postitImages, setPostitImages] = useState([]);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -68,9 +71,9 @@ export default function Profile() {
     await SecureStore.deleteItemAsync("token");
     dispatch(logout());
     toast.show("Logged out successfully", {
-      type: "normal",
+      type: "success",
       placement: "center",
-      duration: 2000,
+      duration: 1000,
       animationType: "zoom-in",
       swipeEnabled: true,
       icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
@@ -123,6 +126,10 @@ export default function Profile() {
       toast.show("Please enter a new username", {
         type: "warning",
         placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
       });
       return;
     }
@@ -159,6 +166,12 @@ export default function Profile() {
                 toast.show(data.message, {
                   type: "danger",
                   placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="close-circle" size={24} color="white" />
+                  ),
                 });
                 return;
               }
@@ -173,18 +186,34 @@ export default function Profile() {
                 toast.show(data.message, {
                   type: "success",
                   placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="checkmark-circle" size={24} color="white" />
+                  ),
                 });
               } else {
                 toast.show("Failed to update username", {
                   type: "danger",
                   placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="close-circle" size={24} color="white" />
+                  ),
                 });
               }
             } catch (error) {
               console.error("Error updating username:", error);
               toast.show("An error occurred. Please try again.", {
-                type: "warning",
+                type: "danger",
                 placement: "center",
+                duration: 1000,
+                animationType: "zoom-in",
+                swipeEnabled: true,
+                icon: <Ionicons name="close-circle" size={24} color="white" />,
               });
             }
           },
@@ -199,6 +228,10 @@ export default function Profile() {
       toast.show("Please enter a new password", {
         type: "warning",
         placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
       });
       return;
     }
@@ -233,13 +266,25 @@ export default function Profile() {
                 toast.show(data.message, {
                   type: "success",
                   placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="checkmark-circle" size={24} color="white" />
+                  ),
                 });
                 setNewPassword("");
                 setIsUpdateInfoModalVisible(false);
               } else {
-                toast.show(data.message, {
+                toast.show("Failed to update password", {
                   type: "danger",
                   placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="close-circle" size={24} color="white" />
+                  ),
                 });
               }
             } catch (error) {
@@ -247,6 +292,10 @@ export default function Profile() {
               toast.show("An error occurred. Please try again.", {
                 type: "danger",
                 placement: "center",
+                duration: 1000,
+                animationType: "zoom-in",
+                swipeEnabled: true,
+                icon: <Ionicons name="close-circle" size={24} color="white" />,
               });
             }
           },
@@ -261,6 +310,10 @@ export default function Profile() {
       toast.show("Please enter a new email", {
         type: "warning",
         placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
       });
       return;
     }
@@ -292,13 +345,25 @@ export default function Profile() {
                 toast.show(data.message, {
                   type: "success",
                   placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="checkmark-circle" size={24} color="white" />
+                  ),
                 });
                 setNewEmail("");
                 setIsUpdateInfoModalVisible(false);
               } else {
-                toast.show(data.message, {
+                toast.show("Failed to update email", {
                   type: "danger",
                   placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="close-circle" size={24} color="white" />
+                  ),
                 });
               }
             } catch (error) {
@@ -306,6 +371,10 @@ export default function Profile() {
               toast.show("An error occurred. Please try again.", {
                 type: "danger",
                 placement: "center",
+                duration: 1000,
+                animationType: "zoom-in",
+                swipeEnabled: true,
+                icon: <Ionicons name="close-circle" size={24} color="white" />,
               });
             }
           },
@@ -315,25 +384,40 @@ export default function Profile() {
     );
   };
 
-  const randomPostitImage = () => {
+  // Function to get random images
+  const getRandomPostitImages = (count = 1) => {
     const images = [
       require("../../assets/images/stickers/postit1.png"),
       require("../../assets/images/stickers/postit2.png"),
       require("../../assets/images/stickers/postit3.png"),
       require("../../assets/images/stickers/postit4.png"),
     ];
-    return images[Math.floor(Math.random() * images.length)];
+
+    // Shuffle the images array
+    const shuffledImages = images.sort(() => 0.5 - Math.random());
+
+    // Return the first 'count' images
+    return shuffledImages.slice(0, count);
   };
+
+  // Set post-it images on component mount
+  useEffect(() => {
+    // Get 2 unique images
+    const images = getRandomPostitImages(2);
+    setPostitImages(images);
+  }, []);
 
   const toggleIsNewPasswordVisible = () => {
     setIsNewPasswordVisible(!isNewPasswordVisible);
   };
 
   const fetchJoke = async () => {
+    setJokeLoading(true);
     const response = await fetch(`${BACKEND_URL}/recipes/joke`);
     const data = await response.json();
     console.log(data);
     setJoke(data.text);
+    setJokeLoading(false);
   };
 
   const avatarImages = {
@@ -424,41 +508,57 @@ export default function Profile() {
                   height: 250,
                 }}
               >
-                {/* Edit Info Modal Button */}
+                {/* Menu Button */}
                 {user.token && (
-                  <View className="absolute top-3 right-3 flex-row">
+                  <View className="absolute top-3 right-1">
                     <TouchableOpacity
-                      onPress={() => setIsUpdateInfoModalVisible(true)}
+                      onPress={() => setOpenMenu(!openMenu)}
+                      className="flex justify-center items-center relative mx-2"
                     >
-                      <FontAwesome5
-                        name="user-edit"
-                        size={24}
-                        color="#4b5563"
+                      <Image
+                        source={require("../../assets/images/menuIcon.png")}
+                        className="w-10 h-10"
                       />
                     </TouchableOpacity>
+                    {openMenu && (
+                      <View className="flex justify-center items-center mt-3 -mr-1">
+                        <TouchableOpacity
+                          onPress={() => setIsAvatarPickerVisible(true)}
+                          className=""
+                        >
+                          <Image
+                            source={require("../../assets/images/changeImage.png")}
+                            className="w-10 h-10"
+                          />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => setIsUpdateInfoModalVisible(true)}
+                          className="mt-2"
+                        >
+                          <Image
+                            source={require("../../assets/images/updateInfo.png")}
+                            className="w-10 h-10"
+                          />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setJokeModalVisible(true);
+                            fetchJoke();
+                          }}
+                          className="mt-3 mr-1"
+                        >
+                          <Image
+                            source={require("../../assets/images/clown.png")}
+                            className="w-10 h-10"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
                 )}
 
-                <View className="absolute top-12 right-3 flex-row">
-                  <TouchableOpacity
-                    onPress={() => {
-                      setJokeModalVisible(true);
-                      fetchJoke();
-                    }}
-                    className="flex justify-center items-center relative mx-2"
-                  >
-                    {/* <FontAwesome5 name="laugh-squint" size={26} color="#4b5563" /> */}
-                    <Image
-                      source={require("../../assets/images/laughingSmiley.png")}
-                      className="w-12 h-12"
-                    />
-                  </TouchableOpacity>
-                </View>
-
                 {/* Avatar */}
-                <TouchableOpacity
-                  onPress={() => setIsAvatarPickerVisible(true)}
-                >
+                <View>
                   <Image
                     source={
                       user.token && avatarImages[selectedAvatar]
@@ -467,7 +567,7 @@ export default function Profile() {
                     }
                     className="w-20 h-20"
                   />
-                </TouchableOpacity>
+                </View>
 
                 {/* User info */}
                 {user.token ? (
@@ -532,11 +632,11 @@ export default function Profile() {
               <View className="flex flex-row justify-center items-center">
                 {/* Middle Postit 1*/}
                 <View
-                  className="flex justify-center items-center relative w-40 h-40 m-1"
+                  className="flex justify-center items-center relative w-40 h-44 mx-2"
                   style={styles.shadow}
                 >
                   <Image
-                    source={randomPostitImage()}
+                    source={postitImages[0]}
                     className="absolute inset-0 w-full h-full"
                   />
                   <View className="relative justify-center items-center mt-4">
@@ -548,18 +648,18 @@ export default function Profile() {
                       {userInfo.favourites?.length}
                     </Text>
                   </View>
-                  <Text className="text-center text-lg font-SpaceMono text-slate-700 mt-3">
+                  <Text className="text-center text-base font-SpaceMono text-slate-700 mt-2">
                     favourite recipes
                   </Text>
                 </View>
 
                 {/* Middle Postit 2 */}
                 <View
-                  className="flex justify-center items-center relative w-40 h-40 m-1"
+                  className="flex justify-center items-center relative w-40 h-44 mx-2"
                   style={styles.shadow}
                 >
                   <Image
-                    source={randomPostitImage()}
+                    source={postitImages[1]}
                     className="absolute inset-0 w-full h-full"
                   />
                   <View className="relative justify-center items-center mt-4">
@@ -571,7 +671,7 @@ export default function Profile() {
                       {userInfo.ingredients?.length}
                     </Text>
                   </View>
-                  <Text className="text-center text-lg font-SpaceMono text-slate-700 mt-4">
+                  <Text className="text-center text-base font-SpaceMono text-slate-700 mt-4">
                     ingredients saved
                   </Text>
                 </View>
@@ -579,7 +679,7 @@ export default function Profile() {
 
               {/* Old ingredients */}
               <View className="flex justify-center items-center">
-                <View className="relative m-1">
+                <View className="relative m-1 mb-4">
                   <View
                     className={
                       oldIngredients.length > 0
@@ -716,7 +816,12 @@ export default function Profile() {
       {/* Update info modal */}
       <Modal
         visible={isUpdateInfoModalVisible}
-        onDismiss={() => setIsUpdateInfoModalVisible(false)}
+        onDismiss={() => {
+          setIsUpdateInfoModalVisible(false);
+          setNewPassword("");
+          setNewUsername("");
+          setNewEmail("");
+        }}
       >
         <View className="flex justify-center items-center">
           <View className="flex justify-around items-center bg-slate-50 rounded-lg p-8">
@@ -734,7 +839,7 @@ export default function Profile() {
                 className="w-6 h-6"
               />
             </TouchableOpacity>
-            <Text className="text-xl text-center font-Nobile mb-4">
+            <Text className="text-center text-2xl font-Nobile text-slate-600 mb-2 p-4">
               Update Information
             </Text>
             <View className="flex justify-center items-center">
@@ -819,11 +924,21 @@ export default function Profile() {
         }}
       >
         <View className="flex justify-center items-center">
-          <View className=" bg-slate-100 rounded-lg p-6 items-center justify-center">
-            <Text className="font-bold text-gray-600 text-2xl p-2">
+          <View className=" bg-slate-100 rounded-lg p-4">
+            <TouchableOpacity
+              onPress={() => setIsAvatarPickerVisible(false)}
+              className="items-end p-1"
+            >
+              <Image
+                source={require("../../assets/images/cross.png")}
+                className="w-6 h-6"
+              />
+            </TouchableOpacity>
+
+            <Text className="text-center text-2xl font-Nobile text-slate-600 p-2">
               Select Avatar
             </Text>
-            <View className="flex-row justify-center items-center flex-wrap">
+            <View className="flex-row justify-center items-center flex-wrap p-2">
               {Object.entries(avatarImages).map(([avatarId]) => (
                 <TouchableOpacity
                   key={avatarId}
@@ -847,12 +962,18 @@ export default function Profile() {
       {/* Modal for Joke */}
       <Modal
         visible={jokeModalVisible}
-        onDismiss={() => setJokeModalVisible(false)}
+        onDismiss={() => {
+          setJokeModalVisible(false);
+          setJoke("");
+        }}
       >
         <View className="flex justify-center items-center">
           <View className="bg-slate-100 rounded-2xl p-2 w-[80%] max-h-[500]">
             <TouchableOpacity
-              onPress={() => setJokeModalVisible(false)}
+              onPress={() => {
+                setJokeModalVisible(false);
+                setJoke("");
+              }}
               className="items-end p-1"
             >
               <Image
@@ -860,14 +981,22 @@ export default function Profile() {
                 className="w-6 h-6"
               />
             </TouchableOpacity>
-            <Text className="text-center text-2xl font-Nobile text-[#475569] mb-2">
+            <Text className="text-center text-2xl font-Nobile text-slate-600 mb-2">
               Random Joke
             </Text>
-            <ScrollView>
-              <Text className="text-center font-Nobile text-lg text-[#475569] my-4 mx-6">
-                {joke}
-              </Text>
-            </ScrollView>
+            {jokeLoading ? (
+              <ActivityIndicator
+                size="large"
+                color="#237CB0"
+                className="my-12 bottom-4"
+              />
+            ) : (
+              <ScrollView>
+                <Text className="text-center font-Nobile text-lg text-slate-600 my-4 mx-6">
+                  {joke}
+                </Text>
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>

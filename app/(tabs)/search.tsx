@@ -77,6 +77,7 @@ export default function Search() {
   const [showConversionResult, setShowConversionResult] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [userFavourites, setUserFavourites] = useState([]);
+  const [randomImage, setRandomImage] = useState(null);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -190,7 +191,7 @@ export default function Search() {
       toast.show("Error fetching recipes", {
         type: "warning",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="warning" size={24} color="white" />,
@@ -256,7 +257,7 @@ export default function Search() {
           toast.show("Error adding recipe to favourites", {
             type: "warning",
             placement: "center",
-            duration: 2000,
+            duration: 1000,
             animationType: "zoom-in",
             swipeEnabled: true,
             icon: <Ionicons name="warning" size={24} color="white" />,
@@ -271,7 +272,7 @@ export default function Search() {
         toast.show("Recipe added to favourites", {
           type: "success",
           placement: "center",
-          duration: 2000,
+          duration: 1000,
           animationType: "zoom-in",
           swipeEnabled: true,
           icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
@@ -296,7 +297,7 @@ export default function Search() {
         toast.show("Error removing recipe from favourites", {
           type: "warning",
           placement: "center",
-          duration: 2000,
+          duration: 1000,
           animationType: "zoom-in",
           swipeEnabled: true,
           icon: <Ionicons name="warning" size={24} color="white" />,
@@ -311,7 +312,7 @@ export default function Search() {
       toast.show("Recipe removed from favourites", {
         type: "success",
         placement: "center",
-        duration: 2000,
+        duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
@@ -410,6 +411,7 @@ export default function Search() {
     setTrivia(data.text);
   };
 
+  // Random Recipe Icon
   const randomRecipeIcon = () => {
     const icons = [
       require("../../assets/images/recipeMissing/recipe7.png"),
@@ -417,6 +419,11 @@ export default function Search() {
     ];
     return icons[Math.floor(Math.random() * icons.length)];
   };
+
+  // Set random image on initial load
+  useEffect(() => {
+    setRandomImage(randomRecipeIcon());
+  }, []);
 
   const dietOptions = [
     { key: "vegetarian", label: "Vegetarian" },
@@ -860,7 +867,9 @@ export default function Search() {
               <Text className="font-Flux text-[18px] text-[#475569] text-center mx-6 my-4">
                 Use your available ingredients to unlock amazing recipe ideas!
               </Text>
-              <Image source={randomRecipeIcon()} className="w-60 h-60" />
+              {randomImage && (
+                <Image source={randomImage} className="w-60 h-60" />
+              )}
             </View>
           </View>
         )}
