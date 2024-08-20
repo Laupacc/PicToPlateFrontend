@@ -14,6 +14,7 @@ import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { ToastProvider } from "react-native-toast-notifications";
+import { store, persistor } from "@/store/store";
 
 import { Provider } from "react-redux";
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
@@ -31,6 +32,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Nobile: require("../assets/fonts/Nobile-Regular.ttf"),
@@ -43,37 +45,39 @@ export default function RootLayout() {
     Flux: require("../assets/fonts/Flux_Architect_Regular.ttf"),
   });
 
+  // Hide the splash screen when the app is loaded.
   useEffect(() => {
     if (loaded) {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
 
+  // Wait for the fonts to load before rendering the app.
   if (!loaded) {
     return null;
   }
 
-  const reducers = combineReducers({
-    user: user,
-    fridge: fridge,
-    recipes: recipes,
-  });
+  // const reducers = combineReducers({
+  //   user: user,
+  //   fridge: fridge,
+  //   recipes: recipes,
+  // });
 
-  const persistConfig = {
-    key: "root",
-    storage: AsyncStorage,
-    whitelist: ["user", "fridge", "recipes"],
-  };
+  // const persistConfig = {
+  //   key: "root",
+  //   storage: AsyncStorage,
+  //   whitelist: ["user", "fridge", "recipes"],
+  // };
 
-  const persistedReducer = persistReducer(persistConfig, reducers);
+  // const persistedReducer = persistReducer(persistConfig, reducers);
 
-  const store = configureStore({
-    reducer: persistedReducer,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({ serializableCheck: false, immutableCheck: false }),
-  });
+  // const store = configureStore({
+  //   reducer: persistedReducer,
+  //   middleware: (getDefaultMiddleware) =>
+  //     getDefaultMiddleware({ serializableCheck: false, immutableCheck: false }),
+  // });
 
-  const persistor = persistStore(store);
+  // const persistor = persistStore(store);
 
   return (
     <Provider store={store}>

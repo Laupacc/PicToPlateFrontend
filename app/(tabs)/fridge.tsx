@@ -7,34 +7,25 @@ import {
   StatusBar,
   TouchableOpacity,
   KeyboardAvoidingView,
-  ImageBackground,
   Dimensions,
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { Modal } from "react-native-paper";
-import React from "react";
-import { Link } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
+import { TextInput, ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
-import Background from "@/components/Background";
+import { useDispatch, useSelector } from "react-redux";
+import { useToast } from "react-native-toast-notifications";
+import { Modal, List } from "react-native-paper";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
-import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
-import { TextInput, ScrollView } from "react-native-gesture-handler";
-import {
-  Feather,
-  Ionicons,
-  AntDesign,
-  FontAwesome,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
-import { List } from "react-native-paper";
-import * as SecureStore from "expo-secure-store";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import moment from "moment";
-import { useToast } from "react-native-toast-notifications";
+import Background from "@/components/Background";
 import BouncingImage from "@/components/Bounce";
+import { BACKEND_URL } from "@/_recipeUtils";
+import { RootState } from "@/store/store";
 import {
   addIngredient,
   removeIngredient,
@@ -42,24 +33,28 @@ import {
 } from "@/store/fridge";
 
 export default function Fridge() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const dispatch = useDispatch();
-  const user = useSelector((state) => state.user.value);
-  const ingredients = useSelector((state) => state.fridge.ingredients);
   const toast = useToast();
+  const user = useSelector((state: RootState) => state.user.value);
+  const ingredients = useSelector(
+    (state: RootState) => state.fridge.ingredients
+  ) as any[];
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
-
-  const [fridgeItems, setFridgeItems] = useState([]);
-  const [selectedIngredients, setSelectedIngredients] = useState([]);
-  const [search, setSearch] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
-  const [selectedFromSearch, setSelectedFromSearch] = useState([]);
-  const [selectedToRemove, setSelectedToRemove] = useState([]);
-  const [isSearchModalVisible, setIsSearchModalVisible] = useState(false);
-  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
-  const [searchMessage, setSearchMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const isInitialMount = useRef<boolean>(true);
+  const [fridgeItems, setFridgeItems] = useState<any[]>([]);
+  const [selectedIngredients, setSelectedIngredients] = useState<any[]>([]);
+  const [search, setSearch] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [selectedFromSearch, setSelectedFromSearch] = useState<any[]>([]);
+  const [selectedToRemove, setSelectedToRemove] = useState<any[]>([]);
+  const [isSearchModalVisible, setIsSearchModalVisible] =
+    useState<boolean>(false);
+  const [isFilterModalVisible, setIsFilterModalVisible] =
+    useState<boolean>(false);
+  const [searchMessage, setSearchMessage] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [directInput, setDirectInput] = useState<string>("");
 
   const [lastSearchQuery, setLastSearchQuery] = useState<string | null>(null);
 
@@ -71,7 +66,10 @@ export default function Fridge() {
     const fetchFridgeItems = async () => {
       if (!user.token) return;
       try {
-        setLoading(true);
+        if (isInitialMount.current) {
+          setLoading(true);
+        }
+
         const response = await fetch(
           `${BACKEND_URL}/users/fetchIngredients/${user.token}`
         );
@@ -81,10 +79,10 @@ export default function Fridge() {
         const data = await response.json();
         console.log(
           "Fridge items:",
-          data.ingredients.map((item) => item.name)
+          data.ingredients.map((item: any) => item.name)
         );
 
-        const allItems = data.ingredients.map((item) => ({
+        const allItems = data.ingredients.map((item: any) => ({
           name: item.name,
           dateAdded: item.dateAdded,
           checked: false,
@@ -92,9 +90,13 @@ export default function Fridge() {
 
         dispatch(updateIngredients(allItems));
         setFridgeItems(allItems);
-        setLoading(false);
       } catch (error) {
         console.error(error);
+      } finally {
+        if (isInitialMount.current) {
+          setLoading(false);
+          isInitialMount.current = false;
+        }
       }
     };
     fetchFridgeItems();
@@ -105,7 +107,7 @@ export default function Fridge() {
     const selectedIgredients = ingredients.filter((item) => item.checked);
     setSelectedIngredients(selectedIgredients);
     if (selectedIgredients.length === 0) {
-      toast.show("Please select at least one ingredient", {
+      toast.show("Select at least one ingredient to search for", {
         type: "warning",
         placement: "center",
         duration: 1000,
@@ -122,9 +124,9 @@ export default function Fridge() {
   };
 
   // Autocomplete search ingredient
-  const autocompleteSearchIngredient = async (query) => {
+  const autocompleteSearchIngredient = async (query: string) => {
     if (query.length === 0) {
-      toast.show("Please enter an ingredient", {
+      toast.show("Enter a search item", {
         type: "warning",
         placement: "center",
         duration: 1000,
@@ -132,7 +134,7 @@ export default function Fridge() {
         swipeEnabled: true,
         icon: <Ionicons name="warning" size={24} color="white" />,
       });
-      return;
+      return false;
     }
     try {
       const response = await fetch(
@@ -145,7 +147,9 @@ export default function Fridge() {
       console.log("Autocomplete search ingredient:", data);
 
       if (
-        !data.some((item) => item.name.toLowerCase() === query.toLowerCase())
+        !data.some(
+          (item: any) => item.name.toLowerCase() === query.toLowerCase()
+        )
       ) {
         data.unshift({ name: query });
       }
@@ -165,13 +169,14 @@ export default function Fridge() {
           icon: <Ionicons name="warning" size={24} color="white" />,
         });
       }
+      return true;
     } catch (error) {
       console.error(error);
     }
   };
 
-  // Toggle ingredient selected from search modal
-  const toggleIngredientSelected = (ingredient) => {
+  // Select ingredients from search modal
+  const toggleIngredientSelected = (ingredient: any) => {
     setSelectedFromSearch((prev) => {
       const index = prev.findIndex((item) => item.name === ingredient.name);
       if (index === -1) {
@@ -182,13 +187,27 @@ export default function Fridge() {
     });
   };
 
-  // Add selected ingredients to fridge
+  // Add selected ingredients to fridge from search modal
   const addIngredientToFridge = async () => {
+    if (selectedFromSearch.length === 0) {
+      toast.show("Select at least one ingredient to add", {
+        type: "warning",
+        placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
+      return false;
+    }
     try {
       // Filter out ingredients that are already in the fridgeItems state
       const newIngredients = selectedFromSearch.filter(
         (item) =>
-          !fridgeItems.some((fridgeItem) => fridgeItem.name === item.name)
+          !fridgeItems.some(
+            (fridgeItem) =>
+              fridgeItem.name.toLowerCase() === item.name.toLowerCase()
+          )
       );
 
       // Alert if some ingredients are already in the fridge
@@ -197,26 +216,21 @@ export default function Fridge() {
           .filter((item) =>
             fridgeItems.some((fridgeItem) => fridgeItem.name === item.name)
           )
-          .map((item) => item.name);
+          .map((item) => item.name.charAt(0).toUpperCase() + item.name.slice(1))
+          .join(", ");
 
-        toast.show(
-          `${alreadyInFridgeNames[0]
-            .charAt(0)
-            .toUpperCase()}${alreadyInFridgeNames[0]
-            .slice(1)
-            .toLowerCase()}${alreadyInFridgeNames
-            .slice(1)
-            .map((name) => `, ${name.toLowerCase()}`)
-            .join("")} is already in your fridge`,
-          {
-            type: "warning",
-            placement: "center",
-            duration: 1000,
-            animationType: "zoom-in",
-            swipeEnabled: true,
-            icon: <Ionicons name="warning" size={24} color="white" />,
-          }
-        );
+        const message = `${alreadyInFridgeNames} ${
+          alreadyInFridgeNames.length > 1 ? "are" : "is"
+        } already in your fridge`;
+
+        toast.show(message, {
+          type: "warning",
+          placement: "center",
+          duration: 1000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="warning" size={24} color="white" />,
+        });
       }
 
       // Proceed to add only new ingredients
@@ -243,12 +257,16 @@ export default function Fridge() {
         const data = await response.json();
         console.log("Added ingredient to fridge:", data);
 
-        // Update the local state with the new ingredients
-        setSelectedFromSearch([]);
         dispatch(addIngredient(newIngredients));
         setFridgeItems((prev) => [...prev, ...newIngredients]);
+        setSelectedFromSearch([]);
+        setDirectInput("");
 
-        toast.show("New ingredient(s) added successfully", {
+        const newIngredientsNames = newIngredients
+          .map((item) => item.name.charAt(0).toUpperCase() + item.name.slice(1))
+          .join(", ");
+
+        toast.show(`${newIngredientsNames} have been added successfully`, {
           type: "success",
           placement: "center",
           duration: 1000,
@@ -256,16 +274,137 @@ export default function Fridge() {
           swipeEnabled: true,
           icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
         });
+        return true;
       } else {
         console.log("No new ingredients to add");
+        return false;
       }
     } catch (error) {
       console.error(error);
+      return false;
+    }
+  };
+
+  // Handle adding an ingredient directly from the input field
+  const addDirectIngredientToFridge = async () => {
+    const trimmedInput = directInput.trim().toLowerCase();
+
+    if (trimmedInput.length === 0) {
+      toast.show("Enter an ingredient to add", {
+        type: "warning",
+        placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
+      return false;
+    }
+
+    const newIngredient = {
+      name: trimmedInput,
+      dateAdded: new Date().toISOString(),
+    };
+    if (
+      fridgeItems.some(
+        (item) => item.name.toLowerCase() === newIngredient.name.toLowerCase()
+      )
+    ) {
+      toast.show(
+        `${
+          newIngredient.name.charAt(0).toUpperCase() +
+          newIngredient.name.slice(1)
+        } is already in your fridge`,
+        {
+          type: "warning",
+          placement: "center",
+          duration: 1000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="warning" size={24} color="white" />,
+        }
+      );
+      return false;
+    }
+
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/users/addIngredient/${user.token}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ingredients: [newIngredient],
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to add ingredient to fridge");
+      }
+      const data = await response.json();
+      console.log("Added ingredient to fridge:", data);
+
+      // Update the local state with the new ingredient
+      dispatch(addIngredient([newIngredient]));
+      setFridgeItems((prev) => [...prev, newIngredient.name]);
+      setDirectInput("");
+      setSearch("");
+
+      toast.show(
+        `${
+          newIngredient.name.charAt(0).toUpperCase() +
+          newIngredient.name.slice(1)
+        } has been added successfully`,
+        {
+          type: "success",
+          placement: "center",
+          duration: 1000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+        }
+      );
+
+      return true;
+    } catch (error) {
+      console.error(error);
+      toast.show("Failed to add ingredient. Please try again.", {
+        type: "danger",
+        placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="alert-circle" size={24} color="white" />,
+      });
+      return false;
+    }
+  };
+
+  // Select several ingredients to remove
+  const toggleIngredientSelectedToRemove = (ingredient: any) => {
+    if (selectedToRemove.includes(ingredient)) {
+      setSelectedToRemove((prev) => prev.filter((name) => name !== ingredient));
+    } else {
+      setSelectedToRemove((prev) => [...prev, ingredient]);
     }
   };
 
   // Remove selected ingredients
   const removeSelectedIngredients = async () => {
+    if (selectedToRemove.length === 0) {
+      toast.show("Select at least one ingredient to delete", {
+        type: "danger",
+        placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
+      return;
+    }
     Alert.alert(
       "Confirm Removal",
       "Are you sure you want to remove the selected ingredients?",
@@ -298,16 +437,20 @@ export default function Fridge() {
               const data = await response.json();
               console.log("Removed ingredients from fridge:", data);
 
+              const ingredientsNamestoRemove = selectedToRemove
+                .map((name) => name.charAt(0).toUpperCase() + name.slice(1))
+                .join(", ");
+
               setFridgeItems((prev) =>
                 prev.filter((item) => !selectedToRemove.includes(item.name))
               );
               dispatch(removeIngredient(selectedToRemove));
               setSelectedToRemove([]);
 
-              toast.show("Ingredient(s) deleted successfully", {
+              toast.show(`${ingredientsNamestoRemove} deleted successfully`, {
                 type: "success",
                 placement: "center",
-                duration: 1000,
+                duration: 5000,
                 animationType: "zoom-in",
                 swipeEnabled: true,
                 icon: (
@@ -332,17 +475,8 @@ export default function Fridge() {
     );
   };
 
-  // Select several ingredients to remove
-  const toggleIngredientSelectedToRemove = (ingredient) => {
-    if (selectedToRemove.includes(ingredient)) {
-      setSelectedToRemove((prev) => prev.filter((name) => name !== ingredient));
-    } else {
-      setSelectedToRemove((prev) => [...prev, ingredient]);
-    }
-  };
-
-  // Filter ingredients by name, dateAdded, checked
-  const filterIngredients = (criteria, sortOrder) => {
+  // Filter ingredients by name, dateAdded or checked
+  const filterIngredients = (criteria: string, sortOrder: string) => {
     let sortedIngredients = [...fridgeItems];
     switch (criteria) {
       case "name":
@@ -355,8 +489,8 @@ export default function Fridge() {
       case "dateAdded":
         sortedIngredients.sort((a, b) =>
           sortOrder === "asc"
-            ? new Date(a.dateAdded) - new Date(b.dateAdded)
-            : new Date(b.dateAdded) - new Date(a.dateAdded)
+            ? new Date(a.dateAdded).getTime() - new Date(b.dateAdded).getTime()
+            : new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime()
         );
         break;
       case "checked":
@@ -369,10 +503,6 @@ export default function Fridge() {
         break;
     }
     setFridgeItems(sortedIngredients);
-  };
-
-  const clearFilters = () => {
-    setFridgeItems(ingredients);
   };
 
   // Go back to recipesFromFridge screen if there has already been a search query
@@ -467,7 +597,7 @@ export default function Fridge() {
                 className="w-12 h-12 top-5 mx-4"
               />
 
-              <Text className="font-CreamyCookies text-2xl">Search</Text>
+              <Text className="font-CreamyCookies text-2xl">Here!</Text>
             </View>
           </View>
         ) : (
@@ -508,8 +638,8 @@ export default function Fridge() {
                                   >
                                     <View className="flex-row justify-center items-center ml-2">
                                       <Text className="text-lg text-slate-600">
-                                        {item.name.charAt(0).toUpperCase() +
-                                          item.name.slice(1)}
+                                        {item.name?.charAt(0).toUpperCase() +
+                                          item.name?.slice(1)}
                                       </Text>
                                       <Text className="text-base text-slate-500">
                                         {" (" +
@@ -582,112 +712,43 @@ export default function Fridge() {
                 </ScrollView>
               </View>
 
-              {/* Search Recipes and Remove Selected Buttons */}
               <View className="flex flex-row justify-center items-center">
+                {/* Search Recipes Button */}
                 <View className="flex justify-center items-center">
                   <TouchableOpacity
                     onPress={searchRecipesFromIngredientsSelected}
-                    className="relative flex justify-center items-center"
+                    className="relative flex justify-center items-center mx-1"
                     style={styles.shadow}
                   >
                     <Image
                       source={require("@/assets/images/button/button9.png")}
                       alt="button"
-                      className="w-40 h-12"
+                      className="w-32 h-10"
                     />
-                    <Text className="text-lg text-white absolute font-Nobile">
+                    <Text className="text-sm text-white absolute font-Nobile">
                       Search Recipes
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <View className="flex justify-center items-center">
-                  {selectedToRemove.length > 0 && (
-                    <TouchableOpacity
-                      onPress={removeSelectedIngredients}
-                      className="relative flex justify-center items-center"
-                      style={styles.shadow}
-                    >
-                      <Image
-                        source={require("@/assets/images/button/button5.png")}
-                        alt="button"
-                        className="w-40 h-12"
-                      />
-                      <Text className="text-lg text-white absolute font-Nobile">
-                        Remove
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-            </>
-          )
-        )}
 
-        {/* Search Bar, Filter Button and go back to recipe button */}
-        {user.token && !loading && (
-          <View
-            className={
-              fridgeItems.length === 0
-                ? "flex flex-row justify-center items-center bottom-24"
-                : "flex flex-row justify-center items-center mt-2"
-            }
-          >
-            <View className="flex justify-center items-center mx-2">
-              <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-              >
-                <View className="items-center justify-center relative w-full">
-                  <TextInput
-                    placeholder="Add ingredients"
-                    placeholderTextColor={"gray"}
-                    value={search}
-                    onChangeText={setSearch}
-                    onSubmitEditing={() => {
-                      autocompleteSearchIngredient(search);
-                      setIsSearchModalVisible(true);
-                    }}
-                    className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-64 h-10 font-Nobile"
-                  />
+                {/* Remove Ingredients Button */}
+                <View className="flex justify-center items-center">
                   <TouchableOpacity
-                    onPress={() => setSearch("")}
-                    style={{
-                      position: "absolute",
-                      right: 10,
-                      top: "50%",
-                      transform: [{ translateY: -12.5 }],
-                    }}
+                    onPress={removeSelectedIngredients}
+                    className="relative flex justify-center items-center mx-1"
+                    style={styles.shadow}
                   >
                     <Image
-                      source={require("@/assets/images/redCross.png")}
-                      alt="clear"
-                      className="w-6 h-6"
+                      source={require("@/assets/images/button/button5.png")}
+                      alt="button"
+                      className="w-32 h-10"
                     />
+                    <Text className="text-sm text-white absolute font-Nobile">
+                      Delete
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                  onPress={() => {
-                    autocompleteSearchIngredient(search);
-                    setIsSearchModalVisible(true);
-                  }}
-                  style={{
-                    position: "absolute",
-                    right: 45,
-                    top: "50%",
-                    transform: [{ translateY: -12.5 }],
-                  }}
-                >
-                  <Image
-                    source={require("@/assets/images/search2.png")}
-                    alt="search"
-                    className="w-6 h-6"
-                  />
-                </TouchableOpacity>
-              </KeyboardAvoidingView>
-            </View>
-
-            {fridgeItems.length > 0 && (
-              <>
                 {/* Filter button */}
                 <TouchableOpacity
                   onPress={() => setIsFilterModalVisible(!isFilterModalVisible)}
@@ -713,8 +774,83 @@ export default function Fridge() {
                     className="w-14 h-12"
                   />
                 </TouchableOpacity>
-              </>
-            )}
+              </View>
+            </>
+          )
+        )}
+
+        {/* Search Bar, Add button, Search Button */}
+        {user.token && !loading && (
+          <View className="flex justify-center items-center">
+            <View
+              className={
+                fridgeItems.length === 0
+                  ? "flex flex-row justify-center items-center bottom-24"
+                  : "flex flex-row justify-center items-center mt-1"
+              }
+            >
+              <View className="flex justify-center items-center mx-2">
+                <KeyboardAvoidingView
+                  behavior={Platform.OS === "ios" ? "padding" : "height"}
+                >
+                  <View className="items-center justify-center relative w-full">
+                    <TextInput
+                      placeholder="Add or search for ingredient"
+                      placeholderTextColor={"gray"}
+                      value={directInput && search}
+                      onChangeText={(text) => {
+                        setSearch(text);
+                        setDirectInput(text);
+                      }}
+                      className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-64 h-10 font-Nobile"
+                    />
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSearch("");
+                        setDirectInput("");
+                      }}
+                      style={{
+                        position: "absolute",
+                        right: 10,
+                        top: "50%",
+                        transform: [{ translateY: -12.5 }],
+                      }}
+                    >
+                      <Image
+                        source={require("@/assets/images/redCross.png")}
+                        alt="clear"
+                        className="w-6 h-6"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </KeyboardAvoidingView>
+              </View>
+              <TouchableOpacity
+                onPress={addDirectIngredientToFridge}
+                style={styles.shadow}
+              >
+                <Image
+                  source={require("@/assets/images/addIcon.png")}
+                  alt="add"
+                  className="w-9 h-9 mx-2"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  const success = await autocompleteSearchIngredient(search);
+                  if (success) {
+                    setIsSearchModalVisible(true);
+                  }
+                }}
+                style={styles.shadow}
+              >
+                <Image
+                  source={require("@/assets/images/search2.png")}
+                  alt="search"
+                  className="w-9 h-9 mx-2"
+                />
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>
@@ -778,10 +914,12 @@ export default function Fridge() {
                 </Text>
               )}
               <TouchableOpacity
-                onPress={() => {
-                  addIngredientToFridge();
-                  setIsSearchModalVisible(false);
-                  setSearch("");
+                onPress={async () => {
+                  const success = await addIngredientToFridge();
+                  if (success) {
+                    setIsSearchModalVisible(false);
+                    setSearch("");
+                  }
                 }}
                 className="relative flex justify-center items-center"
               >
@@ -820,7 +958,7 @@ export default function Fridge() {
             </TouchableOpacity>
             <List.Section className="flex justify-center items-center">
               <List.Accordion
-                className="flex justify-center items-center w-48 border-2 border-[#64E6A6] rounded-lg h-16 mb-2"
+                style={[styles.accordion, { borderColor: "#64E6A6" }]}
                 id={1}
                 title="Name"
                 titleStyle={{
@@ -833,7 +971,6 @@ export default function Fridge() {
                     {...props}
                     name="sort-alphabetical-variant"
                     size={24}
-                    // color={"#FF9B50"}
                   />
                 )}
               >
@@ -843,7 +980,6 @@ export default function Fridge() {
                     filterIngredients("name", "asc");
                     setIsFilterModalVisible(false);
                   }}
-                  // className="bg-[#affbd5] rounded-t-lg"
                 />
                 <List.Item
                   title="⚬ Z → A"
@@ -851,11 +987,10 @@ export default function Fridge() {
                     filterIngredients("name", "desc");
                     setIsFilterModalVisible(false);
                   }}
-                  // className="bg-[#affbd5] rounded-b-lg mb-2"
                 />
               </List.Accordion>
               <List.Accordion
-                className="flex justify-center items-center w-48 border-2 border-[#fa9c55] rounded-lg h-16 mb-2"
+                style={[styles.accordion, { borderColor: "#fa9c55" }]}
                 id={2}
                 title="Selected"
                 titleStyle={{
@@ -864,12 +999,7 @@ export default function Fridge() {
                   fontSize: 15,
                 }}
                 left={(props) => (
-                  <MaterialCommunityIcons
-                    {...props}
-                    name="target"
-                    size={24}
-                    // color={"#FF9B50"}
-                  />
+                  <MaterialCommunityIcons {...props} name="target" size={24} />
                 )}
               >
                 <List.Item
@@ -878,7 +1008,6 @@ export default function Fridge() {
                     filterIngredients("checked", "asc");
                     setIsFilterModalVisible(false);
                   }}
-                  // className="bg-[#feb883ae] rounded-t-lg"
                 />
                 <List.Item
                   title="⚬ ☑️ to ⬜️"
@@ -886,11 +1015,10 @@ export default function Fridge() {
                     filterIngredients("checked", "desc");
                     setIsFilterModalVisible(false);
                   }}
-                  // className="bg-[#feb883ae] rounded-b-lg mb-2"
                 />
               </List.Accordion>
               <List.Accordion
-                className="flex justify-center items-center w-48 border-2 border-[#0cbac7] rounded-lg h-16 mb-2"
+                style={[styles.accordion, { borderColor: "#0cbac7" }]}
                 id={3}
                 title="Date"
                 titleStyle={{
@@ -903,7 +1031,6 @@ export default function Fridge() {
                     {...props}
                     name="calendar-month-outline"
                     size={24}
-                    // color={"#FF9B50"}
                   />
                 )}
               >
@@ -913,7 +1040,6 @@ export default function Fridge() {
                     filterIngredients("dateAdded", "asc");
                     setIsFilterModalVisible(false);
                   }}
-                  // className="bg-[#aef0f4] rounded-t-lg"
                 />
                 <List.Item
                   title="⚬ New → Old"
@@ -921,23 +1047,17 @@ export default function Fridge() {
                     filterIngredients("dateAdded", "desc");
                     setIsFilterModalVisible(false);
                   }}
-                  // className="bg-[#aef0f4] rounded-b-lg mb-2"
                 />
               </List.Accordion>
             </List.Section>
             <TouchableOpacity
               onPress={() => {
-                clearFilters();
+                setFridgeItems(ingredients);
                 setIsFilterModalVisible(false);
               }}
               className="relative flex justify-center items-center top-3"
               style={styles.shadow}
             >
-              {/* <Image
-                source={require("@/assets/images/button/button11.png")}
-                alt="button"
-                className="w-36 h-12"
-              /> */}
               <Text className="text-lg font-Nobile text-slate-800">
                 Clear Sort
               </Text>
@@ -959,5 +1079,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 6,
+  },
+  accordion: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 192, // 48 * 4 (since React Native uses pixels)
+    borderWidth: 2,
+    borderRadius: 8, // rounded-lg
+    height: 64, // 16 * 4
+    marginBottom: 8, // 2 * 4
   },
 });

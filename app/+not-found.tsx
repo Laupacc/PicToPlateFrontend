@@ -1,19 +1,21 @@
 import React from "react";
-import { Link, Stack } from "expo-router";
-import { StyleSheet } from "react-native";
+import { Stack } from "expo-router";
+import { StyleSheet, TouchableOpacity } from "react-native";
+import { useNavigation } from "expo-router";
 
 import { ThemedText } from "@/components/examples/ThemedText";
 import { ThemedView } from "@/components/examples/ThemedView";
 
 export default function NotFoundScreen() {
+  const navigation = useNavigation<any>();
   return (
     <>
       <Stack.Screen options={{ title: "Oops!" }} />
       <ThemedView style={styles.container}>
         <ThemedText type="title">This screen doesn't exist.</ThemedText>
-        <Link href="/(tabs)/search" style={styles.link}>
+        <TouchableOpacity onPress={() => navigation.navigate("(tabs)/search")}>
           <ThemedText type="link">Go to home screen!</ThemedText>
-        </Link>
+        </TouchableOpacity>
       </ThemedView>
     </>
   );

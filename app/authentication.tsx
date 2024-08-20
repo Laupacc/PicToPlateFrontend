@@ -1,7 +1,6 @@
 import {
   Image,
   StyleSheet,
-  Platform,
   View,
   Text,
   TouchableOpacity,
@@ -10,46 +9,47 @@ import {
   Alert,
 } from "react-native";
 import React from "react";
-import { Link } from "expo-router";
 import { useState, useEffect } from "react";
 import { useNavigation } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import FontAwesome from "react-native-vector-icons/FontAwesome";
-import Background from "@/components/Background";
-import { LinearGradient } from "expo-linear-gradient";
-import * as SecureStore from "expo-secure-store";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "@/store/user";
 import { useToast } from "react-native-toast-notifications";
+import * as SecureStore from "expo-secure-store";
 import { Modal } from "react-native-paper";
 import { Feather } from "@expo/vector-icons";
+import Background from "@/components/Background";
+import { RootState } from "@/store/store";
+import { login } from "@/store/user";
+import { BACKEND_URL } from "@/_recipeUtils";
 
 export default function Authentication() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const dispatch = useDispatch();
   const toast = useToast();
-  const user = useSelector((state) => state.user.value);
+  const user = useSelector((state: RootState) => state.user.value);
 
-  const [signUpUsername, setSignUpUsername] = useState("");
-  const [signUpPassword, setSignUpPassword] = useState("");
-  const [signUpEmail, setSignUpEmail] = useState("");
-  const [loginUsername, setLoginUsername] = useState("");
-  const [loginPassword, setLoginPassword] = useState("");
-  const [isloginPasswordHidden, setIsLoginPasswordHidden] = useState(true);
-  const [isSignUpPasswordHidden, setIsSignUpPasswordHidden] = useState(true);
-  const [signUpVisible, setSignUpVisible] = useState(false);
-  const [signUpUsernameEmpty, setSignUpUsernameEmpty] = useState(false);
-  const [signUpPasswordEmpty, setSignUpPasswordEmpty] = useState(false);
-  const [loginUsernameEmpty, setLoginUsernameEmpty] = useState(false);
-  const [loginPasswordEmpty, setLoginPasswordEmpty] = useState(false);
-  const [forgotPasswordModal, setForgotPasswordModal] = useState(false);
-  const [email, setEmail] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const [signUpUsername, setSignUpUsername] = useState<string>("");
+  const [signUpPassword, setSignUpPassword] = useState<string>("");
+  const [signUpEmail, setSignUpEmail] = useState<string>("");
+  const [loginUsername, setLoginUsername] = useState<string>("");
+  const [loginPassword, setLoginPassword] = useState<string>("");
+  const [isloginPasswordHidden, setIsLoginPasswordHidden] =
+    useState<boolean>(true);
+  const [isSignUpPasswordHidden, setIsSignUpPasswordHidden] =
+    useState<boolean>(true);
+  const [signUpVisible, setSignUpVisible] = useState<boolean>(false);
+  const [signUpUsernameEmpty, setSignUpUsernameEmpty] =
+    useState<boolean>(false);
+  const [signUpPasswordEmpty, setSignUpPasswordEmpty] =
+    useState<boolean>(false);
+  const [loginUsernameEmpty, setLoginUsernameEmpty] = useState<boolean>(false);
+  const [loginPasswordEmpty, setLoginPasswordEmpty] = useState<boolean>(false);
+  const [forgotPasswordModal, setForgotPasswordModal] =
+    useState<boolean>(false);
+  const [email, setEmail] = useState<string>("");
+  const [rememberMe, setRememberMe] = useState<boolean>(false);
 
   // Check if email is in a valid format
-  const validateEmail = (email) => {
+  const validateEmail = (email: string) => {
     const regex = /\S+@\S+\.\S+/;
     return regex.test(email);
   };
@@ -175,6 +175,7 @@ export default function Authentication() {
 
         // Dispatch login action
         dispatch(login(data));
+        console.log("user:", data);
 
         setLoginUsername("");
         setLoginPassword("");

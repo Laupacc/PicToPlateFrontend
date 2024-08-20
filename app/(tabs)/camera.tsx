@@ -1,27 +1,3 @@
-import React, { useState, useEffect, useRef } from "react";
-import * as ImagePicker from "expo-image-picker";
-import {
-  CameraView,
-  useCameraPermissions,
-  CameraType,
-  FlashMode,
-} from "expo-camera";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "expo-router";
-import Entypo from "react-native-vector-icons/Entypo";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
-import MaterialIcons from "react-native-vector-icons/MaterialIcons";
-import { PinchGestureHandler, State } from "react-native-gesture-handler";
-import Background from "@/components/Background";
-import BouncyCheckbox from "react-native-bouncy-checkbox";
-import RNBounceable from "@freakycoder/react-native-bounceable";
-import { useDispatch, useSelector } from "react-redux";
-import { useRoute } from "@react-navigation/native";
-import { addIngredient, updateIngredients } from "@/store/fridge";
-import LottieView from "lottie-react-native";
-import { useToast } from "react-native-toast-notifications";
-import { ScrollView } from "react-native-gesture-handler";
 import {
   StyleSheet,
   Text,
@@ -33,6 +9,32 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
+import {
+  ScrollView,
+  PinchGestureHandler,
+  State,
+} from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useState, useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigation } from "expo-router";
+import { useToast } from "react-native-toast-notifications";
+import * as ImagePicker from "expo-image-picker";
+import {
+  CameraView,
+  useCameraPermissions,
+  CameraType,
+  FlashMode,
+} from "expo-camera";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import BouncyCheckbox from "react-native-bouncy-checkbox";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import LottieView from "lottie-react-native";
+import { RootState } from "@/store/store";
+import { updateIngredients } from "@/store/fridge";
+import Background from "@/components/Background";
+import { BACKEND_URL } from "@/_recipeUtils";
 
 const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
 const USER_ID = "clarifai";
@@ -41,28 +43,25 @@ const MODEL_ID = "food-item-recognition";
 const MODEL_VERSION_ID = "1d5fd481e0cf4826aa72ec3ff049e044";
 
 export default function Camera() {
-  const [isPredictionLoading, setPredictionLoading] = useState(false);
-  const [predictions, setPredictions] = useState([]);
-  const [image, setImage] = useState("");
+  const [isPredictionLoading, setPredictionLoading] = useState<boolean>(false);
+  const [predictions, setPredictions] = useState<any[]>([]);
+  const [image, setImage] = useState<string | null>(null);
   const [facing, setFacing] = useState<CameraType | undefined>("back");
   const [flash, setFlash] = useState<FlashMode | undefined>("off");
-  const [zoom, setZoom] = useState(0);
+  const [zoom, setZoom] = useState<number>(0);
   const [permission, requestPermission] = useCameraPermissions();
-  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState<boolean>(false);
   const cameraRef = useRef<CameraView>(null);
-  const pinchRef = useRef(null);
-  const [selectedIngredients, setSelectedIngredients] = useState([]);
-  const [addedIngredients, setAddedIngredients] = useState([]);
+  const pinchRef = useRef<PinchGestureHandler>(null);
+  const [selectedIngredients, setSelectedIngredients] = useState<any[]>([]);
+  const [addedIngredients, setAddedIngredients] = useState<string[]>([]);
 
   const dispatch = useDispatch();
-  const route = useRoute();
   const toast = useToast();
-  const navigation = useNavigation();
-  const user = useSelector((state) => state.user.value);
+  const navigation = useNavigation<any>();
+  const user = useSelector((state: RootState) => state.user.value);
 
   const screenWidth = Dimensions.get("window").width;
-
-  const BACKEND_URL = "http://192.168.1.34:3000";
 
   // useEffect to get the camera permissions
   useEffect(() => {
@@ -142,7 +141,7 @@ export default function Camera() {
   }
 
   // Handle pinch gesture to zoom in/out
-  const handlePinch = ({ nativeEvent }) => {
+  const handlePinch = ({ nativeEvent }: { nativeEvent: any }) => {
     if (nativeEvent.state === State.ACTIVE) {
       const newZoom = Math.min(
         Math.max(zoom + (nativeEvent.scale - 1) * 0.1, 0),
@@ -153,7 +152,7 @@ export default function Camera() {
   };
 
   // Classify the image using the Clarifai API
-  const classifyImage = async (imageUri) => {
+  const classifyImage = async (imageUri: string) => {
     try {
       setPredictionLoading(true);
       setPredictions([]);
@@ -209,17 +208,23 @@ export default function Camera() {
   };
 
   // Convert a blob to base64
-  const blobToBase64 = (blob) => {
+  const blobToBase64 = (blob: Blob) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result.split(",")[1]);
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result.split(",")[1]);
+        } else {
+          reject(new Error("Failed to convert blob to base64"));
+        }
+      };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
   };
 
   // Toggle the selected ingredient
-  const toggleIngredient = (prediction) => {
+  const toggleIngredient = (prediction: any) => {
     setSelectedIngredients((prev) => {
       if (prev.includes(prediction)) {
         return prev.filter((item) => item !== prediction);
@@ -252,7 +257,7 @@ export default function Camera() {
     }
 
     if (selectedIngredients.length === 0) {
-      toast.show("Please select ingredients to add", {
+      toast.show("Please select at least one ingredient to add", {
         type: "warning",
         placement: "center",
         duration: 1000,
@@ -270,7 +275,7 @@ export default function Camera() {
       );
       const existingIngredientsData = await existingIngredientsResponse.json();
       const existingIngredients = existingIngredientsData.ingredients.map(
-        (ingredient) => ingredient.name
+        (ingredient: { name: string }) => ingredient.name.toLowerCase()
       );
 
       // Filter out the ingredients that are already in the fridge
@@ -278,11 +283,23 @@ export default function Camera() {
         .filter((ingredient) => !existingIngredients.includes(ingredient.name))
         .map((ingredient) => ({
           name: ingredient.name,
-          dateAdded: new Date().toISOString(),
+          dateAdded: ingredient.dateAdded,
         }));
 
+      const alreadyInFridgeNames = selectedIngredients
+        .map((ingredient) => ingredient.name)
+        .filter((name) => existingIngredients.includes(name))
+        .map((name) => name.charAt(0).toUpperCase() + name.slice(1))
+        .join(", ");
+
+      const ingredientCount = alreadyInFridgeNames.split(", ").length;
+
+      const message = `${alreadyInFridgeNames} ${
+        ingredientCount > 1 ? "are" : "is"
+      } already in your fridge`;
+
       if (newIngredients.length === 0) {
-        toast.show(`This ingredient is already in your kitchen`, {
+        toast.show(message, {
           type: "warning",
           placement: "center",
           duration: 1000,
@@ -308,16 +325,22 @@ export default function Camera() {
       }
       const responseData = await response.json();
       console.log("Ingredients added:", responseData);
-      dispatch(updateIngredients(newIngredients));
 
-      const ingredientNames = newIngredients
+      dispatch(updateIngredients(newIngredients));
+      setAddedIngredients((prev) => [
+        ...prev,
+        ...newIngredients.map((i) => i.name),
+      ]);
+      setSelectedIngredients([]);
+
+      const newIngredientsNames = newIngredients
         .map(
           (ingredient) =>
             ingredient.name.charAt(0).toUpperCase() + ingredient.name.slice(1)
         )
         .join(", ");
 
-      toast.show(`${ingredientNames} have been added successfully`, {
+      toast.show(`${newIngredientsNames} have been added successfully`, {
         type: "success",
         placement: "center",
         duration: 1000,
@@ -330,12 +353,6 @@ export default function Camera() {
       setTimeout(() => {
         navigation.navigate("fridge");
       }, 2000);
-
-      setAddedIngredients((prev) => [
-        ...prev,
-        ...newIngredients.map((i) => i.name),
-      ]);
-      setSelectedIngredients([]);
     } catch (error) {
       console.error("Failed to add ingredients:", error);
       toast.show("Failed to add ingredients. Please try again.", {
@@ -495,6 +512,7 @@ export default function Camera() {
                       addedIngredients.includes(prediction.name) ||
                       selectedIngredients.includes(prediction)
                     }
+                    disabled={addedIngredients.includes(prediction.name)}
                     text={
                       prediction.name.charAt(0).toUpperCase() +
                       prediction.name.slice(1) +

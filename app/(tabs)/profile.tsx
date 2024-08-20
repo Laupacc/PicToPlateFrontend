@@ -10,59 +10,55 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { Modal } from "react-native-paper";
-import React from "react";
-import { useEffect, useState } from "react";
-import { Link } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "expo-router";
+import { ScrollView } from "react-native-gesture-handler";
+import { Link } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "@/store/user";
-import * as SecureStore from "expo-secure-store";
-import Background from "@/components/Background";
-import moment from "moment";
 import { useToast } from "react-native-toast-notifications";
-import * as ImagePicker from "expo-image-picker";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import BouncingImage from "@/components/Bounce";
+import { Modal } from "react-native-paper";
+import * as SecureStore from "expo-secure-store";
+import { Ionicons, AntDesign } from "@expo/vector-icons";
+import moment from "moment";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
-import {
-  Feather,
-  FontAwesome5,
-  Ionicons,
-  Entypo,
-  FontAwesome,
-  AntDesign,
-} from "@expo/vector-icons";
-import { FlatList, ScrollView } from "react-native-gesture-handler";
+import Background from "@/components/Background";
+import BouncingImage from "@/components/Bounce";
+import { RootState } from "@/store/store";
+import { logout } from "@/store/user";
+import { BACKEND_URL } from "@/_recipeUtils";
 
 export default function Profile() {
-  const navigation = useNavigation();
   const dispatch = useDispatch();
   const toast = useToast();
-  const user = useSelector((state) => state.user.value);
+  const user = useSelector((state: RootState) => state.user.value);
+  const favourites = useSelector(
+    (state: RootState) => state.recipes.favourites
+  );
+  const ingredients = useSelector(
+    (state: RootState) => state.fridge.ingredients
+  );
 
-  const [userInfo, setUserInfo] = useState({});
-  const [newPassword, setNewPassword] = useState("");
-  const [newUsername, setNewUsername] = useState("");
-  const [newEmail, setNewEmail] = useState("");
-  const [isNewPasswordVisible, setIsNewPasswordVisible] = useState(false);
+  const [userInfo, setUserInfo] = useState<any>({});
+  const [newPassword, setNewPassword] = useState<string>("");
+  const [newUsername, setNewUsername] = useState<string>("");
+  const [newEmail, setNewEmail] = useState<string>("");
+  const [isNewPasswordVisible, setIsNewPasswordVisible] =
+    useState<boolean>(false);
   const [isUpdateInfoModalVisible, setIsUpdateInfoModalVisible] =
-    useState(false);
-  const [oldIngredients, setOldIngredients] = useState([{}]);
-  const [isAvatarPickerVisible, setIsAvatarPickerVisible] = useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState(null);
-  const [joke, setJoke] = useState("");
-  const [jokeModalVisible, setJokeModalVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [openMenu, setOpenMenu] = useState(false);
-  const [jokeLoading, setJokeLoading] = useState(false);
-  const [postitImages, setPostitImages] = useState([]);
+    useState<boolean>(false);
+  const [oldIngredients, setOldIngredients] = useState<any[]>([{}]);
+  const [isAvatarPickerVisible, setIsAvatarPickerVisible] =
+    useState<boolean>(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<string>("poutine");
+  const [joke, setJoke] = useState<string>("");
+  const [jokeModalVisible, setJokeModalVisible] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [openMenu, setOpenMenu] = useState<boolean>(false);
+  const [jokeLoading, setJokeLoading] = useState<boolean>(false);
+  const [postitImages, setPostitImages] = useState<any[]>([]);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
-
-  const BACKEND_URL = "http://192.168.1.34:3000";
 
   const handleLogout = async () => {
     if (!user.token) {
@@ -83,7 +79,7 @@ export default function Profile() {
 
   // fetch user info
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserInfo = async () => {
       if (user.token) {
         setLoading(true);
         const response = await fetch(
@@ -102,8 +98,8 @@ export default function Profile() {
         setLoading(false);
       }
     };
-    fetchUser();
-  }, [user.token]);
+    fetchUserInfo();
+  }, [user.token, favourites, ingredients]);
 
   //get favourite ingredients older than 7 days from today
   useEffect(() => {
@@ -124,6 +120,17 @@ export default function Profile() {
   const updateUsername = async () => {
     if (!newUsername) {
       toast.show("Please enter a new username", {
+        type: "warning",
+        placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
+      return;
+    }
+    if (newUsername.length < 6) {
+      toast.show("Username must be at least 6 characters long", {
         type: "warning",
         placement: "center",
         duration: 1000,
@@ -177,7 +184,7 @@ export default function Profile() {
               }
 
               if (data.message) {
-                setUserInfo((prevUserInfo) => ({
+                setUserInfo((prevUserInfo: any) => ({
                   ...prevUserInfo,
                   username: newUsername,
                 }));
@@ -235,6 +242,17 @@ export default function Profile() {
       });
       return;
     }
+    if (newPassword.length < 6) {
+      toast.show("Password must be at least 6 characters long", {
+        type: "warning",
+        placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
+      return;
+    }
     Alert.alert(
       "Update Password",
       "Are you sure you want to update your password?",
@@ -262,7 +280,20 @@ export default function Profile() {
                 }
               );
               const data = await response.json();
-              if (response.ok) {
+              if (!response.ok) {
+                toast.show(data.message, {
+                  type: "danger",
+                  placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="close-circle" size={24} color="white" />
+                  ),
+                });
+                return;
+              }
+              if (data.message) {
                 toast.show(data.message, {
                   type: "success",
                   placement: "center",
@@ -273,6 +304,10 @@ export default function Profile() {
                     <Ionicons name="checkmark-circle" size={24} color="white" />
                   ),
                 });
+                setUserInfo((prevUserInfo: any) => ({
+                  ...prevUserInfo,
+                  password: newPassword,
+                }));
                 setNewPassword("");
                 setIsUpdateInfoModalVisible(false);
               } else {
@@ -305,9 +340,26 @@ export default function Profile() {
     );
   };
 
+  // Check if email is in a valid format
+  const validateEmail = (email: string) => {
+    const regex = /\S+@\S+\.\S+/;
+    return regex.test(email);
+  };
+
   const updateEmail = async () => {
     if (!newEmail) {
       toast.show("Please enter a new email", {
+        type: "warning",
+        placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
+      return;
+    }
+    if (!validateEmail(newEmail)) {
+      toast.show("Please enter a valid email address", {
         type: "warning",
         placement: "center",
         duration: 1000,
@@ -341,7 +393,20 @@ export default function Profile() {
                 }),
               });
               const data = await response.json();
-              if (response.ok) {
+              if (!response.ok) {
+                toast.show(data.message, {
+                  type: "danger",
+                  placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="close-circle" size={24} color="white" />
+                  ),
+                });
+                return;
+              }
+              if (data.message) {
                 toast.show(data.message, {
                   type: "success",
                   placement: "center",
@@ -352,6 +417,10 @@ export default function Profile() {
                     <Ionicons name="checkmark-circle" size={24} color="white" />
                   ),
                 });
+                setUserInfo((prevUserInfo: any) => ({
+                  ...prevUserInfo,
+                  email: newEmail,
+                }));
                 setNewEmail("");
                 setIsUpdateInfoModalVisible(false);
               } else {
@@ -435,12 +504,12 @@ export default function Profile() {
     fish: require("../../assets/images/avatars/fish.png"),
   };
 
-  const handleAvatarSelect = (avatarId) => {
+  const handleAvatarSelect = (avatarId: string) => {
     addAvatar(avatarId);
   };
 
   // Select avatar
-  const addAvatar = async (avatarId) => {
+  const addAvatar = async (avatarId: string) => {
     try {
       const response = await fetch(
         `${BACKEND_URL}/users/addAvatar/${user.token}`,
@@ -561,8 +630,11 @@ export default function Profile() {
                 <View>
                   <Image
                     source={
-                      user.token && avatarImages[selectedAvatar]
-                        ? avatarImages[selectedAvatar]
+                      user.token &&
+                      avatarImages[selectedAvatar as keyof typeof avatarImages]
+                        ? avatarImages[
+                            selectedAvatar as keyof typeof avatarImages
+                          ]
                         : require("../../assets/images/avatars/poutine.png")
                     }
                     className="w-20 h-20"
@@ -842,7 +914,7 @@ export default function Profile() {
             <Text className="text-center text-2xl font-Nobile text-slate-600 mb-2 p-4">
               Update Information
             </Text>
-            <View className="flex justify-center items-center">
+            <View className="flex justify-center items-center mb-6">
               <View className="flex-row justify-center items-center">
                 <TextInput
                   placeholder="New Username"
@@ -919,12 +991,9 @@ export default function Profile() {
       <Modal
         visible={isAvatarPickerVisible}
         onDismiss={() => setIsAvatarPickerVisible(false)}
-        contentContainerStyle={{
-          margin: 30,
-        }}
       >
         <View className="flex justify-center items-center">
-          <View className=" bg-slate-100 rounded-lg p-4">
+          <View className=" bg-slate-100 rounded-lg p-4 w-[85%]">
             <TouchableOpacity
               onPress={() => setIsAvatarPickerVisible(false)}
               className="items-end p-1"
@@ -936,9 +1005,9 @@ export default function Profile() {
             </TouchableOpacity>
 
             <Text className="text-center text-2xl font-Nobile text-slate-600 p-2">
-              Select Avatar
+              Select an avatar
             </Text>
-            <View className="flex-row justify-center items-center flex-wrap p-2">
+            <View className="flex-row justify-center items-center flex-wrap p-2 mb-6">
               {Object.entries(avatarImages).map(([avatarId]) => (
                 <TouchableOpacity
                   key={avatarId}
@@ -949,7 +1018,7 @@ export default function Profile() {
                   className="flex justify-center items-center"
                 >
                   <Image
-                    source={avatarImages[avatarId]}
+                    source={avatarImages[avatarId as keyof typeof avatarImages]}
                     className="w-20 h-20 m-2"
                   />
                 </TouchableOpacity>

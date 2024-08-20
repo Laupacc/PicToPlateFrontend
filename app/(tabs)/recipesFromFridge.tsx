@@ -7,42 +7,54 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
 import React, { useEffect, useState, useRef } from "react";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Background from "@/components/Background";
+import { useToast } from "react-native-toast-notifications";
 import { useDispatch, useSelector } from "react-redux";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import Background from "@/components/Background";
 import {
-  fetchRecipeInformation,
-  fetchAnalyzedInstructions,
-} from "@/apiFunctions";
+  BACKEND_URL,
+  addRecipeToFavourites,
+  removeRecipeFromFavourites,
+  goToRecipeCard,
+} from "@/_recipeUtils";
+import { RootState } from "@/store/store";
 import {
   addToFavouriteRecipes,
   removeFromFavouriteRecipes,
 } from "@/store/recipes";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { useToast } from "react-native-toast-notifications";
 
 export default function recipesFromFridge() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const route = useRoute();
-  const dispatch = useDispatch();
   const toast = useToast();
-  const user = useSelector((state) => state.user.value);
-
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.user.value);
+  const favourites = useSelector(
+    (state: RootState) => state.recipes.favourites
+  );
   const { searchQuery } = route.params as { searchQuery: string };
-  const [recipes, setRecipes] = useState([]);
-  const [numberOfRecipes, setNumberOfRecipes] = useState(10);
-  const [offset, setOffset] = useState(0);
-  const [isFavourite, setIsFavourite] = useState({});
-  const [userFavourites, setUserFavourites] = useState([]);
-  const [hasMoreResults, setHasMoreResults] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const isInitialMount = useRef<boolean>(true);
+  const [recipes, setRecipes] = useState<any[]>([]);
+  const [numberOfRecipes, setNumberOfRecipes] = useState<number>(10);
+  const [offset, setOffset] = useState<number>(0);
+  const [isFavourite, setIsFavourite] = useState<{ [key: number]: boolean }>(
+    {}
+  );
+  const [userFavourites, setUserFavourites] = useState<any[]>([]);
+  const [hasMoreResults, setHasMoreResults] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [individualSearchMode, setIndividualSearchMode] =
+    useState<boolean>(false);
+  const [exhaustedIngredients, setExhaustedIngredients] = useState<Set<string>>(
+    new Set()
+  );
 
-  // Fetch favourites from user
+  // Fetch favourite recipes from user
   useEffect(() => {
     const fetchFavourites = async () => {
       if (user.token) {
@@ -57,20 +69,52 @@ export default function recipesFromFridge() {
           }
         );
         const data = await response.json();
-
         setUserFavourites(data.favourites);
+        setIsFavourite(
+          data.favourites.reduce((acc: any, fav: any) => {
+            acc[fav.id] = true;
+            return acc;
+          }, {})
+        );
       }
     };
     fetchFavourites();
-  }, [user.token]);
+  }, [user.token, favourites]);
 
   // Search for recipes from kitchen ingredients
   useEffect(() => {
-    const searchRecipesFromFridge = async () => {
+    const searchRecipesFromFridge = async (individualSearchMode = false) => {
       if (!searchQuery) {
         return;
       }
-      setLoading(true);
+
+      // Clear previous search results
+      setRecipes([]);
+      setExhaustedIngredients(new Set());
+      setIndividualSearchMode(false);
+
+      if (isInitialMount.current || offset === 0) {
+        setLoading(true);
+      }
+
+      // Function to fetch recipes
+      const fetchRecipes = async (
+        ingredients: string,
+        number: number,
+        offset = 0
+      ) => {
+        const response = await fetch(
+          `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${number}&offset=${offset}`
+        );
+        console.log(response.url);
+
+        if (!response.ok) {
+          throw new Error("Failed to search recipes");
+        }
+        const data = await response.json();
+        return data;
+      };
+
       try {
         const search = searchQuery
           .toLowerCase()
@@ -80,152 +124,100 @@ export default function recipesFromFridge() {
           .split(" ")
           .join(",");
 
-        if (offset === 0) {
-          setRecipes([]); // Clear previous search results
+        let results: any[] = [];
+        let totalResults = 0;
+
+        // Fetch recipes with combined ingredients
+        if (!individualSearchMode) {
+          let data = await fetchRecipes(search, numberOfRecipes, offset);
+          results = data.results;
+          totalResults = data.totalResults;
+          console.log("Search results for combined search:", totalResults);
+
+          // If no results found, try searching each ingredient individually
+          if (results.length === 0) {
+            console.log(
+              "No results found for combined search. Trying individual searches..."
+            );
+            individualSearchMode = true;
+            setIndividualSearchMode(true);
+          }
         }
 
-        const fetchRecipes = async (ingredients, number, offset = 0) => {
-          const response = await fetch(
-            `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${number}&offset=${offset}`
-          );
-          console.log("Search response:", response.url);
-          if (!response.ok) {
-            throw new Error("Failed to search recipes");
+        // Fetch recipes with individual ingredients
+        if (individualSearchMode) {
+          const individualSearches = search.split(",");
+          results = [];
+          totalResults = 0;
+          for (const ingredient of individualSearches) {
+            // Skip exhausted ingredients
+            if (exhaustedIngredients.has(ingredient)) {
+              continue;
+            }
+            const individualResults = await fetchRecipes(
+              ingredient,
+              numberOfRecipes,
+              offset
+            );
+            console.log(
+              `Search results for ${ingredient}:`,
+              individualResults.totalResults
+            );
+
+            // If no results found for an ingredient, add it to the exhausted list
+            if (individualResults.results.length === 0) {
+              exhaustedIngredients.add(ingredient);
+              toast.show(`No more results for ${ingredient}`, {
+                type: "info",
+                placement: "center",
+                duration: 1000,
+                animationType: "zoom-in",
+                swipeEnabled: true,
+                icon: (
+                  <Ionicons name="information-circle" size={24} color="white" />
+                ),
+              });
+            } else {
+              // Combine results from individual searches
+              results = results.concat(individualResults.results);
+              totalResults += individualResults.totalResults;
+            }
           }
-          const data = await response.json();
-          console.log("Search results:", data.totalResults);
-          return data;
-        };
-
-        const data = await fetchRecipes(search, numberOfRecipes, offset);
-
-        let results = data.results;
-
-        // if (results.length === 0) {
-        //   const individualSearches = search.split(",");
-        //   results = [];
-        //   for (const ingredient of individualSearches) {
-        //     const individualResults = await fetchRecipes(
-        //       ingredient,
-        //       numberOfRecipes,
-        //       offset
-        //     );
-        //     results = results.concat(individualResults);
-        //   }
-        // }
+          setExhaustedIngredients(new Set(exhaustedIngredients)); // Update state
+        }
 
         // Check if the recipes are in the user favourites
         if (userFavourites.length > 0 && results.length > 0) {
           const recipeIds = userFavourites.map((fav) => fav.id);
-
           results = results.map((recipe) => {
             const recipeIdString = String(recipe.id);
-
             if (recipeIds.includes(recipeIdString)) {
               setIsFavourite((prev) => ({ ...prev, [recipe.id]: true }));
             }
             return recipe;
           });
         }
-
-        // If offset is 0, replace the recipes, otherwise append to the existing ones
+        // Update the recipes state
         if (offset === 0) {
           setRecipes(results);
         } else {
           setRecipes((prevRecipes) => [...prevRecipes, ...results]);
         }
 
-        // Check if there are more results to load
-        if (data.totalResults && data.totalResults > numberOfRecipes + offset) {
+        // Determine if there are more results to load
+        if (totalResults && totalResults > numberOfRecipes + offset) {
           setHasMoreResults(true);
         } else {
           setHasMoreResults(false);
         }
 
-        setLoading(false);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    searchRecipesFromFridge();
-  }, [searchQuery, numberOfRecipes, offset, userFavourites]);
-
-  const loadMoreRecipes = () => {
-    setOffset((prevOffset) => prevOffset + 10);
-  };
-
-  // Add recipe to favourites list
-  const addRecipeToFavourites = async (recipeId) => {
-    if (!user.token) {
-      return;
-    }
-    try {
-      console.log("Recipe ID before fetch:", recipeId);
-
-      const token = user.token;
-      const recipeData = await fetchRecipeInformation(recipeId);
-      const instructions = await fetchAnalyzedInstructions(recipeId);
-      if (recipeData && instructions) {
-        const fullRecipeData = {
-          ...recipeData,
-          analyzedInstructions: instructions,
-        };
-
-        const response = await fetch(
-          `${BACKEND_URL}/users/addFavourite/${token}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ recipe: fullRecipeData }),
-          }
-        );
-
-        const data = await response.json();
-        if (!response.ok) {
-          toast.show("Error adding recipe to favourites", {
-            type: "warning",
-            placement: "center",
-            duration: 1000,
-            animationType: "zoom-in",
-            swipeEnabled: true,
-            icon: <Ionicons name="warning" size={24} color="white" />,
-          });
-          console.log("Error adding recipe to favourites");
-          throw new Error(data.message || "Error adding recipe to favourites");
+        if (isInitialMount.current || offset === 0) {
+          setLoading(false);
+          isInitialMount.current = false;
         }
-
-        dispatch(addToFavouriteRecipes(fullRecipeData));
-        setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
-
-        toast.show("Recipe added to favourites", {
-          type: "success",
-          placement: "center",
-          duration: 1000,
-          animationType: "zoom-in",
-          swipeEnabled: true,
-          icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-        });
-      }
-    } catch (error) {
-      console.error("Error adding recipe to favourites:", error.message);
-    }
-  };
-
-  // Remove recipe from favourites list
-  const removeRecipeFromFavourites = async (recipeId) => {
-    try {
-      const token = user.token;
-      const response = await fetch(
-        `${BACKEND_URL}/users/removeFavourite/${token}/${recipeId}`,
-        { method: "DELETE" }
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.show("Error removing recipe from favourites", {
+      } catch (error) {
+        console.error("Error fetching recipes:", error);
+        toast.show("Error fetching recipes", {
           type: "warning",
           placement: "center",
           duration: 1000,
@@ -233,48 +225,41 @@ export default function recipesFromFridge() {
           swipeEnabled: true,
           icon: <Ionicons name="warning" size={24} color="white" />,
         });
-        console.log("Error adding recipe to favourites");
-        throw new Error(data.message || "Error adding recipe to favourites");
+
+        if (isInitialMount.current || offset === 0) {
+          setLoading(false);
+          isInitialMount.current = false;
+        }
       }
+    };
 
-      dispatch(removeFromFavouriteRecipes(recipeId));
-      setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
+    console.log("Effect triggered");
 
-      toast.show("Recipe removed from favourites", {
-        type: "success",
-        placement: "center",
-        duration: 1000,
-        animationType: "zoom-in",
-        swipeEnabled: true,
-        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-      });
-    } catch (error) {
-      console.error("Error removing recipe from favourites:", error.message);
-    }
+    searchRecipesFromFridge();
+  }, [searchQuery, numberOfRecipes, offset]);
+
+  const loadMoreRecipes = () => {
+    setOffset((prevOffset) => prevOffset + numberOfRecipes);
+  };
+
+  // Add recipe to favourites list
+  const handleAddToFavourites = async (recipeId: string) => {
+    await addRecipeToFavourites(recipeId, user, toast, true);
+    dispatch(addToFavouriteRecipes(recipeId));
+    setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
+  };
+
+  // Remove recipe from favourites list
+  const handleRemoveFromFavourites = async (recipeId: string) => {
+    await removeRecipeFromFavourites(recipeId, user, toast);
+    dispatch(removeFromFavouriteRecipes(recipeId));
+    setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
   };
 
   // Go to recipe card
-  const goToRecipeCard = async (recipeId) => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/users/fetchAllRecipes`);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch recipes");
-      }
-
-      const data = await response.json();
-      const existingRecipe = data.recipes.find(
-        (recipe) => recipe.id === String(recipeId)
-      );
-
-      if (existingRecipe) {
-        navigation.navigate("recipeCard", { passedRecipe: existingRecipe });
-      } else {
-        navigation.navigate("recipeCard", { recipeId: recipeId });
-      }
-    } catch (error) {
-      console.error("Error navigating to recipe card:", error.message);
-    }
+  const handleGoToRecipeCard = async (recipeId: string) => {
+    const fromScreen = "recipesFromFridge";
+    await goToRecipeCard(recipeId, navigation, fromScreen);
   };
 
   return (
@@ -328,8 +313,8 @@ export default function recipesFromFridge() {
                       className="absolute top-20 right-4"
                       onPress={() => {
                         isFavourite[recipe.id]
-                          ? removeRecipeFromFavourites(recipe.id)
-                          : addRecipeToFavourites(recipe.id);
+                          ? handleRemoveFromFavourites(recipe.id)
+                          : handleAddToFavourites(recipe.id);
                       }}
                     >
                       <Image
@@ -343,7 +328,7 @@ export default function recipesFromFridge() {
                     </TouchableOpacity>
                     <View className="flex items-center justify-center">
                       <TouchableOpacity
-                        onPress={() => goToRecipeCard(recipe.id)}
+                        onPress={() => handleGoToRecipeCard(recipe.id)}
                         key={recipe.id}
                         className="flex items-center justify-center"
                       >

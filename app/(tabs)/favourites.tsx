@@ -1,7 +1,6 @@
 import {
   Image,
   StyleSheet,
-  Platform,
   View,
   Text,
   ScrollView,
@@ -12,99 +11,79 @@ import React, { useEffect, useState, useRef } from "react";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
-import Background from "@/components/Background";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchRecipeInformation, randomStickerImage } from "@/apiFunctions";
-import { useRoute } from "@react-navigation/native";
 import { useToast } from "react-native-toast-notifications";
 import LottieView from "lottie-react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
-import recipes, {
-  removeFromFavouriteRecipes,
-  updateFavouriteRecipes,
-} from "@/store/recipes";
+import { RootState } from "@/store/store";
+import { removeFromFavouriteRecipes } from "@/store/recipes";
+import Background from "@/components/Background";
+import {
+  BACKEND_URL,
+  removeRecipeFromFavourites,
+  goToRecipeCard,
+} from "@/_recipeUtils";
 
 export default function Favourites() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const dispatch = useDispatch();
-  const route = useRoute();
   const toast = useToast();
-  const user = useSelector((state) => state.user.value);
-  const favourites = useSelector((state) => state.recipes.favourites);
+  const user = useSelector((state: RootState) => state.user.value);
+  const favourites = useSelector(
+    (state: RootState) => state.recipes.favourites
+  );
 
-  const [favouriteRecipes, setFavouriteRecipes] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const isInitialMount = useRef<boolean>(true);
+  const [favouriteRecipes, setFavouriteRecipes] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const BACKEND_URL = "http://192.168.1.34:3000";
-
-  // Fetch favourite recipes from the backend
+  // fetch user info for favourite recipes
   useEffect(() => {
-    const fetchFavouriteRecipes = async () => {
+    const fetchUserInfo = async () => {
       if (!user.token) return;
-
       try {
-        setLoading(true);
-        const response = await fetch(
-          `${BACKEND_URL}/users/fetchFavourites/${user.token}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch favourite recipes");
+        if (isInitialMount.current) {
+          setLoading(true);
         }
+
+        const response = await fetch(
+          `${BACKEND_URL}/users/userInformation/${user.token}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
         const data = await response.json();
         console.log(
-          "Fetched favourite recipe IDs:",
-          data.favourites.map((r) => r.id)
+          "User info fetched",
+          data.favourites.map((fav: any) => fav.id)
         );
-
-        dispatch(updateFavouriteRecipes(data.favourites));
         setFavouriteRecipes(data.favourites);
+
+        if (isInitialMount.current) {
+          isInitialMount.current = false;
+          setTimeout(() => setLoading(false), 1500);
+        }
       } catch (error) {
-        console.error("Failed to fetch favourite recipes at the end", error);
-      } finally {
-        setTimeout(() => setLoading(false), 1500);
+        console.error("Failed to fetch user info", error);
       }
     };
-    fetchFavouriteRecipes();
+    fetchUserInfo();
   }, [user.token, favourites.length]);
 
   // Remove recipe from favourites list
-  const removeRecipeFromFavourites = async (recipeId) => {
-    try {
-      const token = user.token;
-      const response = await fetch(
-        `${BACKEND_URL}/users/removeFavourite/${token}/${recipeId}`,
-        { method: "DELETE" }
-      );
-      const data = await response.json();
+  const handleRemoveFromFavourites = async (recipeId: any) => {
+    await removeRecipeFromFavourites(recipeId, user, toast);
+    dispatch(removeFromFavouriteRecipes(recipeId));
+    setFavouriteRecipes(favouriteRecipes.filter((r) => r.id !== recipeId));
+  };
 
-      if (!response.ok) {
-        toast.show("Error removing recipe from favourites", {
-          type: "warning",
-          placement: "center",
-          duration: 1000,
-          animationType: "zoom-in",
-          swipeEnabled: true,
-          icon: <Ionicons name="warning" size={24} color="white" />,
-        });
-        console.log("Error adding recipe to favourites");
-        throw new Error(data.message || "Error adding recipe to favourites");
-      }
-
-      dispatch(removeFromFavouriteRecipes(recipeId));
-      setFavouriteRecipes(favouriteRecipes.filter((r) => r.id !== recipeId));
-
-      toast.show("Recipe removed from favourites", {
-        type: "success",
-        placement: "center",
-        duration: 1000,
-        animationType: "zoom-in",
-        swipeEnabled: true,
-        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-      });
-    } catch (error) {
-      console.error("Error removing recipe from favourites:", error.message);
-    }
+  // Go to recipe card
+  const handleGoToRecipeCard = async (recipeId: any) => {
+    const fromScreen = "favourites";
+    await goToRecipeCard(recipeId, navigation, fromScreen);
   };
 
   return (
@@ -185,7 +164,7 @@ export default function Favourites() {
                   />
                   <TouchableOpacity
                     className="absolute top-20 right-5"
-                    onPress={() => removeRecipeFromFavourites(recipe.id)}
+                    onPress={() => handleRemoveFromFavourites(recipe.id)}
                   >
                     <Image
                       source={require("../../assets/images/trash2.png")}
@@ -194,12 +173,7 @@ export default function Favourites() {
                   </TouchableOpacity>
                   <View className="flex items-center justify-center">
                     <TouchableOpacity
-                      onPress={() =>
-                        navigation.navigate("recipeCard", {
-                          recipeId: recipe.id,
-                          passedRecipe: recipe,
-                        })
-                      }
+                      onPress={() => handleGoToRecipeCard(recipe.id)}
                       key={recipe.id}
                       className="flex items-center justify-center"
                     >
@@ -238,17 +212,4 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  // shadow: {
-  //   ...Platform.select({
-  //     ios: {
-  //       shadowColor: "#000",
-  //       shadowOffset: { width: 2, height: 2 },
-  //       shadowOpacity: 0.25,
-  //       shadowRadius: 4,
-  //     },
-  //     android: {
-  //       elevation: 20,
-  //     },
-  //   }),
-  // },
 });

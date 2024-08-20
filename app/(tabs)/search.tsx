@@ -10,84 +10,97 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
+import React, { useEffect, useState } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Modal } from "react-native-paper";
-import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useToast } from "react-native-toast-notifications";
+import { useNavigation } from "expo-router";
+import RNPickerSelect from "react-native-picker-select";
+import BouncyCheckbox from "react-native-bouncy-checkbox";
+import RNBounceable from "@freakycoder/react-native-bounceable";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { Entypo } from "@expo/vector-icons";
+import Background from "@/components/Background";
+import BouncingImage from "@/components/Bounce";
+import { RootState } from "@/store/store";
 import {
   addToFavouriteRecipes,
   removeFromFavouriteRecipes,
 } from "@/store/recipes";
-import { Link } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "expo-router";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import Background from "@/components/Background";
-import BouncingImage from "@/components/Bounce";
 import {
+  BACKEND_URL,
   fetchRandomRecipe,
-  fetchRecipeInformation,
-  fetchAnalyzedInstructions,
-} from "@/apiFunctions";
-import BouncyCheckbox from "react-native-bouncy-checkbox";
-import RNBounceable from "@freakycoder/react-native-bounceable";
-import RNPickerSelect from "react-native-picker-select";
-import { useToast } from "react-native-toast-notifications";
-import { List } from "react-native-paper";
-import { Entypo } from "@expo/vector-icons";
+  addRecipeToFavourites,
+  removeRecipeFromFavourites,
+  goToRecipeCard,
+} from "@/_recipeUtils";
 
 export default function Search() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const dispatch = useDispatch();
   const toast = useToast();
-  const user = useSelector((state) => state.user.value);
+  const user = useSelector((state: RootState) => state.user.value);
+  const favourites = useSelector(
+    (state: RootState) => state.recipes.favourites
+  );
 
-  const [trivia, setTrivia] = useState("");
-  const [showTrivia, setShowTrivia] = useState(false);
+  const [trivia, setTrivia] = useState<string>("");
+  const [showTrivia, setShowTrivia] = useState<boolean>(false);
+  const [triviaLoading, setTriviaLoading] = useState<boolean>(false);
   const [recipe, setRecipe] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
-  const [numberOfRecipes, setNumberOfRecipes] = useState(10);
-  const [searchPerformed, setSearchPerformed] = useState(false);
+  const [search, setSearch] = useState<string>("");
+  const [numberOfRecipes, setNumberOfRecipes] = useState<number>(10);
+  const [individualSearchMode, setIndividualSearchMode] =
+    useState<boolean>(false);
+  const [usedIngredients, setUsedIngredients] = useState<string[]>([]);
+  const [exhaustedIngredients, setExhaustedIngredients] = useState<Set<any>>(
+    new Set()
+  );
+  const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
+  const [hasMoreResults, setHasMoreResults] = useState<boolean>(false);
   const [recipesFromIngredients, setRecipesFromIngredients] = useState<any[]>(
     []
   );
-  const [hasMoreResults, setHasMoreResults] = useState(false);
+  const [lastRecipeOpened, setLastRecipeOpened] = useState<any>(null);
+
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const [openFilterModal, setOpenFilterModal] = useState<boolean>(false);
   const [maxReadyTime, setMaxReadyTime] = useState<number | null>(null);
-  const [diet, setDiet] = useState([]);
-  const [intolerances, setIntolerances] = useState([]);
-  const [showMaxReadyTime, setShowMaxReadyTime] = useState(false);
-  const [showDiet, setShowDiet] = useState(false);
-  const [showIntolerances, setShowIntolerances] = useState(false);
+  const [diet, setDiet] = useState<string[]>([]);
+  const [intolerances, setIntolerances] = useState<string[]>([]);
+  const [showMaxReadyTime, setShowMaxReadyTime] = useState<boolean>(false);
+  const [showDiet, setShowDiet] = useState<boolean>(false);
+  const [showIntolerances, setShowIntolerances] = useState<boolean>(false);
+  const [selectedDiet, setSelectedDiet] = useState<string[]>([]);
+  const [selectedIntolerance, setSelectedIntolerance] = useState<string[]>([]);
+  const [selectedMaxReadyTime, setSelectedMaxReadyTime] = useState<
+    number | null
+  >(null);
 
-  const [selectedDiet, setSelectedDiet] = useState([]);
-  const [selectedIntolerance, setSelectedIntolerance] = useState([]);
-  const [selectedMaxReadyTime, setSelectedMaxReadyTime] = useState(null);
+  const [ingredientName, setIngredientName] = useState<string>("");
+  const [sourceAmount, setSourceAmount] = useState<string>("");
+  const [sourceUnit, setSourceUnit] = useState<string>("");
+  const [targetUnit, setTargetUnit] = useState<string>("");
+  const [convertedAmount, setConvertedAmount] = useState<string>("");
+  const [showConversion, setShowConversion] = useState<boolean>(false);
+  const [showConversionResult, setShowConversionResult] =
+    useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const isInitialMount = useRef(true);
-  const [showFilters, setShowFilters] = useState(false);
-  const [openFilterModal, setOpenFilterModal] = useState(false);
-  const [isFavourite, setIsFavourite] = useState(false);
-
-  const [ingredientName, setIngredientName] = useState("");
-  const [sourceAmount, setSourceAmount] = useState("");
-  const [sourceUnit, setSourceUnit] = useState("");
-  const [targetUnit, setTargetUnit] = useState("");
-  const [convertedAmount, setConvertedAmount] = useState("");
-  const [showConversion, setShowConversion] = useState(false);
-  const [showConversionResult, setShowConversionResult] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [userFavourites, setUserFavourites] = useState([]);
-  const [randomImage, setRandomImage] = useState(null);
-
-  const screenWidth = Dimensions.get("window").width;
-  const calculatedHeight = screenWidth * (9 / 16);
-
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const [isFavourite, setIsFavourite] = useState<{ [key: number]: boolean }>(
+    {}
+  );
+  const [userFavourites, setUserFavourites] = useState<any[]>([]);
+  const [randomImage, setRandomImage] = useState<any>(null);
 
   // Fetch Random Recipe
   const handleFetchRandomRecipe = async () => {
     const recipe = await fetchRandomRecipe();
     setRecipe(recipe);
+    setLastRecipeOpened(recipe.id);
     navigation.navigate("recipeCard", { recipeId: recipe.id });
   };
 
@@ -107,21 +120,40 @@ export default function Search() {
         );
         const data = await response.json();
         setUserFavourites(data.favourites);
+        setIsFavourite(
+          data.favourites.reduce((acc: any, fav: any) => {
+            acc[fav.id] = true;
+            return acc;
+          }, {})
+        );
       }
     };
     fetchFavourites();
-  }, [user.token]);
+  }, [user.token, favourites]);
 
   // Search for recipes by ingredients
   const complexSearchByIngredients = async (
-    search,
-    diet,
-    intolerances,
-    maxReadyTime,
-    number,
-    offset = 0
+    search = "",
+    diet: string[] = [],
+    intolerances: string[] = [],
+    maxReadyTime: number | null = null,
+    number = 10,
+    offset = 0,
+    isIndividualSearchMode = false,
+    usedIngredientsParam: string[] = [],
+    exhaustedIngredientsParam = new Set()
   ) => {
-    if (!search.trim()) return;
+    if (!search.trim()) {
+      toast.show("Please enter an ingredient", {
+        type: "warning",
+        placement: "center",
+        duration: 1000,
+        animationType: "zoom-in",
+        swipeEnabled: true,
+        icon: <Ionicons name="warning" size={24} color="white" />,
+      });
+      return;
+    }
 
     const ingredients = search
       .toLowerCase()
@@ -130,7 +162,9 @@ export default function Search() {
       .trim()
       .split(" ")
       .join(",");
+
     let URL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${number}&offset=${offset}`;
+
     if (diet.length > 0) {
       const dietParam = diet.join(",");
       URL += `&diet=${dietParam}`;
@@ -142,28 +176,89 @@ export default function Search() {
     if (maxReadyTime) {
       URL += `&maxReadyTime=${maxReadyTime}`;
     }
+
     try {
-      const response = await fetch(URL);
-      console.log(URL);
-
-      const recipe = await response.json();
-      let results = recipe.results;
-
-      // Check if the recipes are in the user favourites
-      if (userFavourites.length > 0 && results.length > 0) {
-        const recipeIds = userFavourites.map((fav) => fav.id);
-
-        results = results.map((recipe) => {
-          const recipeIdString = String(recipe.id);
-
-          if (recipeIds.includes(recipeIdString)) {
-            setIsFavourite((prev) => ({ ...prev, [recipe.id]: true }));
-          }
-          return recipe;
-        });
+      // Clear previous search results
+      if (offset === 0) {
+        setRecipesFromIngredients([]);
+        setExhaustedIngredients(new Set());
       }
 
-      // check if there are any results
+      let results: any[] = [];
+      let totalResults = 0;
+
+      // Fetch recipes for combined ingredients
+      if (!isIndividualSearchMode) {
+        const response = await fetch(URL);
+        console.log(URL);
+
+        if (!response.ok) {
+          throw new Error("Error fetching recipes");
+        }
+
+        const recipe = await response.json();
+        console.log("Search results:", recipe.totalResults);
+
+        results = recipe.results;
+        totalResults = recipe.totalResults;
+
+        if (results.length === 0) {
+          // Switch to individual search mode
+          isIndividualSearchMode = true;
+          console.log(
+            "No results found for combined search. Trying individual searches..."
+          );
+          usedIngredientsParam = ingredients.split(",");
+          setUsedIngredients(usedIngredientsParam);
+          setIndividualSearchMode(true);
+        }
+      }
+
+      // If no results found in combined search, try individual searches
+      if (isIndividualSearchMode) {
+        for (const ingredient of usedIngredientsParam) {
+          // Skip API call if no more results for this ingredient
+          if (exhaustedIngredientsParam.has(ingredient)) {
+            console.log(`Skipping ${ingredient} as it has been exhausted`);
+            continue;
+          }
+
+          // Fetch recipes for each ingredients
+          const individualURL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredient}&number=${number}&offset=${offset}`;
+          const data = await fetch(individualURL);
+          console.log(individualURL);
+          const individualResults = await data.json();
+          console.log(
+            `Search results for ${ingredient}: ${individualResults.totalResults}`
+          );
+
+          // If no results found for this ingredient, mark it as exhausted
+          if (individualResults.results.length === 0) {
+            exhaustedIngredientsParam.add(ingredient);
+            toast.show(
+              `No more results for ${ingredient}, results for other ingredients will be shown`,
+              {
+                type: "info",
+                placement: "center",
+                duration: 1000,
+                animationType: "zoom-in",
+                swipeEnabled: true,
+                icon: (
+                  <Ionicons name="information-circle" size={24} color="white" />
+                ),
+              }
+            );
+          } else {
+            // Add results to the list
+            results = results.concat(individualResults.results);
+            totalResults += individualResults.totalResults;
+          }
+        }
+        // Update the exhausted ingredients
+        setExhaustedIngredients(new Set(exhaustedIngredientsParam));
+      }
+
+      // If offset is 0, replace the recipes, otherwise append to the existing ones
       if (offset === 0) {
         setRecipesFromIngredients(results);
       } else {
@@ -173,13 +268,26 @@ export default function Search() {
         ]);
       }
 
-      // check if there are more results
-      if (recipe.totalResults && recipe.totalResults > number + offset) {
+      // Check if there are more results to load
+      if (totalResults && totalResults > number + offset) {
         setHasMoreResults(true);
       } else {
         setHasMoreResults(false);
       }
 
+      // Check if the recipes are in the user's favourites
+      if (userFavourites.length > 0 && results.length > 0) {
+        const recipeIds = userFavourites.map((fav) => fav.id);
+        results = results.map((recipe) => {
+          const recipeIdString = String(recipe.id);
+          if (recipeIds.includes(recipeIdString)) {
+            setIsFavourite((prev: any) => ({ ...prev, [recipe.id]: true }));
+          }
+          return recipe;
+        });
+      }
+
+      // Update the states
       setSearch(search);
       setDiet(diet);
       setIntolerances(intolerances);
@@ -199,135 +307,64 @@ export default function Search() {
     }
   };
 
+  // Load more recipes based on the current search mode
+  const loadMoreRecipes = () => {
+    complexSearchByIngredients(
+      search,
+      diet,
+      intolerances,
+      maxReadyTime,
+      10,
+      numberOfRecipes, // current number of loaded recipes as offset
+      individualSearchMode,
+      usedIngredients,
+      exhaustedIngredients
+    );
+  };
+
   // Go to recipe card
-  const goToRecipeCard = async (recipeId) => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/users/fetchAllRecipes`);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch recipes");
-      }
-
-      const data = await response.json();
-      const existingRecipe = data.recipes.find(
-        (recipe) => recipe.id === String(recipeId)
-      );
-
-      if (existingRecipe) {
-        navigation.navigate("recipeCard", { passedRecipe: existingRecipe });
-      } else {
-        navigation.navigate("recipeCard", { recipeId: recipeId });
-      }
-    } catch (error) {
-      console.error("Error navigating to recipe card:", error.message);
-    }
+  const handleGoToRecipeCard = async (recipeId: any) => {
+    const fromScreen = "search";
+    await goToRecipeCard(recipeId, navigation, fromScreen);
+    setLastRecipeOpened(recipeId);
   };
 
-  // Add recipe to favourites list
-  const addRecipeToFavourites = async (recipeId) => {
-    if (!user.token) {
-      return;
-    }
-    try {
-      console.log("Recipe ID before fetch:", recipeId);
-
-      const token = user.token;
-      const recipeData = await fetchRecipeInformation(recipeId);
-      const instructions = await fetchAnalyzedInstructions(recipeId);
-      if (recipeData && instructions) {
-        const fullRecipeData = {
-          ...recipeData,
-          analyzedInstructions: instructions,
-        };
-
-        const response = await fetch(
-          `${BACKEND_URL}/users/addFavourite/${token}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ recipe: fullRecipeData }),
-          }
-        );
-
-        const data = await response.json();
-        if (!response.ok) {
-          toast.show("Error adding recipe to favourites", {
-            type: "warning",
-            placement: "center",
-            duration: 1000,
-            animationType: "zoom-in",
-            swipeEnabled: true,
-            icon: <Ionicons name="warning" size={24} color="white" />,
-          });
-          console.log("Error adding recipe to favourites");
-          throw new Error(data.message || "Error adding recipe to favourites");
-        }
-
-        dispatch(addToFavouriteRecipes(fullRecipeData));
-        setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
-
-        toast.show("Recipe added to favourites", {
-          type: "success",
-          placement: "center",
-          duration: 1000,
-          animationType: "zoom-in",
-          swipeEnabled: true,
-          icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-        });
-      }
-    } catch (error) {
-      console.error("Error adding recipe to favourites:", error.message);
-    }
-  };
-
-  // Remove recipe from favourites list
-  const removeRecipeFromFavourites = async (recipeId) => {
-    try {
-      const token = user.token;
-      const response = await fetch(
-        `${BACKEND_URL}/users/removeFavourite/${token}/${recipeId}`,
-        { method: "DELETE" }
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.show("Error removing recipe from favourites", {
-          type: "warning",
-          placement: "center",
-          duration: 1000,
-          animationType: "zoom-in",
-          swipeEnabled: true,
-          icon: <Ionicons name="warning" size={24} color="white" />,
-        });
-        console.log("Error adding recipe to favourites");
-        throw new Error(data.message || "Error adding recipe to favourites");
-      }
-
-      dispatch(removeFromFavouriteRecipes(recipeId));
-      setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
-
-      toast.show("Recipe removed from favourites", {
-        type: "success",
+  // Go to last recipe opened
+  const handleGoToLastRecipeOpened = () => {
+    if (lastRecipeOpened) {
+      goToRecipeCard(lastRecipeOpened, navigation, "search");
+    } else {
+      toast.show("No recipe viewed yet", {
+        type: "warning",
         placement: "center",
         duration: 1000,
         animationType: "zoom-in",
         swipeEnabled: true,
-        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+        icon: <Ionicons name="warning" size={24} color="white" />,
       });
-    } catch (error) {
-      console.error("Error removing recipe from favourites:", error.message);
     }
+  };
+
+  // Add recipe to favourites list
+  const handleAddToFavourites = async (recipeId: string) => {
+    await addRecipeToFavourites(recipeId, user, toast, true);
+    dispatch(addToFavouriteRecipes(recipeId));
+    setIsFavourite((prev: any) => ({ ...prev, [recipeId]: true }));
+  };
+
+  // Remove recipe from favourites list
+  const handleRemoveFromFavourites = async (recipeId: string) => {
+    await removeRecipeFromFavourites(recipeId, user, toast);
+    dispatch(removeFromFavouriteRecipes(recipeId));
+    setIsFavourite((prev: any) => ({ ...prev, [recipeId]: false }));
   };
 
   // Unit Converter
   const convertAmount = async (
-    ingredientName,
-    sourceAmount,
-    sourceUnit,
-    targetUnit
+    ingredientName: string,
+    sourceAmount: string,
+    sourceUnit: string,
+    targetUnit: string
   ) => {
     const URL = `${BACKEND_URL}/recipes/convertAmount?ingredientName=${ingredientName}&sourceAmount=${sourceAmount}&sourceUnit=${sourceUnit}&targetUnit=${targetUnit}`;
     try {
@@ -355,24 +392,25 @@ export default function Search() {
     }
   };
 
+  // Toggle Diet Checkbox (multiple can be selected)
   const toggleDiet = (item: string) => {
     if (diet.includes(item)) {
       setSelectedDiet(selectedDiet.filter((x) => x !== item));
-    }
-    if (!diet.includes(item)) {
+    } else {
       setSelectedDiet([...selectedDiet, item]);
     }
   };
 
+  // Toggle Intolerances Checkbox (multiple can be selected)
   const toggleIntolerances = (item: string) => {
     if (intolerances.includes(item)) {
       setSelectedIntolerance(selectedIntolerance.filter((x) => x !== item));
-    }
-    if (!intolerances.includes(item)) {
+    } else {
       setSelectedIntolerance([...selectedIntolerance, item]);
     }
   };
 
+  // Toggle Max Ready Time Checkbox (only one can be selected)
   const toggleMaxReadyTime = (time: number) => {
     if (maxReadyTime === time) {
       setSelectedMaxReadyTime(null);
@@ -381,7 +419,7 @@ export default function Search() {
     }
   };
 
-  // Handle Ok Press in Filter Modal
+  // Handle Ok Press in Filter Modal to apply filters
   const handleOkPress = () => {
     setDiet(selectedDiet);
     setIntolerances(selectedIntolerance);
@@ -389,26 +427,21 @@ export default function Search() {
     setOpenFilterModal(false);
   };
 
+  // Reset Filters back to default
   const handleResetFilters = () => {
     setSelectedDiet([]);
     setSelectedIntolerance([]);
     setSelectedMaxReadyTime(null);
   };
 
-  const handleClearSearch = () => {
-    setSearch("");
-    setDiet([]);
-    setIntolerances([]);
-    setMaxReadyTime(null);
-    complexSearchByIngredients("", [], [], null, 0);
-  };
-
-  // Fetch Trivia useEffect
+  // Fetch Trivia
   const fetchTrivia = async () => {
+    setTriviaLoading(true);
     const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
     const data = await response.json();
     console.log(data);
     setTrivia(data.text);
+    setTriviaLoading(false);
   };
 
   // Random Recipe Icon
@@ -420,11 +453,12 @@ export default function Search() {
     return icons[Math.floor(Math.random() * icons.length)];
   };
 
-  // Set random image on initial load
+  // Set random image on initial load only
   useEffect(() => {
     setRandomImage(randomRecipeIcon());
   }, []);
 
+  // Diet Options
   const dietOptions = [
     { key: "vegetarian", label: "Vegetarian" },
     { key: "vegan", label: "Vegan" },
@@ -439,6 +473,7 @@ export default function Search() {
     { key: "lowFodmap", label: "Low Fodmap" },
   ];
 
+  // Intolerances Options
   const intolerancesOptions = [
     { key: "dairy", label: "Dairy" },
     { key: "egg", label: "Egg" },
@@ -454,8 +489,10 @@ export default function Search() {
     { key: "wheat", label: "Wheat" },
   ];
 
+  // Max Ready Time Options
   const maxReadyTimeOptions = [15, 30, 45, 60, 90, 120, 150, 180];
 
+  // Convert Amounts and Units Options
   const conversionAmounts = [
     { label: "g", value: "g" },
     { label: "kg", value: "kg" },
@@ -469,32 +506,20 @@ export default function Search() {
   ];
 
   // Search for recipes on initial load based on user's preferences
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-    } else {
-      complexSearchByIngredients(
-        search,
-        diet,
-        intolerances,
-        maxReadyTime,
-        10, // always request 10 recipes per call
-        0 // reset offset on initial load
-      );
-    }
-  }, [diet, intolerances, maxReadyTime]);
-
-  // Load more recipes on scroll button click
-  const loadMoreRecipes = () => {
-    complexSearchByIngredients(
-      search,
-      diet,
-      intolerances,
-      maxReadyTime,
-      10, // always request 10 more recipes per call
-      numberOfRecipes // current number of loaded recipes as offset
-    );
-  };
+  // useEffect(() => {
+  //   if (isInitialMount.current) {
+  //     isInitialMount.current = false;
+  //   } else {
+  //     complexSearchByIngredients(
+  //       search,
+  //       diet,
+  //       intolerances,
+  //       maxReadyTime,
+  //       10, // always request 10 recipes per call
+  //       0 // reset offset on initial load
+  //     );
+  //   }
+  // }, [diet, intolerances, maxReadyTime]);
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center pb-16">
@@ -505,13 +530,12 @@ export default function Search() {
           source={require("../../assets/images/logo8.png")}
           className="w-60 h-14"
         />
-        {/* <View className="w-72 h-[1] bg-slate-400"></View> */}
       </View>
 
-      {/* Three Top Buttons */}
+      {/* Top Four Buttons */}
       <View className="flex-row justify-center items-center mb-3">
-        {/* Open Trivia Button */}
         <View className="flex-row justify-center items-center mx-1 flex-grow">
+          {/* Open Trivia Button */}
           <TouchableOpacity
             onPress={() => {
               setShowTrivia(!showTrivia);
@@ -541,6 +565,21 @@ export default function Search() {
               Unit Converter
             </Text>
           </TouchableOpacity>
+
+          {/* Filter Button */}
+          <View className="flex flex-row justify-center items-center">
+            <TouchableOpacity
+              onPress={() => setOpenFilterModal(!openFilterModal)}
+              className="flex justify-center items-center relative mx-2"
+              style={styles.shadow}
+            >
+              <Image
+                source={require("@/assets/images/filter5.png")}
+                alt="button"
+                className="w-10 h-10"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Radom Recipe Button */}
@@ -687,7 +726,7 @@ export default function Search() {
         </View>
       )}
 
-      {/* Search bar and filter button*/}
+      {/* Search bar, Search Button, Back to Last Recipe Button */}
       <View className="flex flex-row justify-center items-center mb-2">
         {/* Search bar */}
         <View className="flex justify-center items-center mx-3">
@@ -696,12 +735,11 @@ export default function Search() {
           >
             <View className="relative items-center w-full justify-center">
               <TextInput
-                placeholder="Search by ingredients"
+                placeholder="Search by ingredient"
                 placeholderTextColor={"gray"}
                 value={search}
                 onChangeText={(text) => setSearch(text)}
                 onSubmitEditing={() =>
-                  search.trim() &&
                   complexSearchByIngredients(
                     search,
                     diet,
@@ -713,7 +751,7 @@ export default function Search() {
                 className="border border-gray-400 rounded-lg pl-4 w-64 h-10 bg-[#e2e8f0] font-Nobile"
               />
               <TouchableOpacity
-                onPress={() => handleClearSearch()}
+                onPress={() => setSearch("")}
                 className="absolute right-2.5 top-2 -translate-y-3.125"
               >
                 <Image
@@ -723,42 +761,45 @@ export default function Search() {
                 />
               </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={() =>
-                search.trim() &&
-                complexSearchByIngredients(
-                  search,
-                  diet,
-                  intolerances,
-                  maxReadyTime,
-                  numberOfRecipes
-                )
-              }
-              className="absolute right-11 top-2 -translate-y-3.125"
-            >
-              <Image
-                source={require("@/assets/images/search2.png")}
-                alt="search"
-                className="w-6 h-6"
-              />
-            </TouchableOpacity>
           </KeyboardAvoidingView>
         </View>
 
-        {/* Filter Button */}
-        <View className="flex flex-row justify-center items-center">
+        {/* Search Button */}
+        <View
+          className="flex justify-center items-center relative"
+          style={styles.shadow}
+        >
           <TouchableOpacity
-            onPress={() => setOpenFilterModal(!openFilterModal)}
-            className="flex justify-center items-center relative mx-2"
-            style={styles.shadow}
+            onPress={() =>
+              complexSearchByIngredients(
+                search,
+                diet,
+                intolerances,
+                maxReadyTime,
+                numberOfRecipes
+              )
+            }
           >
             <Image
-              source={require("@/assets/images/filter5.png")}
-              alt="button"
-              className="w-10 h-10"
+              source={require("@/assets/images/search2.png")}
+              alt="search"
+              className="w-9 h-9 mx-1"
             />
           </TouchableOpacity>
         </View>
+
+        {/* Back to Last Recipe button */}
+        <TouchableOpacity
+          onPress={handleGoToLastRecipeOpened}
+          className="mx-1"
+          style={styles.shadow}
+        >
+          <Image
+            source={require("@/assets/images/backToRecipeFridge2.png")}
+            alt="button"
+            className="w-14 h-12"
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Recipe Results */}
@@ -779,8 +820,8 @@ export default function Search() {
                 className="absolute top-20 right-4"
                 onPress={() =>
                   isFavourite[recipe.id]
-                    ? removeRecipeFromFavourites(recipe.id)
-                    : addRecipeToFavourites(recipe.id)
+                    ? handleRemoveFromFavourites(recipe.id)
+                    : handleAddToFavourites(recipe.id)
                 }
               >
                 <Image
@@ -795,7 +836,7 @@ export default function Search() {
 
               <View className="flex items-center justify-center">
                 <TouchableOpacity
-                  onPress={() => goToRecipeCard(recipe.id)}
+                  onPress={() => handleGoToRecipeCard(recipe.id)}
                   key={recipe.id}
                   className="flex items-center justify-center"
                 >
@@ -884,7 +925,13 @@ export default function Search() {
         }}
       >
         <View className="flex justify-center items-center">
-          <View className="flex justify-center items-center bg-slate-100 rounded-lg p-3 w-[80%]">
+          <View
+            className={
+              triviaLoading
+                ? "bg-slate-100 rounded-lg p-3 w-[80%]"
+                : "flex justify-center items-center bg-slate-100 rounded-lg p-3 w-[80%]"
+            }
+          >
             <View>
               <TouchableOpacity
                 onPress={() => {
@@ -898,12 +945,21 @@ export default function Search() {
                   className="w-6 h-6"
                 />
               </TouchableOpacity>
+
               <Text className="text-center font-Nobile text-2xl text-[#475569]">
                 Did you know?
               </Text>
-              <Text className="text-center font-Nobile text-lg text-[#475569] m-8 mb-10">
-                {trivia}
-              </Text>
+              {triviaLoading ? (
+                <ActivityIndicator
+                  size="large"
+                  color="#475569"
+                  className="my-10"
+                />
+              ) : (
+                <Text className="text-center font-Nobile text-lg text-[#475569] m-8 mb-10">
+                  {trivia}
+                </Text>
+              )}
             </View>
           </View>
         </View>
@@ -912,13 +968,23 @@ export default function Search() {
       {/* Filter Modal */}
       <Modal
         visible={openFilterModal}
-        onDismiss={() => setOpenFilterModal(false)}
+        onDismiss={() => {
+          setShowDiet(false);
+          setShowIntolerances(false);
+          setShowMaxReadyTime(false);
+          setOpenFilterModal(false);
+        }}
       >
         {/* Filters */}
         <View className="flex justify-center items-center">
-          <View className="bg-slate-100 rounded-2xl p-12">
+          <View className="bg-slate-100 rounded-2xl p-12 mb-12">
             <TouchableOpacity
-              onPress={() => setOpenFilterModal(false)}
+              onPress={() => {
+                setShowDiet(false);
+                setShowIntolerances(false);
+                setShowMaxReadyTime(false);
+                setOpenFilterModal(false);
+              }}
               className="absolute top-2 right-2 p-1"
             >
               <Image

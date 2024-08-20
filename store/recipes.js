@@ -2,7 +2,6 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     favourites: [],
-    // recipesById: {},
 };
 
 export const recipesSlice = createSlice({
@@ -13,26 +12,11 @@ export const recipesSlice = createSlice({
             state.favourites.push(action.payload);
         },
         removeFromFavouriteRecipes: (state, action) => {
-            state.favourites = state.favourites.filter(recipe => recipe !== action.payload);
+            state.favourites = state.favourites.filter(recipe => recipe.id !== action.payload.id);
         },
         updateFavouriteRecipes: (state, action) => {
             state.favourites = action.payload;
         },
-        // cacheRecipe: (state, action) => {
-        //     return {
-        //         ...state,
-        //         recipesById: {
-        //             ...state.recipesById,
-        //             [action.payload.id]: action.payload,
-        //         },
-        //     };
-        // },
-        // clearCache: (state) => {
-        //     return {
-        //         ...state,
-        //         recipesById: {},
-        //     };
-        // },
     },
 });
 

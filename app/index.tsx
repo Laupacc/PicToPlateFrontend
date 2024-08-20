@@ -15,7 +15,7 @@ import { useDispatch } from "react-redux";
 import { login } from "@/store/user";
 
 export default function Index() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const dispatch = useDispatch();
 
   // Check if token exists in SecureStore and logs in automatically or navigates to authentication screen

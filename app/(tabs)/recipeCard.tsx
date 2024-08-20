@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Image,
   StyleSheet,
@@ -11,59 +10,68 @@ import {
   StatusBar,
   ActivityIndicator,
 } from "react-native";
-import { DataTable, Modal } from "react-native-paper";
+import React, { useState, useEffect, useRef } from "react";
 import { ScrollView } from "react-native-gesture-handler";
-import { useState, useEffect, useRef } from "react";
+import { DataTable, Modal } from "react-native-paper";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useDispatch, useSelector } from "react-redux";
+import { useToast } from "react-native-toast-notifications";
 import { useNavigation } from "expo-router";
 import { useRoute } from "@react-navigation/native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import AntDesign from "react-native-vector-icons/AntDesign";
+import wineCategories from "../../_dataSets.json";
 import Background from "@/components/Background";
 import BouncingImage from "@/components/Bounce";
-import wineCategories from "../../_dataSets.json";
 import {
+  BACKEND_URL,
   fetchRandomRecipe,
   fetchRecipeInformation,
   fetchAnalyzedInstructions,
-} from "@/apiFunctions";
-import { useDispatch, useSelector } from "react-redux";
-import { useToast } from "react-native-toast-notifications";
+  addRecipeToFavourites,
+  removeRecipeFromFavourites,
+} from "@/_recipeUtils";
+import { RootState } from "@/store/store";
 import {
   addToFavouriteRecipes,
   removeFromFavouriteRecipes,
 } from "@/store/recipes";
 
 export default function RecipeCard() {
-  const dispatch = useDispatch();
-  const user = useSelector((state) => state.user.value);
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const toast = useToast();
   const route = useRoute();
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.user.value);
 
-  const { recipeId } = route.params as { recipeId: number };
-  const { passedRecipe } = route.params as { passedRecipe: object };
+  const { fromScreen } = route.params as { fromScreen: string };
+  const { recipeId } = route.params as { recipeId: string };
+  const { passedRecipe } = route.params as {
+    passedRecipe: { id: string; additionalData: any };
+  };
+
   const [recipe, setRecipe] = useState<any>(null);
-  const [servings, setServings] = useState(0);
-  const [unitSystem, setUnitSystem] = useState("us");
-  const [dynamicHeight, setDynamicHeight] = useState(0);
-  const [dynamicHeightWine, setDynamicHeightWine] = useState(0);
-  const [dynamicHeightEquipment, setDynamicHeightEquipment] = useState(0);
-  const [ingredientSubstitutes, setIngredientSubstitutes] = useState([]);
-  const [showWinePairing, setShowWinePairing] = useState(false);
-  const [activeIngredientId, setActiveIngredientId] = useState(null);
-  const [ingredientModalVisible, setIngredientModalVisible] = useState(false);
+  const [servings, setServings] = useState<number>(0);
+  const [unitSystem, setUnitSystem] = useState<"metric" | "us">("us");
+  const [dynamicHeight, setDynamicHeight] = useState<number>(0);
+  const [dynamicHeightWine, setDynamicHeightWine] = useState<number>(0);
+  const [dynamicHeightEquipment, setDynamicHeightEquipment] =
+    useState<number>(0);
+  const [ingredientSubstitutes, setIngredientSubstitutes] = useState<any>([]);
+  const [showWinePairing, setShowWinePairing] = useState<boolean>(false);
+  const [activeIngredientId, setActiveIngredientId] = useState<null | string>(
+    null
+  );
+  const [ingredientModalVisible, setIngredientModalVisible] =
+    useState<boolean>(false);
   const [selectedIngredientNutrition, setSelectedIngredientNutrition] =
-    useState(null);
-  const [showNutrition, setShowNutrition] = useState(false);
-  const [showMacros, setShowMacros] = useState(false);
-  const [showSubstitutes, setShowSubstitutes] = useState(false);
-  const [isFavourite, setIsFavourite] = useState({});
-  const [userFavourites, setUserFavourites] = useState([]);
+    useState<any>(null);
+  const [showNutrition, setShowNutrition] = useState<boolean>(false);
+  const [showMacros, setShowMacros] = useState<boolean>(false);
+  const [showSubstitutes, setShowSubstitutes] = useState<boolean>(false);
+  const [isFavourite, setIsFavourite] = useState<any>({});
+  const [userFavourites, setUserFavourites] = useState<any>([]);
   const cachedIngredientSubstitutes = useRef<any>({});
-  const [loading, setLoading] = useState(true);
-
-  const BACKEND_URL = "http://192.168.1.34:3000";
+  const [loading, setLoading] = useState<boolean>(true);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -83,11 +91,11 @@ export default function RecipeCard() {
           }
         );
         const data = await response.json();
-        console.log("User favourites:", data.favourites.length);
         setUserFavourites(data.favourites);
       }
     };
     fetchFavourites();
+    console.log("Fetching user favourites");
   }, [user.token]);
 
   // Fetch full recipe data from API or database
@@ -102,6 +110,7 @@ export default function RecipeCard() {
         if (passedRecipe) {
           recipeData = passedRecipe.additionalData;
           currentRecipeId = passedRecipe.id;
+          setServings(recipeData.servings);
           console.log("Passed recipe");
 
           // Fetch the recipe data from the API
@@ -129,9 +138,9 @@ export default function RecipeCard() {
         // Check if the recipe is already in the user's favourites list
         if (userFavourites && currentRecipeId) {
           const isFavourite = userFavourites.some(
-            (fav) => fav.id === String(currentRecipeId)
+            (fav: any) => fav.id === String(currentRecipeId)
           );
-          setIsFavourite((prev) => ({
+          setIsFavourite((prev: any) => ({
             ...prev,
             [currentRecipeId]: isFavourite,
           }));
@@ -140,13 +149,13 @@ export default function RecipeCard() {
         }
 
         setLoading(false);
-      } catch (error) {
+      } catch (error: any) {
         console.log("Error fetching recipe data:", error.message);
       }
     };
 
     // Function to add the recipe to the Recipe collection
-    const addRecipeToCollection = async (recipe) => {
+    const addRecipeToCollection = async (recipe: object) => {
       try {
         const response = await fetch(
           `${BACKEND_URL}/users/addRecipeToCollection`,
@@ -160,7 +169,7 @@ export default function RecipeCard() {
         );
         const data = await response.json();
         console.log(data.message);
-      } catch (error) {
+      } catch (error: any) {
         console.log("Error adding recipe to collection:", error.message);
       }
     };
@@ -169,7 +178,7 @@ export default function RecipeCard() {
   }, [recipeId, passedRecipe, userFavourites]);
 
   // Fetch ingredient substitutes
-  const fetchIngredientSubstitution = async (id) => {
+  const fetchIngredientSubstitution = async (id: number) => {
     if (
       cachedIngredientSubstitutes.current &&
       cachedIngredientSubstitutes.current.id === id
@@ -200,7 +209,7 @@ export default function RecipeCard() {
         };
         console.log("Ingredient substitutes:", data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log("Error fetching ingredient substitutes:", error.message);
     }
   };
@@ -212,6 +221,7 @@ export default function RecipeCard() {
   const incrementServings = () => {
     setServings(servings + 1);
   };
+
   const decrementServings = () => {
     if (servings >= 1) {
       setServings(servings - 1);
@@ -230,12 +240,30 @@ export default function RecipeCard() {
 
   const handleFetchRandomRecipe = async () => {
     const randomRecipe = await fetchRandomRecipe();
-    const isFav = user?.favourites?.includes(randomRecipe.recipeId) || false;
-    setIsFavourite(isFav);
     navigation.navigate("recipeCard", { recipeId: randomRecipe.id });
   };
 
-  const imageForWine = (wine) => {
+  // Handle back button press
+  const handleBackButton = () => {
+    const navigationMap: Record<string, string> = {
+      favourites: "favourites",
+      search: "search",
+      recipesFromFridge: "recipesFromFridge",
+    };
+
+    if (navigationMap[fromScreen as keyof typeof navigationMap]) {
+      navigation.navigate(
+        navigationMap[fromScreen as keyof typeof navigationMap],
+        { fromScreen }
+      );
+      console.log(`Navigating back to ${fromScreen}`);
+    } else {
+      navigation.goBack();
+      console.log("Navigating back");
+    }
+  };
+
+  const imageForWine = (wine: string) => {
     const wineImages = {
       white_wine: require("../../assets/images/wines/whitewine.png"),
       red_wine: require("../../assets/images/wines/redwine.png"),
@@ -244,24 +272,26 @@ export default function RecipeCard() {
       sparkling_wine: require("../../assets/images/wines/sparklingwine.png"),
       default: require("../../assets/images/wines/defaultwine.png"),
     };
-    const category = wineCategories.wineCategories[wine] || "default";
+    const category =
+      (wineCategories.wineCategories as Record<string, string>)[wine] ||
+      "default";
     if (category) {
-      return wineImages[category];
+      return wineImages[category as keyof typeof wineImages];
     } else {
       return wineImages.default;
     }
   };
 
   // Fetch nutrition data for clicked ingredient
-  const handleIngredientClick = (ingredientId) => {
+  const handleIngredientClick = (ingredientId: string) => {
     // Find the ingredient in the recipe data
     const ingredient = recipe.extendedIngredients.find(
-      (ing) => ing.id === ingredientId
+      (ing: { id: string }) => ing.id === ingredientId
     );
     if (ingredient && recipe.nutrition && recipe.nutrition.ingredients) {
       // Find the nutrition data for the clicked ingredient
       const nutritionInfo = recipe.nutrition.ingredients.find(
-        (nutri) => nutri.id === ingredientId
+        (nutri: { id: string }) => nutri.id === ingredientId
       );
       setSelectedIngredientNutrition(nutritionInfo);
     }
@@ -275,102 +305,17 @@ export default function RecipeCard() {
   }, [selectedIngredientNutrition]);
 
   // Add recipe to favourites list
-  const addRecipeToFavourites = async (recipeId) => {
-    if (!user.token) {
-      return;
-    }
-    try {
-      console.log("Recipe ID before fetch:", recipeId);
-
-      const token = user.token;
-      const recipeData = await fetchRecipeInformation(recipeId);
-      const instructions = await fetchAnalyzedInstructions(recipeId);
-      if (recipeData && instructions) {
-        const fullRecipeData = {
-          ...recipeData,
-          analyzedInstructions: instructions,
-        };
-
-        const response = await fetch(
-          `${BACKEND_URL}/users/addFavourite/${token}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ recipe: fullRecipeData }),
-          }
-        );
-
-        const data = await response.json();
-        if (!response.ok) {
-          toast.show("Error adding recipe to favourites", {
-            type: "warning",
-            placement: "center",
-            duration: 1000,
-            animationType: "zoom-in",
-            swipeEnabled: true,
-            icon: <Ionicons name="warning" size={24} color="white" />,
-          });
-          console.log("Error adding recipe to favourites");
-          throw new Error(data.message || "Error adding recipe to favourites");
-        }
-
-        dispatch(addToFavouriteRecipes(fullRecipeData));
-        setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
-
-        toast.show("Recipe added to favourites", {
-          type: "success",
-          placement: "center",
-          duration: 1000,
-          animationType: "zoom-in",
-          swipeEnabled: true,
-          icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-        });
-      }
-    } catch (error) {
-      console.error("Error adding recipe to favourites:", error.message);
-    }
+  const handleAddToFavourites = async (recipeId: string) => {
+    await addRecipeToFavourites(recipeId, user, toast, false);
+    dispatch(addToFavouriteRecipes(recipeId));
+    setIsFavourite((prev: any) => ({ ...prev, [recipeId]: true }));
   };
 
   // Remove recipe from favourites list
-  const removeRecipeFromFavourites = async (recipeId) => {
-    try {
-      const token = user.token;
-      const response = await fetch(
-        `${BACKEND_URL}/users/removeFavourite/${token}/${recipeId}`,
-        { method: "DELETE" }
-      );
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.show("Error removing recipe from favourites", {
-          type: "warning",
-          placement: "center",
-          duration: 1000,
-          animationType: "zoom-in",
-          swipeEnabled: true,
-          icon: <Ionicons name="warning" size={24} color="white" />,
-        });
-        console.log("Error adding recipe to favourites");
-        throw new Error(data.message || "Error adding recipe to favourites");
-      }
-
-      dispatch(removeFromFavouriteRecipes(recipeId));
-      setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
-
-      toast.show("Recipe removed from favourites", {
-        type: "success",
-        placement: "center",
-        duration: 1000,
-        animationType: "zoom-in",
-        swipeEnabled: true,
-        icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-      });
-    } catch (error) {
-      console.error("Error removing recipe from favourites:", error.message);
-    }
+  const handleRemoveFromFavourites = async (recipeId: string) => {
+    await removeRecipeFromFavourites(recipeId, user, toast);
+    dispatch(removeFromFavouriteRecipes(recipeId));
+    setIsFavourite((prev: any) => ({ ...prev, [recipeId]: false }));
   };
 
   const dietImages = {
@@ -439,7 +384,7 @@ export default function RecipeCard() {
 
               {/* Back Button */}
               <TouchableOpacity
-                onPress={() => navigation.goBack()}
+                onPress={() => handleBackButton()}
                 className="absolute top-5 left-5"
                 style={styles.shadow}
               >
@@ -468,8 +413,8 @@ export default function RecipeCard() {
                 <TouchableOpacity
                   onPress={() => {
                     isFavourite[recipe.id]
-                      ? removeRecipeFromFavourites(recipe.id)
-                      : addRecipeToFavourites(recipe.id);
+                      ? handleRemoveFromFavourites(recipe.id)
+                      : handleAddToFavourites(recipe.id);
                   }}
                   className="absolute top-4 right-4"
                 >
@@ -532,8 +477,9 @@ export default function RecipeCard() {
               {/* Diets */}
               <ScrollView>
                 <View className="flex flex-row m-2 flex-wrap justify-center items-center">
-                  {recipe.diets.map((diet) => {
-                    const imageSource = dietImages[diet];
+                  {recipe.diets.map((diet: any) => {
+                    const imageSource =
+                      dietImages[diet as keyof typeof dietImages];
                     if (imageSource) {
                       let imageStyle = "w-16 h-16 m-1";
                       if (diet === "dairy free" || diet === "whole 30") {
@@ -557,11 +503,11 @@ export default function RecipeCard() {
                 {/* Macros Button */}
                 <TouchableOpacity
                   onPress={() => setShowMacros(!showMacros)}
-                  className="flex justify-center items-center m-1 p-2 border border-sky-100 rounded-lg bg-slate-200"
+                  className="flex justify-center items-center m-1 p-3 rounded-lg bg-[#1c79b2]"
                   style={styles.shadow}
                 >
                   <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-slate-700 text-center font-Nobile">
+                    <Text className="text-md text-white text-center font-Nobile">
                       Macros
                     </Text>
                     {/* <Image
@@ -574,11 +520,11 @@ export default function RecipeCard() {
                 {/* Nutritional Values Button */}
                 <TouchableOpacity
                   onPress={() => setShowNutrition(!showNutrition)}
-                  className="flex justify-center items-center m-1 p-2 border border-sky-100 rounded-lg bg-slate-200"
+                  className="flex justify-center items-center m-1 p-3 rounded-lg bg-[#1c79b2]"
                   style={styles.shadow}
                 >
                   <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-slate-700 text-center font-Nobile">
+                    <Text className="text-md text-white text-center font-Nobile">
                       Nutritional values
                     </Text>
                     {/* <Image
@@ -593,11 +539,11 @@ export default function RecipeCard() {
                   onPress={() => {
                     setShowWinePairing(!showWinePairing);
                   }}
-                  className="flex justify-center items-center m-1 p-2 border border-sky-100 rounded-lg bg-slate-200"
+                  className="flex justify-center items-center m-1 p-3 rounded-lg bg-[#1c79b2]"
                   style={styles.shadow}
                 >
                   <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-slate-700 text-center font-Nobile">
+                    <Text className="text-md text-white text-center font-Nobile">
                       Wine
                     </Text>
                     {/* <Image
@@ -610,11 +556,11 @@ export default function RecipeCard() {
                 {/* Food Substitute Button */}
                 <TouchableOpacity
                   onPress={() => setShowSubstitutes(!showSubstitutes)}
-                  className="flex justify-center items-center m-1 p-2 border border-sky-100 rounded-lg bg-slate-200"
+                  className="flex justify-center items-center m-1 p-3 rounded-lg bg-[#1c79b2]"
                   style={styles.shadow}
                 >
                   <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-slate-700 text-center font-Nobile">
+                    <Text className="text-md text-white text-center font-Nobile">
                       Substitutes
                     </Text>
                     {/* <Image
@@ -704,7 +650,7 @@ export default function RecipeCard() {
                       >
                         <View className="flex flex-row justify-center items-center flex-wrap">
                           {recipe.winePairing.pairedWines.map(
-                            (wine, index: number) => (
+                            (wine: any, index: number) => (
                               <View
                                 key={index}
                                 className="flex flex-row justify-center items-center m-2 w-20 h-80"
@@ -772,20 +718,19 @@ export default function RecipeCard() {
                 <View className="flex flex-row justify-center items-center mr-4">
                   <Text className="font-SpaceMono text-md m-2">US</Text>
                   <Switch
-                    value={unitSystem === "us"}
+                    value={unitSystem === "metric"}
                     onValueChange={(value) =>
-                      setUnitSystem(value ? "us" : "metric")
+                      setUnitSystem(value ? "metric" : "us")
                     }
-                    trackColor={{ false: "#fb923c", true: "#ffb600" }}
+                    trackColor={{ false: "#ffb600", true: "#fb923c" }}
                     thumbColor={"#f94a00"}
-                    ios_backgroundColor="#fb923c"
+                    ios_backgroundColor="#ffb600"
                   ></Switch>
                   <Text className="font-SpaceMono text-md m-2">Metric</Text>
                 </View>
 
                 {/* Ready in minutes */}
                 <View className="flex justify-center items-center">
-                  {/* <Ionicons name="timer" size={40} color={"#4ade80"} /> */}
                   <Image
                     source={require("../../assets/images/timer2.png")}
                     className="w-10 h-10"
@@ -820,7 +765,7 @@ export default function RecipeCard() {
               {(() => {
                 const displayedIngredients = new Set();
                 return recipe.extendedIngredients?.map(
-                  (ingredient, index: number) => {
+                  (ingredient: any, index: number) => {
                     if (displayedIngredients.has(ingredient.id)) {
                       return null;
                     }
@@ -893,21 +838,21 @@ export default function RecipeCard() {
                                 {unitSystem === "metric"
                                   ? parseFloat(
                                       (
-                                        ingredient.measures.us.amount *
+                                        ingredient.measures.metric.amount *
                                         (servings / recipe.servings)
                                       ).toFixed(2)
                                     )
                                   : parseFloat(
                                       (
-                                        ingredient.measures.metric.amount *
+                                        ingredient.measures.us.amount *
                                         (servings / recipe.servings)
                                       ).toFixed(2)
                                     )}
                               </Text>
                               <Text className="font-SpaceMono text-[12px] text-center">
                                 {unitSystem === "metric"
-                                  ? ingredient.measures.us.unitShort
-                                  : ingredient.measures.metric.unitShort}
+                                  ? ingredient.measures.metric.unitShort
+                                  : ingredient.measures.us.unitShort}
                               </Text>
                             </View>
                           </View>
@@ -923,7 +868,7 @@ export default function RecipeCard() {
                 recipe.analyzedInstructions[0] &&
                 recipe.analyzedInstructions[0].steps &&
                 recipe.analyzedInstructions[0].steps.some(
-                  (step) => step.equipment.length > 0
+                  (step: any) => step.equipment.length > 0
                 ) && (
                   <View className="relative">
                     <View
@@ -957,34 +902,38 @@ export default function RecipeCard() {
                         {(() => {
                           const displayedEquipment = new Set();
                           return recipe.analyzedInstructions[0].steps.map(
-                            (step, stepIndex) =>
-                              step.equipment.map((equipment, index) => {
-                                if (displayedEquipment.has(equipment.name)) {
-                                  return null;
-                                }
-                                displayedEquipment.add(equipment.name);
-                                return (
-                                  <View
-                                    key={`${stepIndex}-${index}`}
-                                    className="flex justify-center items-center m-1"
-                                  >
-                                    <Image
-                                      source={
-                                        equipment.image
-                                          ? { uri: equipment.image }
-                                          : require("../../assets/images/questionMark.png")
-                                      }
-                                      className="w-16 h-16"
-                                      resizeMode="contain"
-                                    />
+                            (step: any, stepIndex: number) =>
+                              step.equipment.map(
+                                (equipment: any, index: number) => {
+                                  if (displayedEquipment.has(equipment.name)) {
+                                    return null;
+                                  }
+                                  displayedEquipment.add(equipment.name);
+                                  return (
+                                    <View
+                                      key={`${stepIndex}-${index}`}
+                                      className="flex justify-center items-center m-1"
+                                    >
+                                      <Image
+                                        source={
+                                          equipment.image
+                                            ? { uri: equipment.image }
+                                            : require("../../assets/images/questionMark.png")
+                                        }
+                                        className="w-16 h-16"
+                                        resizeMode="contain"
+                                      />
 
-                                    <Text className="font-SpaceMono text-xs">
-                                      {equipment.name.charAt(0).toUpperCase() +
-                                        equipment.name.slice(1)}
-                                    </Text>
-                                  </View>
-                                );
-                              })
+                                      <Text className="font-SpaceMono text-xs">
+                                        {equipment.name
+                                          .charAt(0)
+                                          .toUpperCase() +
+                                          equipment.name.slice(1)}
+                                      </Text>
+                                    </View>
+                                  );
+                                }
+                              )
                           );
                         })()}
                       </View>
@@ -1016,7 +965,7 @@ export default function RecipeCard() {
                   {recipe.analyzedInstructions &&
                     recipe.analyzedInstructions.length > 0 &&
                     recipe.analyzedInstructions[0].steps.map(
-                      (instruction, index: number) => (
+                      (instruction: any, index: number) => (
                         <View
                           key={index}
                           className="flex justify-between items-center rounded-2xl m-2 p-3 border"
@@ -1099,32 +1048,34 @@ export default function RecipeCard() {
                     }}
                   >
                     {recipe.nutrition.nutrients &&
-                      recipe.nutrition.nutrients.map((nutrient, index) => (
-                        <DataTable.Row
-                          key={index}
-                          style={
-                            index % 2 === 0
-                              ? { backgroundColor: "#f1f5f9" }
-                              : { backgroundColor: "#e2e8f0" }
-                          }
-                        >
-                          <DataTable.Cell className="justify-center">
-                            <Text numberOfLines={2} className="text-center">
-                              {nutrient.name}
-                            </Text>
-                          </DataTable.Cell>
-                          <DataTable.Cell className="justify-center">
-                            <Text numberOfLines={1}>
-                              {nutrient.amount} {nutrient.unit}
-                            </Text>
-                          </DataTable.Cell>
-                          <DataTable.Cell className="justify-center">
-                            <Text numberOfLines={1}>
-                              {nutrient.percentOfDailyNeeds}%
-                            </Text>
-                          </DataTable.Cell>
-                        </DataTable.Row>
-                      ))}
+                      recipe.nutrition.nutrients.map(
+                        (nutrient: any, index: number) => (
+                          <DataTable.Row
+                            key={index}
+                            style={
+                              index % 2 === 0
+                                ? { backgroundColor: "#f1f5f9" }
+                                : { backgroundColor: "#e2e8f0" }
+                            }
+                          >
+                            <DataTable.Cell className="justify-center">
+                              <Text numberOfLines={2} className="text-center">
+                                {nutrient.name}
+                              </Text>
+                            </DataTable.Cell>
+                            <DataTable.Cell className="justify-center">
+                              <Text numberOfLines={1}>
+                                {nutrient.amount} {nutrient.unit}
+                              </Text>
+                            </DataTable.Cell>
+                            <DataTable.Cell className="justify-center">
+                              <Text numberOfLines={1}>
+                                {nutrient.percentOfDailyNeeds}%
+                              </Text>
+                            </DataTable.Cell>
+                          </DataTable.Row>
+                        )
+                      )}
                   </ScrollView>
                 </DataTable>
               </>
@@ -1186,7 +1137,7 @@ export default function RecipeCard() {
                     }}
                   >
                     {selectedIngredientNutrition.nutrients.map(
-                      (nutrient, index) => (
+                      (nutrient: any, index: number) => (
                         <DataTable.Row
                           key={index}
                           style={
@@ -1225,7 +1176,6 @@ export default function RecipeCard() {
       <Modal
         visible={showSubstitutes}
         onDismiss={() => setShowSubstitutes(false)}
-        style={{ width: "100%" }}
       >
         <View className="flex justify-center items-center">
           <View className="bg-slate-200 rounded-2xl p-2 justify-center items-center max-h-[720] w-[90%] bottom-10">
@@ -1239,13 +1189,13 @@ export default function RecipeCard() {
                   className="w-6 h-6"
                 />
               </TouchableOpacity>
-              <View className="flex flex-row flex-wrap justify-center items-center mb-4">
+              <View className="flex flex-row flex-wrap justify-center items-center my-2">
                 {(() => {
                   const displayedIngredients = new Set();
                   return (
                     recipe &&
                     recipe.extendedIngredients?.map(
-                      (ingredient, index: number) => {
+                      (ingredient: any, index: number) => {
                         if (displayedIngredients.has(ingredient.id)) {
                           return null;
                         }
@@ -1285,53 +1235,52 @@ export default function RecipeCard() {
                     )
                   );
                 })()}
-
-                <View className="flex justify-center items-center mt-4">
-                  {activeIngredientId !== null && (
-                    <View className="w-full items-center">
-                      {(() => {
-                        const displayedTexts = new Set();
-                        return recipe.extendedIngredients.map(
-                          (ingredient, index: number) => {
-                            if (
-                              activeIngredientId === ingredient.id &&
-                              !displayedTexts.has(ingredient.id)
-                            ) {
-                              displayedTexts.add(ingredient.id);
-                              return (
-                                <View key={index}>
-                                  <Text className="font-SpaceMono text-lg text-center mb-2">
-                                    {ingredient.originalName
-                                      .charAt(0)
-                                      .toUpperCase() +
-                                      ingredient.originalName.slice(1)}
-                                  </Text>
-                                  {ingredientSubstitutes.length > 0 ? (
-                                    ingredientSubstitutes.map(
-                                      (substitute, subIndex) => (
-                                        <Text
-                                          key={subIndex}
-                                          className="font-SpaceMono text-md text-center"
-                                        >
-                                          {substitute}
-                                        </Text>
-                                      )
+              </View>
+              <View className="flex justify-center items-center mb-4">
+                {activeIngredientId !== null && (
+                  <View className="w-full items-center">
+                    {(() => {
+                      const displayedTexts = new Set();
+                      return recipe.extendedIngredients.map(
+                        (ingredient: any, index: number) => {
+                          if (
+                            activeIngredientId === ingredient.id &&
+                            !displayedTexts.has(ingredient.id)
+                          ) {
+                            displayedTexts.add(ingredient.id);
+                            return (
+                              <View key={index}>
+                                <Text className="font-SpaceMono text-lg text-center mb-2">
+                                  {ingredient.originalName
+                                    .charAt(0)
+                                    .toUpperCase() +
+                                    ingredient.originalName.slice(1)}
+                                </Text>
+                                {ingredientSubstitutes.length > 0 ? (
+                                  ingredientSubstitutes.map(
+                                    (substitute: any, subIndex: number) => (
+                                      <Text
+                                        key={subIndex}
+                                        className="font-SpaceMono text-md text-center"
+                                      >
+                                        {substitute}
+                                      </Text>
                                     )
-                                  ) : (
-                                    <Text className="font-SpaceMono text-md text-center">
-                                      No substitutes found
-                                    </Text>
-                                  )}
-                                </View>
-                              );
-                            }
-                            return null;
+                                  )
+                                ) : (
+                                  <Text className="font-SpaceMono text-md text-center">
+                                    No substitutes found
+                                  </Text>
+                                )}
+                              </View>
+                            );
                           }
-                        );
-                      })()}
-                    </View>
-                  )}
-                </View>
+                          return null;
+                        }
+                      );
+                    })()}
+                  </View>
+                )}
               </View>
             </ScrollView>
           </View>
