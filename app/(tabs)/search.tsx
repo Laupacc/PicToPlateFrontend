@@ -9,7 +9,6 @@ import {
   ScrollView,
   TextInput,
   KeyboardAvoidingView,
-  Dimensions,
   ActivityIndicator,
 } from "react-native";
 import React, { useEffect, useState } from "react";
@@ -23,6 +22,12 @@ import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { Entypo } from "@expo/vector-icons";
+import {
+  dietOptions,
+  intolerancesOptions,
+  conversionAmounts,
+  maxReadyTimeOptions,
+} from "../../_dataSets.json";
 import Background from "@/components/Background";
 import BouncingImage from "@/components/Bounce";
 import { RootState } from "@/store/store";
@@ -346,14 +351,14 @@ export default function Search() {
   };
 
   // Add recipe to favourites list
-  const handleAddToFavourites = async (recipeId: string) => {
+  const handleAddToFavourites = async (recipeId: number) => {
     await addRecipeToFavourites(recipeId, user, toast, true);
     dispatch(addToFavouriteRecipes(recipeId));
     setIsFavourite((prev: any) => ({ ...prev, [recipeId]: true }));
   };
 
   // Remove recipe from favourites list
-  const handleRemoveFromFavourites = async (recipeId: string) => {
+  const handleRemoveFromFavourites = async (recipeId: number) => {
     await removeRecipeFromFavourites(recipeId, user, toast);
     dispatch(removeFromFavouriteRecipes(recipeId));
     setIsFavourite((prev: any) => ({ ...prev, [recipeId]: false }));
@@ -457,69 +462,6 @@ export default function Search() {
   useEffect(() => {
     setRandomImage(randomRecipeIcon());
   }, []);
-
-  // Diet Options
-  const dietOptions = [
-    { key: "vegetarian", label: "Vegetarian" },
-    { key: "vegan", label: "Vegan" },
-    { key: "glutenfree", label: "Gluten Free" },
-    { key: "ketogenic", label: "Ketogenic" },
-    { key: "pescetarian", label: "Pescetarian" },
-    { key: "paleo", label: "Paleo" },
-    { key: "primal", label: "Primal" },
-    { key: "whole30", label: "Whole 30" },
-    { key: "lactoVegetarian", label: "Lacto Vegetarian" },
-    { key: "ovoVegetarian", label: "Ovo Vegetarian" },
-    { key: "lowFodmap", label: "Low Fodmap" },
-  ];
-
-  // Intolerances Options
-  const intolerancesOptions = [
-    { key: "dairy", label: "Dairy" },
-    { key: "egg", label: "Egg" },
-    { key: "gluten", label: "Gluten" },
-    { key: "grain", label: "Grain" },
-    { key: "peanut", label: "Peanut" },
-    { key: "seafood", label: "Seafood" },
-    { key: "sesame", label: "Sesame" },
-    { key: "shellfish", label: "Shellfish" },
-    { key: "soy", label: "Soy" },
-    { key: "sulfite", label: "Sulfite" },
-    { key: "treeNut", label: "Tree Nut" },
-    { key: "wheat", label: "Wheat" },
-  ];
-
-  // Max Ready Time Options
-  const maxReadyTimeOptions = [15, 30, 45, 60, 90, 120, 150, 180];
-
-  // Convert Amounts and Units Options
-  const conversionAmounts = [
-    { label: "g", value: "g" },
-    { label: "kg", value: "kg" },
-    { label: "oz", value: "oz" },
-    { label: "lb", value: "lb" },
-    { label: "tsp", value: "tsp" },
-    { label: "tbsp", value: "tbsp" },
-    { label: "cup", value: "cup" },
-    { label: "ml", value: "ml" },
-    { label: "l", value: "l" },
-  ];
-
-  // Search for recipes on initial load based on user's preferences
-  // useEffect(() => {
-  //   if (isInitialMount.current) {
-  //     isInitialMount.current = false;
-  //   } else {
-  //     complexSearchByIngredients(
-  //       search,
-  //       diet,
-  //       intolerances,
-  //       maxReadyTime,
-  //       10, // always request 10 recipes per call
-  //       0 // reset offset on initial load
-  //     );
-  //   }
-  // }, [diet, intolerances, maxReadyTime]);
 
   return (
     <SafeAreaView className="flex-1 items-center justify-center pb-16">

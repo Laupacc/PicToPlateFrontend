@@ -545,12 +545,6 @@ export default function Profile() {
           className="w-60 h-14"
         />
       </View>
-      {/* <View className="flex justify-center items-center m-4">
-        <Link href="/">Got to home</Link>
-        <Link href="/recipesFromFridge">Got to recipes from fridge</Link>
-        <Link href="/authentication">Got to authentication</Link>
-      </View> */}
-
       {loading ? (
         <ActivityIndicator
           size="large"

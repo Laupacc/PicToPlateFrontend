@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { ToastType } from "react-native-toast-notifications";
 
 export type RootStackParamList = {
   camera: undefined;
@@ -23,13 +24,13 @@ export const fetchRandomRecipe = async () => {
     }
     const data = await response.json();
     return data.recipes[0];
-  } catch (error) {
+  } catch (error: any) {
     console.log("Error fetching random recipe:", error.message);
     throw error;
   }
 };
 
-export const fetchRecipeInformation = async (id) => {
+export const fetchRecipeInformation = async (id: number) => {
   try {
     const response = await fetch(
       `${BACKEND_URL}/recipes/recipeInformation/${id}`
@@ -40,13 +41,13 @@ export const fetchRecipeInformation = async (id) => {
     }
     const data = await response.json();
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.log("Error fetching recipe information:", error.message);
     throw error;
   }
 };
 
-export const fetchAnalyzedInstructions = async (id) => {
+export const fetchAnalyzedInstructions = async (id: number) => {
   try {
     const response = await fetch(
       `${BACKEND_URL}/recipes/analyzedInstructions/${id}`
@@ -57,7 +58,7 @@ export const fetchAnalyzedInstructions = async (id) => {
     }
     const data = await response.json();
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.log("Error fetching analyzed instructions:", error.message);
     throw error;
   }
@@ -74,9 +75,9 @@ export const randomStickerImage = () => {
 };
 
 export const addRecipeToFavourites = async (
-  recipeId,
-  user,
-  toast,
+  recipeId: number,
+  user: any,
+  toast: ToastType,
   fetchDetails = true
 ) => {
   if (!user?.token) {
@@ -136,7 +137,7 @@ export const addRecipeToFavourites = async (
       swipeEnabled: true,
       icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
     });
-  } catch (error) {
+  } catch (error: any) {
     toast.show("Error adding recipe to favourites", {
       type: "warning",
       placement: "center",
@@ -149,7 +150,11 @@ export const addRecipeToFavourites = async (
   }
 };
 
-export const removeRecipeFromFavourites = async (recipeId, user, toast) => {
+export const removeRecipeFromFavourites = async (
+  recipeId: number,
+  user: any,
+  toast: ToastType
+) => {
   if (!user?.token) {
     return;
   }
@@ -184,12 +189,21 @@ export const removeRecipeFromFavourites = async (recipeId, user, toast) => {
       icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
     });
     console.log("Recipe removed from favourites");
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error removing recipe from favourites:", error.message);
   }
 };
 
-export const goToRecipeCard = async (recipeId, navigation, fromScreen) => {
+export const goToRecipeCard = async (
+  recipeId: number,
+  navigation: {
+    navigate: (
+      arg0: string,
+      arg1: { passedRecipe?: any; fromScreen: string; recipeId?: number }
+    ) => void;
+  },
+  fromScreen: string
+) => {
   try {
     const response = await fetch(`${BACKEND_URL}/users/fetchAllRecipes`);
 
@@ -199,7 +213,7 @@ export const goToRecipeCard = async (recipeId, navigation, fromScreen) => {
 
     const data = await response.json();
     const existingRecipe = data.recipes.find(
-      (recipe) => recipe.id === String(recipeId)
+      (recipe: any) => recipe.id === String(recipeId)
     );
 
     if (existingRecipe) {
@@ -210,7 +224,7 @@ export const goToRecipeCard = async (recipeId, navigation, fromScreen) => {
     } else {
       navigation.navigate("recipeCard", { recipeId: recipeId, fromScreen });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error navigating to recipe card:", error.message);
   }
 };

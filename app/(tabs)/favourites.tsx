@@ -57,7 +57,7 @@ export default function Favourites() {
         );
         const data = await response.json();
         console.log(
-          "User info fetched",
+          "User id favourites fetched",
           data.favourites.map((fav: any) => fav.id)
         );
         setFavouriteRecipes(data.favourites);
@@ -74,14 +74,14 @@ export default function Favourites() {
   }, [user.token, favourites.length]);
 
   // Remove recipe from favourites list
-  const handleRemoveFromFavourites = async (recipeId: any) => {
+  const handleRemoveFromFavourites = async (recipeId: number) => {
     await removeRecipeFromFavourites(recipeId, user, toast);
     dispatch(removeFromFavouriteRecipes(recipeId));
     setFavouriteRecipes(favouriteRecipes.filter((r) => r.id !== recipeId));
   };
 
   // Go to recipe card
-  const handleGoToRecipeCard = async (recipeId: any) => {
+  const handleGoToRecipeCard = async (recipeId: number) => {
     const fromScreen = "favourites";
     await goToRecipeCard(recipeId, navigation, fromScreen);
   };

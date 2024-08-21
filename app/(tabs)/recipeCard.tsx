@@ -44,9 +44,9 @@ export default function RecipeCard() {
   const user = useSelector((state: RootState) => state.user.value);
 
   const { fromScreen } = route.params as { fromScreen: string };
-  const { recipeId } = route.params as { recipeId: string };
+  const { recipeId } = route.params as { recipeId: number };
   const { passedRecipe } = route.params as {
-    passedRecipe: { id: string; additionalData: any };
+    passedRecipe: { id: number; additionalData: any };
   };
 
   const [recipe, setRecipe] = useState<any>(null);
@@ -95,8 +95,8 @@ export default function RecipeCard() {
       }
     };
     fetchFavourites();
-    console.log("Fetching user favourites");
-  }, [user.token]);
+    console.log("Fetching user favourites: ", userFavourites.length);
+  }, [user.token, userFavourites.length]);
 
   // Fetch full recipe data from API or database
   useEffect(() => {
@@ -175,7 +175,7 @@ export default function RecipeCard() {
     };
 
     fetchRecipeData();
-  }, [recipeId, passedRecipe, userFavourites]);
+  }, [recipeId, passedRecipe]);
 
   // Fetch ingredient substitutes
   const fetchIngredientSubstitution = async (id: number) => {
@@ -283,15 +283,15 @@ export default function RecipeCard() {
   };
 
   // Fetch nutrition data for clicked ingredient
-  const handleIngredientClick = (ingredientId: string) => {
+  const handleIngredientClick = (ingredientId: number) => {
     // Find the ingredient in the recipe data
     const ingredient = recipe.extendedIngredients.find(
-      (ing: { id: string }) => ing.id === ingredientId
+      (ing: { id: number }) => ing.id === ingredientId
     );
     if (ingredient && recipe.nutrition && recipe.nutrition.ingredients) {
       // Find the nutrition data for the clicked ingredient
       const nutritionInfo = recipe.nutrition.ingredients.find(
-        (nutri: { id: string }) => nutri.id === ingredientId
+        (nutri: { id: number }) => nutri.id === ingredientId
       );
       setSelectedIngredientNutrition(nutritionInfo);
     }
@@ -305,14 +305,14 @@ export default function RecipeCard() {
   }, [selectedIngredientNutrition]);
 
   // Add recipe to favourites list
-  const handleAddToFavourites = async (recipeId: string) => {
+  const handleAddToFavourites = async (recipeId: number) => {
     await addRecipeToFavourites(recipeId, user, toast, false);
     dispatch(addToFavouriteRecipes(recipeId));
     setIsFavourite((prev: any) => ({ ...prev, [recipeId]: true }));
   };
 
   // Remove recipe from favourites list
-  const handleRemoveFromFavourites = async (recipeId: string) => {
+  const handleRemoveFromFavourites = async (recipeId: number) => {
     await removeRecipeFromFavourites(recipeId, user, toast);
     dispatch(removeFromFavouriteRecipes(recipeId));
     setIsFavourite((prev: any) => ({ ...prev, [recipeId]: false }));
@@ -437,46 +437,54 @@ export default function RecipeCard() {
               </Text>
 
               {/* Recipe Attributes */}
-              <ScrollView>
-                <View className="flex flex-row m-1 flex-wrap justify-center items-center">
+              <View>
+                <View className="flex flex-row mb-1 flex-wrap justify-center items-center">
                   {recipe.veryHealthy && (
-                    <Text
-                      className="text-center font-SpaceMono text-md bg-[#F4C653] rounded-2xl p-2 m-1"
+                    <View
+                      className="bg-[#F4C653] rounded-2xl py-2 px-3 m-1"
                       style={styles.shadow}
                     >
-                      Very Healthy
-                    </Text>
+                      <Text className="text-center font-SpaceMono text-md">
+                        Very Healthy
+                      </Text>
+                    </View>
                   )}
                   {recipe.cheap && (
-                    <Text
-                      className="text-center font-SpaceMono text-md bg-[#F4C653] rounded-2xl p-2 m-1"
+                    <View
+                      className="bg-[#F4C653] rounded-2xl py-2 px-3 m-1"
                       style={styles.shadow}
                     >
-                      Cheap
-                    </Text>
+                      <Text className="text-center font-SpaceMono text-md">
+                        Cheap
+                      </Text>
+                    </View>
                   )}
                   {recipe.veryPopular && (
-                    <Text
-                      className="text-center font-SpaceMono text-md bg-[#F4C653] rounded-2xl p-2 m-1"
+                    <View
+                      className="bg-[#F4C653] rounded-2xl py-2 px-3 m-1"
                       style={styles.shadow}
                     >
-                      Very Popular
-                    </Text>
+                      <Text className="text-center font-SpaceMono text-md">
+                        Very Popular
+                      </Text>
+                    </View>
                   )}
                   {recipe.sustainable && (
-                    <Text
-                      className="text-center font-SpaceMono text-md bg-[#F4C653] rounded-2xl p-2 m-1"
+                    <View
+                      className="bg-[#F4C653] rounded-2xl py-2 px-3 m-1"
                       style={styles.shadow}
                     >
-                      Sustainable
-                    </Text>
+                      <Text className="text-center font-SpaceMono text-md">
+                        Sustainable
+                      </Text>
+                    </View>
                   )}
                 </View>
-              </ScrollView>
+              </View>
 
               {/* Diets */}
-              <ScrollView>
-                <View className="flex flex-row m-2 flex-wrap justify-center items-center">
+              <View>
+                <View className="flex flex-row mb-2 flex-wrap justify-center items-center mx-4">
                   {recipe.diets.map((diet: any) => {
                     const imageSource =
                       dietImages[diet as keyof typeof dietImages];
@@ -496,7 +504,7 @@ export default function RecipeCard() {
                     return null;
                   })}
                 </View>
-              </ScrollView>
+              </View>
 
               {/* Four Option Buttons */}
               <View className="flex flex-row justify-center items-center">

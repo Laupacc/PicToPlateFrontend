@@ -36,11 +36,11 @@ import { updateIngredients } from "@/store/fridge";
 import Background from "@/components/Background";
 import { BACKEND_URL } from "@/_recipeUtils";
 
-const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
-const USER_ID = "clarifai";
-const APP_ID = "main";
-const MODEL_ID = "food-item-recognition";
-const MODEL_VERSION_ID = "1d5fd481e0cf4826aa72ec3ff049e044";
+// const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
+// const USER_ID = "clarifai";
+// const APP_ID = "main";
+// const MODEL_ID = "food-item-recognition";
+// const MODEL_VERSION_ID = "1d5fd481e0cf4826aa72ec3ff049e044";
 
 export default function Camera() {
   const [isPredictionLoading, setPredictionLoading] = useState<boolean>(false);
@@ -154,74 +154,117 @@ export default function Camera() {
   // Classify the image using the Clarifai API
   const classifyImage = async (imageUri: string) => {
     try {
-      setPredictionLoading(true);
       setPredictions([]);
+      setPredictionLoading(true);
 
+      // Convert image to base64
       const response = await fetch(imageUri);
       const blob = await response.blob();
-      const base64Image = await blobToBase64(blob);
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64data = reader.result?.toString().split(",")[1];
 
-      const raw = JSON.stringify({
-        user_app_id: {
-          user_id: USER_ID,
-          app_id: APP_ID,
-        },
-        inputs: [
+        // Send the image to the backend for classification
+        const responseFromBackend = await fetch(
+          `${BACKEND_URL}/classifyImage`,
           {
-            data: {
-              image: {
-                base64: base64Image,
-              },
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
             },
-          },
-        ],
-      });
+            body: JSON.stringify({ imageBase64: base64data }),
+          }
+        );
 
-      const requestOptions = {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          Authorization: "Key " + PAT,
-          "Content-Type": "application/json",
-        },
-        body: raw,
+        // Get the predictions from the backend
+        const response = await responseFromBackend.text();
+        const predictions = JSON.parse(response);
+
+        if (predictions && predictions.length > 0) {
+          console.log("Predictions:", predictions);
+          setPredictions(predictions);
+        } else {
+          console.log("No predictions available");
+        }
+        setPredictionLoading(false);
       };
-
-      const result = await fetch(
-        `https://api.clarifai.com/v2/models/${MODEL_ID}/versions/${MODEL_VERSION_ID}/outputs`,
-        requestOptions
-      );
-      const resultJson = await result.json();
-
-      const predictions = resultJson.outputs[0].data.concepts;
-      if (predictions && predictions.length > 0) {
-        console.log("Predictions:", predictions);
-        setPredictions(predictions);
-      } else {
-        console.log("No predictions available");
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setPredictionLoading(false);
+    } catch (error: any) {
+      console.log("Failed to classify image:", error);
     }
   };
 
-  // Convert a blob to base64
-  const blobToBase64 = (blob: Blob) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          resolve(reader.result.split(",")[1]);
-        } else {
-          reject(new Error("Failed to convert blob to base64"));
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
+  // Classify the image using the Clarifai API
+  // const classifyImage = async (imageUri: string) => {
+  //   try {
+  //     setPredictionLoading(true);
+  //     setPredictions([]);
+
+  //     const response = await fetch(imageUri);
+  //     const blob = await response.blob();
+  //     const base64Image = await blobToBase64(blob);
+
+  //     const raw = JSON.stringify({
+  //       user_app_id: {
+  //         user_id: USER_ID,
+  //         app_id: APP_ID,
+  //       },
+  //       inputs: [
+  //         {
+  //           data: {
+  //             image: {
+  //               base64: base64Image,
+  //             },
+  //           },
+  //         },
+  //       ],
+  //     });
+
+  //     const requestOptions = {
+  //       method: "POST",
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: "Key " + PAT,
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: raw,
+  //     };
+
+  //     const result = await fetch(
+  //       `https://api.clarifai.com/v2/models/${MODEL_ID}/versions/${MODEL_VERSION_ID}/outputs`,
+  //       requestOptions
+  //     );
+  //     const resultJson = await result.json();
+
+  //     const predictions = resultJson.outputs[0].data.concepts;
+  //     if (predictions && predictions.length > 0) {
+  //       console.log("Predictions:", predictions);
+  //       setPredictions(predictions);
+  //     } else {
+  //       console.log("No predictions available");
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   } finally {
+  //     setPredictionLoading(false);
+  //   }
+  // };
+
+  // // Convert a blob to base64
+  // const blobToBase64 = (blob: Blob) => {
+  //   return new Promise((resolve, reject) => {
+  //     const reader = new FileReader();
+  //     reader.onloadend = () => {
+  //       if (typeof reader.result === "string") {
+  //         resolve(reader.result.split(",")[1]);
+  //       } else {
+  //         reject(new Error("Failed to convert blob to base64"));
+  //       }
+  //     };
+  //     reader.onerror = reject;
+  //     reader.readAsDataURL(blob);
+  //   });
+  // };
 
   // Toggle the selected ingredient
   const toggleIngredient = (prediction: any) => {

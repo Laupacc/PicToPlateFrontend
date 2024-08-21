@@ -243,21 +243,21 @@ export default function recipesFromFridge() {
   };
 
   // Add recipe to favourites list
-  const handleAddToFavourites = async (recipeId: string) => {
+  const handleAddToFavourites = async (recipeId: number) => {
     await addRecipeToFavourites(recipeId, user, toast, true);
     dispatch(addToFavouriteRecipes(recipeId));
     setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
   };
 
   // Remove recipe from favourites list
-  const handleRemoveFromFavourites = async (recipeId: string) => {
+  const handleRemoveFromFavourites = async (recipeId: number) => {
     await removeRecipeFromFavourites(recipeId, user, toast);
     dispatch(removeFromFavouriteRecipes(recipeId));
     setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
   };
 
   // Go to recipe card
-  const handleGoToRecipeCard = async (recipeId: string) => {
+  const handleGoToRecipeCard = async (recipeId: number) => {
     const fromScreen = "recipesFromFridge";
     await goToRecipeCard(recipeId, navigation, fromScreen);
   };

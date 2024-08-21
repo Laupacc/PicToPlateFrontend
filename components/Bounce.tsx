@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Animated, Image, View } from "react-native";
+import { Animated } from "react-native";
 
-const BouncingImage = ({ children }) => {
+const BouncingImage = ({ children }: { children: React.ReactNode }) => {
   // Step 2: Initialize an animated value
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
@@ -38,7 +38,7 @@ const BouncingImage = ({ children }) => {
     bounceAnimation();
 
     // Clear the timeout when the component unmounts
-    return () => clearTimeout(bounceAnimation);
+    return () => clearTimeout(bounceAnimation as any);
   }, [bounceAnim]);
 
   return (

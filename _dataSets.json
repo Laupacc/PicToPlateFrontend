@@ -102,5 +102,44 @@
     "dry vermouth": "default",
     "fruit wine": "default",
     "mead": "default"
-  }
+  },
+  "dietOptions": [
+    { "key": "vegetarian", "label": "Vegetarian" },
+    { "key": "vegan", "label": "Vegan" },
+    { "key": "glutenfree", "label": "Gluten Free" },
+    { "key": "ketogenic", "label": "Ketogenic" },
+    { "key": "pescetarian", "label": "Pescetarian" },
+    { "key": "paleo", "label": "Paleo" },
+    { "key": "primal", "label": "Primal" },
+    { "key": "whole30", "label": "Whole 30" },
+    { "key": "lactoVegetarian", "label": "Lacto Vegetarian" },
+    { "key": "ovoVegetarian", "label": "Ovo Vegetarian" },
+    { "key": "lowFodmap", "label": "Low Fodmap" }
+  ],
+  "intolerancesOptions": [
+    { "key": "dairy", "label": "Dairy" },
+    { "key": "egg", "label": "Egg" },
+    { "key": "gluten", "label": "Gluten" },
+    { "key": "grain", "label": "Grain" },
+    { "key": "peanut", "label": "Peanut" },
+    { "key": "seafood", "label": "Seafood" },
+    { "key": "sesame", "label": "Sesame" },
+    { "key": "shellfish", "label": "Shellfish" },
+    { "key": "soy", "label": "Soy" },
+    { "key": "sulfite", "label": "Sulfite" },
+    { "key": "treeNut", "label": "Tree Nut" },
+    { "key": "wheat", "label": "Wheat" }
+  ],
+  "conversionAmounts": [
+    { "label": "g", "value": "g" },
+    { "label": "kg", "value": "kg" },
+    { "label": "oz", "value": "oz" },
+    { "label": "lb", "value": "lb" },
+    { "label": "tsp", "value": "tsp" },
+    { "label": "tbsp", "value": "tbsp" },
+    { "label": "cup", "value": "cup" },
+    { "label": "ml", "value": "ml" },
+    { "label": "l", "value": "l" }
+  ],
+  "maxReadyTimeOptions": [15, 30, 45, 60, 90, 120, 150, 180]
 }

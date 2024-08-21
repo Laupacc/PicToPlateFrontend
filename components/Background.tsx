@@ -2,7 +2,7 @@ import React from "react";
 import { View, Dimensions } from "react-native";
 import Svg, { Line } from "react-native-svg";
 
-export default function Background({ cellSize }) {
+export default function Background({ cellSize }: { cellSize: number }) {
   const { width, height } = Dimensions.get("screen");
   const numberOfVerticalLines = Math.ceil(width / cellSize);
   const numberOfHorizontalLines = Math.ceil(height / cellSize);
