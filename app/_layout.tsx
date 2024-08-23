@@ -17,15 +17,7 @@ import { ToastProvider } from "react-native-toast-notifications";
 import { store, persistor } from "@/store/store";
 
 import { Provider } from "react-redux";
-import { configureStore, combineReducers } from "@reduxjs/toolkit";
-
-import { persistStore, persistReducer } from "redux-persist";
 import { PersistGate } from "redux-persist/integration/react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-import user from "@/store/user";
-import fridge from "@/store/fridge";
-import recipes from "@/store/recipes";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -56,28 +48,6 @@ export default function RootLayout() {
   if (!loaded) {
     return null;
   }
-
-  // const reducers = combineReducers({
-  //   user: user,
-  //   fridge: fridge,
-  //   recipes: recipes,
-  // });
-
-  // const persistConfig = {
-  //   key: "root",
-  //   storage: AsyncStorage,
-  //   whitelist: ["user", "fridge", "recipes"],
-  // };
-
-  // const persistedReducer = persistReducer(persistConfig, reducers);
-
-  // const store = configureStore({
-  //   reducer: persistedReducer,
-  //   middleware: (getDefaultMiddleware) =>
-  //     getDefaultMiddleware({ serializableCheck: false, immutableCheck: false }),
-  // });
-
-  // const persistor = persistStore(store);
 
   return (
     <Provider store={store}>

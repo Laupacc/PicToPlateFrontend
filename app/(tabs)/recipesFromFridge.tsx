@@ -4,11 +4,14 @@ import {
   View,
   Text,
   TouchableOpacity,
+  StatusBar,
+  Platform,
   ActivityIndicator,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import { useToast } from "react-native-toast-notifications";
@@ -52,6 +55,17 @@ export default function recipesFromFridge() {
     useState<boolean>(false);
   const [exhaustedIngredients, setExhaustedIngredients] = useState<Set<string>>(
     new Set()
+  );
+
+  // Set status bar style
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle("dark-content");
+      if (Platform.OS === "android") {
+        StatusBar.setBackgroundColor("transparent");
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
   );
 
   // Fetch favourite recipes from user
@@ -244,16 +258,16 @@ export default function recipesFromFridge() {
 
   // Add recipe to favourites list
   const handleAddToFavourites = async (recipeId: number) => {
-    await addRecipeToFavourites(recipeId, user, toast, true);
-    dispatch(addToFavouriteRecipes(recipeId));
     setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
+    await addRecipeToFavourites(recipeId, user, toast);
+    dispatch(addToFavouriteRecipes(recipeId));
   };
 
   // Remove recipe from favourites list
   const handleRemoveFromFavourites = async (recipeId: number) => {
+    setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
     await removeRecipeFromFavourites(recipeId, user, toast);
     dispatch(removeFromFavouriteRecipes(recipeId));
-    setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
   };
 
   // Go to recipe card
@@ -264,6 +278,11 @@ export default function recipesFromFridge() {
 
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <Background cellSize={25} />
 
       {/* Arrow to go back to fridge and title */}

@@ -9,8 +9,10 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScrollView } from "react-native-gesture-handler";
 import { Link } from "expo-router";
@@ -56,26 +58,22 @@ export default function Profile() {
   const [openMenu, setOpenMenu] = useState<boolean>(false);
   const [jokeLoading, setJokeLoading] = useState<boolean>(false);
   const [postitImages, setPostitImages] = useState<any[]>([]);
+  const [dangerZoneOpen, setDangerZoneOpen] = useState<boolean>(false);
+  const [deleteAccountInput, setDeleteAccountInput] = useState<string>("");
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
-  const handleLogout = async () => {
-    if (!user.token) {
-      return;
-    }
-    await SecureStore.deleteItemAsync("token");
-    dispatch(logout());
-    toast.show("Logged out successfully", {
-      type: "success",
-      placement: "center",
-      duration: 1000,
-      animationType: "zoom-in",
-      swipeEnabled: true,
-      icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
-    });
-    console.log(user);
-  };
+  // Set status bar style
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle("dark-content");
+      if (Platform.OS === "android") {
+        StatusBar.setBackgroundColor("transparent");
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
 
   // fetch user info
   useEffect(() => {
@@ -117,6 +115,113 @@ export default function Profile() {
     }
   }, [userInfo.ingredients]);
 
+  // Logout function
+  const handleLogout = async () => {
+    if (!user.token) {
+      return;
+    }
+    await SecureStore.deleteItemAsync("token");
+    dispatch(logout());
+    toast.show("Logged out successfully", {
+      type: "success",
+      placement: "center",
+      duration: 1000,
+      animationType: "zoom-in",
+      swipeEnabled: true,
+      icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
+    });
+    console.log(user);
+  };
+
+  // Delete account function
+  const deleteAccount = async () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you absolutely sure you want to delete your account?",
+      [
+        {
+          text: "Cancel",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+        {
+          text: "Yes I'm sure",
+          onPress: async () => {
+            try {
+              const response = await fetch(
+                `${BACKEND_URL}/users/deleteAccount/${user.token}`,
+                {
+                  method: "DELETE",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    token: user.token,
+                  }),
+                }
+              );
+              const data = await response.json();
+              if (!response.ok) {
+                toast.show(data.message, {
+                  type: "danger",
+                  placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="close-circle" size={24} color="white" />
+                  ),
+                });
+                return;
+              }
+              if (data.message) {
+                toast.show(data.message, {
+                  type: "success",
+                  placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="checkmark-circle" size={24} color="white" />
+                  ),
+                });
+                await SecureStore.deleteItemAsync("token");
+                dispatch(logout());
+                setIsUpdateInfoModalVisible(false);
+                setDangerZoneOpen(false);
+                setDeleteAccountInput("");
+                setOpenMenu(false);
+              } else {
+                toast.show("Failed to delete account", {
+                  type: "danger",
+                  placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons name="close-circle" size={24} color="white" />
+                  ),
+                });
+              }
+            } catch (error) {
+              console.error("Error deleting account:", error);
+              toast.show("An error occurred. Please try again.", {
+                type: "danger",
+                placement: "center",
+                duration: 1000,
+                animationType: "zoom-in",
+                swipeEnabled: true,
+                icon: <Ionicons name="close-circle" size={24} color="white" />,
+              });
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  // Update username function
   const updateUsername = async () => {
     if (!newUsername) {
       toast.show("Please enter a new username", {
@@ -230,6 +335,7 @@ export default function Profile() {
     );
   };
 
+  // Update password function
   const updatePassword = async () => {
     if (!newPassword) {
       toast.show("Please enter a new password", {
@@ -346,6 +452,7 @@ export default function Profile() {
     return regex.test(email);
   };
 
+  // Update email function
   const updateEmail = async () => {
     if (!newEmail) {
       toast.show("Please enter a new email", {
@@ -453,7 +560,17 @@ export default function Profile() {
     );
   };
 
-  // Function to get random images
+  // Close update info modal
+  const closeUpdateInfoModal = () => {
+    setIsUpdateInfoModalVisible(false);
+    setNewPassword("");
+    setNewUsername("");
+    setNewEmail("");
+    setDeleteAccountInput("");
+    setDangerZoneOpen(false);
+  };
+
+  // Function to get random postit images
   const getRandomPostitImages = (count = 1) => {
     const images = [
       require("../../assets/images/stickers/postit1.png"),
@@ -476,10 +593,12 @@ export default function Profile() {
     setPostitImages(images);
   }, []);
 
+  // Toggle visibility of new password
   const toggleIsNewPasswordVisible = () => {
     setIsNewPasswordVisible(!isNewPasswordVisible);
   };
 
+  // Fetch a random joke
   const fetchJoke = async () => {
     setJokeLoading(true);
     const response = await fetch(`${BACKEND_URL}/recipes/joke`);
@@ -489,6 +608,7 @@ export default function Profile() {
     setJokeLoading(false);
   };
 
+  // Avatar images
   const avatarImages = {
     friedChicken: require("../../assets/images/avatars/friedChicken.png"),
     hamburger: require("../../assets/images/avatars/hamburger.png"),
@@ -504,11 +624,12 @@ export default function Profile() {
     fish: require("../../assets/images/avatars/fish.png"),
   };
 
+  // Select avatar
   const handleAvatarSelect = (avatarId: string) => {
     addAvatar(avatarId);
   };
 
-  // Select avatar
+  // Update avatar
   const addAvatar = async (avatarId: string) => {
     try {
       const response = await fetch(
@@ -538,7 +659,13 @@ export default function Profile() {
 
   return (
     <SafeAreaView className="flex-1 justify-center items-center">
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <Background cellSize={25} />
+      {/* Logo */}
       <View className="flex justify-center items-center">
         <Image
           source={require("../../assets/images/logo8.png")}
@@ -882,22 +1009,12 @@ export default function Profile() {
       {/* Update info modal */}
       <Modal
         visible={isUpdateInfoModalVisible}
-        onDismiss={() => {
-          setIsUpdateInfoModalVisible(false);
-          setNewPassword("");
-          setNewUsername("");
-          setNewEmail("");
-        }}
+        onDismiss={() => closeUpdateInfoModal()}
       >
         <View className="flex justify-center items-center">
           <View className="flex justify-around items-center bg-slate-50 rounded-lg p-8">
             <TouchableOpacity
-              onPress={() => {
-                setIsUpdateInfoModalVisible(false);
-                setNewPassword("");
-                setNewUsername("");
-                setNewEmail("");
-              }}
+              onPress={() => closeUpdateInfoModal()}
               className="absolute top-2 right-2 p-1"
             >
               <Image
@@ -976,6 +1093,73 @@ export default function Profile() {
                   </TouchableOpacity>
                 </View>
               </View>
+            </View>
+            <View className="flex justify-center items-center">
+              <TouchableOpacity
+                onPress={() => setDangerZoneOpen(!dangerZoneOpen)}
+                className="flex-row justify-center items-center mb-4"
+              >
+                <Text className="text-center text-base font-Nobile text-red-600 mx-2">
+                  Danger Zone
+                </Text>
+                <Image
+                  source={require("../../assets/images/dangerZone2.png")}
+                  className="w-10 h-10"
+                />
+              </TouchableOpacity>
+
+              {dangerZoneOpen && (
+                <View className="flex justify-center items-center w-64">
+                  <View className="flex justify-center items-center border-2 rounded-xl border-red-500 p-4">
+                    <Text className="text-center text-base font-NobileBold text-red-600 mb-2">
+                      Delete Account
+                    </Text>
+                    <Text className="text-justify text-md font-Nobile text-red-600 mb-2 w-64">
+                      Are you sure you want to delete your account. This action
+                      cannot be undone. If you wish to proceed, please type
+                      "DELETEACCOUNT" in the box below.
+                    </Text>
+                    <View className="flex-row justify-center items-center my-2">
+                      <TextInput
+                        placeholder="DELETEACCOUNT"
+                        value={deleteAccountInput}
+                        onChangeText={(text) => setDeleteAccountInput(text)}
+                        autoCapitalize="none"
+                        className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 mx-3 font-Nobile"
+                      />
+                      <View style={styles.shadow}>
+                        <TouchableOpacity
+                          onPress={() => {
+                            if (deleteAccountInput === "DELETEACCOUNT") {
+                              deleteAccount();
+                            } else {
+                              toast.show("Please type DELETEACCOUNT", {
+                                type: "danger",
+                                placement: "center",
+                                duration: 1000,
+                                animationType: "zoom-in",
+                                swipeEnabled: true,
+                                icon: (
+                                  <Ionicons
+                                    name="warning"
+                                    size={24}
+                                    color="white"
+                                  />
+                                ),
+                              });
+                            }
+                          }}
+                        >
+                          <Image
+                            source={require("../../assets/images/redCross.png")}
+                            className="w-10 h-10"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              )}
             </View>
           </View>
         </View>

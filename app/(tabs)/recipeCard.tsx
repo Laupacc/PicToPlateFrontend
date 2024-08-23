@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   Dimensions,
   Switch,
-  StatusBar,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView } from "react-native-gesture-handler";
 import { DataTable, Modal } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -70,33 +71,51 @@ export default function RecipeCard() {
   const [showSubstitutes, setShowSubstitutes] = useState<boolean>(false);
   const [isFavourite, setIsFavourite] = useState<any>({});
   const [userFavourites, setUserFavourites] = useState<any>([]);
+  const [favouritesFetched, setFavouritesFetched] = useState<boolean>(false);
   const cachedIngredientSubstitutes = useRef<any>({});
   const [loading, setLoading] = useState<boolean>(true);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
 
+  // Set the status bar style
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle("dark-content");
+      if (Platform.OS === "android") {
+        StatusBar.setBackgroundColor("transparent");
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
+
   // fetch favourite recipes lists from user
   useEffect(() => {
     const fetchFavourites = async () => {
       if (user.token) {
-        const response = await fetch(
-          `${BACKEND_URL}/users/userInformation/${user.token}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${user.token}`,
-            },
-          }
-        );
-        const data = await response.json();
-        setUserFavourites(data.favourites);
+        try {
+          const response = await fetch(
+            `${BACKEND_URL}/users/userInformation/${user.token}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${user.token}`,
+              },
+            }
+          );
+          const data = await response.json();
+          setUserFavourites(data.favourites);
+          setFavouritesFetched(true);
+          console.log("User favourites fetched:", data.favourites.length);
+        } catch (error: any) {
+          console.error("Error fetching user favourites:", error.message);
+          setFavouritesFetched(true);
+        }
       }
     };
     fetchFavourites();
-    console.log("Fetching user favourites: ", userFavourites.length);
-  }, [user.token, userFavourites.length]);
+  }, [user.token, userFavourites.length, recipe]);
 
   // Fetch full recipe data from API or database
   useEffect(() => {
@@ -112,11 +131,12 @@ export default function RecipeCard() {
           currentRecipeId = passedRecipe.id;
           setServings(recipeData.servings);
           console.log("Passed recipe");
-
-          // Fetch the recipe data from the API
         } else {
-          const fetchedRecipeData = await fetchRecipeInformation(recipeId);
-          const instructions = await fetchAnalyzedInstructions(recipeId);
+          // Fetch the recipe data from the API
+          const [fetchedRecipeData, instructions] = await Promise.all([
+            fetchRecipeInformation(recipeId),
+            fetchAnalyzedInstructions(recipeId),
+          ]);
 
           if (fetchedRecipeData && instructions) {
             recipeData = {
@@ -133,19 +153,6 @@ export default function RecipeCard() {
 
         if (recipeData) {
           setRecipe(recipeData);
-        }
-
-        // Check if the recipe is already in the user's favourites list
-        if (userFavourites && currentRecipeId) {
-          const isFavourite = userFavourites.some(
-            (fav: any) => fav.id === String(currentRecipeId)
-          );
-          setIsFavourite((prev: any) => ({
-            ...prev,
-            [currentRecipeId]: isFavourite,
-          }));
-        } else {
-          console.log("User favourites not found or no recipe ID");
         }
 
         setLoading(false);
@@ -176,6 +183,46 @@ export default function RecipeCard() {
 
     fetchRecipeData();
   }, [recipeId, passedRecipe]);
+
+  // Check if the recipe is already in the user's favourites list
+  useEffect(() => {
+    if (favouritesFetched && recipe) {
+      const isFavourite = userFavourites.some(
+        (fav: { id: string }) => fav.id === String(recipe.id)
+      );
+      setIsFavourite((prev: any) => ({
+        ...prev,
+        [recipe.id]: isFavourite,
+      }));
+      console.log(
+        "Checked favourite status for recipe:",
+        recipe.id,
+        isFavourite
+      );
+    } else if (!recipe) {
+      console.log("No recipe provided for favourite check.");
+    }
+  }, [favouritesFetched, recipe, userFavourites]);
+
+  const handleFetchRandomRecipe = async () => {
+    try {
+      const randomRecipe = await fetchRandomRecipe();
+
+      // Check if recipe exists in the database
+      const response = await fetch(
+        `${BACKEND_URL}/users/fetchRecipe/${randomRecipe.id}`
+      );
+      if (response.status === 404) {
+        navigation.navigate("recipeCard", { recipeId: randomRecipe.id });
+      } else {
+        const existingRecipe = await response.json();
+
+        navigation.navigate("recipeCard", { passedRecipe: existingRecipe });
+      }
+    } catch (error: any) {
+      console.log("Error fetching random recipe:", error.message);
+    }
+  };
 
   // Fetch ingredient substitutes
   const fetchIngredientSubstitution = async (id: number) => {
@@ -214,6 +261,7 @@ export default function RecipeCard() {
     }
   };
 
+  // Construct image URL for ingredient
   const constructImageUrl = (imageFileName: string) => {
     return `https://img.spoonacular.com/ingredients_100x100/${imageFileName}`;
   };
@@ -228,6 +276,7 @@ export default function RecipeCard() {
     }
   };
 
+  // Postit images for steps
   const randomPostitImage = () => {
     const images = [
       require("../../assets/images/stickers/postit1.png"),
@@ -236,11 +285,6 @@ export default function RecipeCard() {
       require("../../assets/images/stickers/postit4.png"),
     ];
     return images[Math.floor(Math.random() * images.length)];
-  };
-
-  const handleFetchRandomRecipe = async () => {
-    const randomRecipe = await fetchRandomRecipe();
-    navigation.navigate("recipeCard", { recipeId: randomRecipe.id });
   };
 
   // Handle back button press
@@ -263,6 +307,7 @@ export default function RecipeCard() {
     }
   };
 
+  // Wine images
   const imageForWine = (wine: string) => {
     const wineImages = {
       white_wine: require("../../assets/images/wines/whitewine.png"),
@@ -306,18 +351,19 @@ export default function RecipeCard() {
 
   // Add recipe to favourites list
   const handleAddToFavourites = async (recipeId: number) => {
-    await addRecipeToFavourites(recipeId, user, toast, false);
-    dispatch(addToFavouriteRecipes(recipeId));
     setIsFavourite((prev: any) => ({ ...prev, [recipeId]: true }));
+    await addRecipeToFavourites(recipeId, user, toast);
+    dispatch(addToFavouriteRecipes(recipeId));
   };
 
   // Remove recipe from favourites list
   const handleRemoveFromFavourites = async (recipeId: number) => {
+    setIsFavourite((prev: any) => ({ ...prev, [recipeId]: false }));
     await removeRecipeFromFavourites(recipeId, user, toast);
     dispatch(removeFromFavouriteRecipes(recipeId));
-    setIsFavourite((prev: any) => ({ ...prev, [recipeId]: false }));
   };
 
+  // Diet images
   const dietImages = {
     "fodmap friendly": require("../../assets/images/diets/fodmap.png"),
     paleo: require("../../assets/images/diets/paleo.png"),
@@ -337,7 +383,11 @@ export default function RecipeCard() {
 
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
-      <StatusBar barStyle="dark-content" />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <Background cellSize={25} />
       {loading ? (
         <ActivityIndicator size="large" color="#237CB0" className="flex-1" />

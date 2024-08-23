@@ -1,13 +1,16 @@
 import {
   Image,
-  StyleSheet,
-  Platform,
+  RefreshControl,
   View,
   Text,
-  StatusBar,
   TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  StatusBar,
+  Platform,
 } from "react-native";
-import React from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useState, useCallback } from "react";
 import { useNavigation } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import * as SecureStore from "expo-secure-store";
@@ -16,7 +19,8 @@ import { login } from "@/store/user";
 
 export default function Index() {
   const navigation = useNavigation<any>();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   // Check if token exists in SecureStore and logs in automatically or navigates to authentication screen
   const checkTokenOrLogin = async () => {
@@ -81,9 +85,43 @@ export default function Index() {
     return enterPhrases[Math.floor(Math.random() * enterPhrases.length)];
   };
 
+  // Function to handle refresh
+  const onRefresh = useCallback(() => {
+    if (refreshing) {
+      console.log("Already refreshing, please wait for the process to finish");
+      return;
+    }
+    setRefreshing(true);
+    console.log("Starting refresh");
+
+    setTimeout(() => {
+      setRefreshing(false);
+      console.log("Refresh complete");
+    }, 2000);
+  }, [refreshing]);
+
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle("light-content");
+      if (Platform.OS === "android") {
+        StatusBar.setBackgroundColor("transparent");
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
+
   return (
-    <View className="flex-1 justify-center items-center">
-      <StatusBar barStyle="light-content" />
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <View className="w-full h-full relative flex justify-center items-center">
         <Image
           className="bg-cover bg-center relative w-full h-full"
@@ -119,6 +157,13 @@ export default function Index() {
 
         <View className="absolute bottom-8"></View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});

@@ -11,11 +11,17 @@ export const fridgeSlice = createSlice({
     addIngredient: (state, action) => {
       state.ingredients = [...state.ingredients, ...action.payload];
     },
+    // removeIngredient: (state, action) => {
+    //   state.ingredients = state.ingredients.filter(
+    //     (ingredient) => ingredient !== action.payload
+    //   );
+    // },
     removeIngredient: (state, action) => {
       state.ingredients = state.ingredients.filter(
-        (ingredient) => ingredient !== action.payload
+        (ingredient) => !action.payload.includes(ingredient.name)
       );
     },
+
     updateIngredients: (state, action) => {
       state.ingredients = action.payload;
     },

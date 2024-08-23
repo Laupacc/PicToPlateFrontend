@@ -6,8 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Platform,
 } from "react-native";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import { Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
@@ -35,6 +37,17 @@ export default function Favourites() {
   const isInitialMount = useRef<boolean>(true);
   const [favouriteRecipes, setFavouriteRecipes] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+
+  // Set status bar style
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle("dark-content");
+      if (Platform.OS === "android") {
+        StatusBar.setBackgroundColor("transparent");
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
 
   // fetch user info for favourite recipes
   useEffect(() => {
@@ -89,8 +102,11 @@ export default function Favourites() {
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <Background cellSize={25} />
-      <StatusBar barStyle="dark-content" />
-
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       <View
         className="flex justify-center items-center relative m-2 w-[330] h-[60]"
         style={styles.shadow}

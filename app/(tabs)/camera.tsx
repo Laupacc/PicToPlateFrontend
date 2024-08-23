@@ -2,12 +2,12 @@ import {
   StyleSheet,
   Text,
   View,
-  StatusBar,
   Image,
   TouchableOpacity,
   Platform,
   Dimensions,
   Alert,
+  StatusBar,
 } from "react-native";
 import {
   ScrollView,
@@ -15,7 +15,8 @@ import {
   State,
 } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useState, useEffect, useRef } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigation } from "expo-router";
 import { useToast } from "react-native-toast-notifications";
@@ -36,13 +37,15 @@ import { updateIngredients } from "@/store/fridge";
 import Background from "@/components/Background";
 import { BACKEND_URL } from "@/_recipeUtils";
 
-// const PAT = "83d75a04e4344dc5a05b3c633f6c9613";
-// const USER_ID = "clarifai";
-// const APP_ID = "main";
-// const MODEL_ID = "food-item-recognition";
-// const MODEL_VERSION_ID = "1d5fd481e0cf4826aa72ec3ff049e044";
-
 export default function Camera() {
+  const dispatch = useDispatch();
+  const toast = useToast();
+  const navigation = useNavigation<any>();
+  const user = useSelector((state: RootState) => state.user.value);
+  const fridgeItems = useSelector(
+    (state: RootState) => state.fridge.ingredients
+  );
+
   const [isPredictionLoading, setPredictionLoading] = useState<boolean>(false);
   const [predictions, setPredictions] = useState<any[]>([]);
   const [image, setImage] = useState<string | null>(null);
@@ -55,13 +58,22 @@ export default function Camera() {
   const pinchRef = useRef<PinchGestureHandler>(null);
   const [selectedIngredients, setSelectedIngredients] = useState<any[]>([]);
   const [addedIngredients, setAddedIngredients] = useState<string[]>([]);
-
-  const dispatch = useDispatch();
-  const toast = useToast();
-  const navigation = useNavigation<any>();
-  const user = useSelector((state: RootState) => state.user.value);
+  const [alreadyInFridge, setAlreadyInFridge] = useState<string[]>([]);
+  const [existingIngredientsSelected, setExistingIngredientsSelected] =
+    useState(false);
 
   const screenWidth = Dimensions.get("window").width;
+
+  // Set the status bar style
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle("light-content");
+      if (Platform.OS === "android") {
+        StatusBar.setBackgroundColor("transparent");
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
 
   // useEffect to get the camera permissions
   useEffect(() => {
@@ -277,6 +289,23 @@ export default function Camera() {
     });
   };
 
+  // Random Lottie loading animation
+  const randomLoadingAnimation = () => {
+    const animations = [
+      require("../../assets/images/animations/Animation1723027836457.json"),
+      require("../../assets/images/animations/Animation1722874735851.json"),
+      require("../../assets/images/animations/Animation1720193319067.json"),
+      require("../../assets/images/animations/Animation1720193239255.json"),
+    ];
+    return animations[Math.floor(Math.random() * animations.length)];
+  };
+
+  useEffect(() => {
+    if (existingIngredientsSelected) {
+      setAlreadyInFridge(fridgeItems.map((item) => item.name));
+    }
+  }, [fridgeItems]);
+
   // Add the selected ingredients to the user's kitchen
   const addIngredients = async () => {
     if (!user.token) {
@@ -335,13 +364,25 @@ export default function Camera() {
         .map((name) => name.charAt(0).toUpperCase() + name.slice(1))
         .join(", ");
 
+      const existingIngredientsSelected = existingIngredients.filter(
+        (name: any) =>
+          selectedIngredients
+            .map((ingredient) => ingredient.name)
+            .includes(name)
+      );
+
+      setAlreadyInFridge(existingIngredientsSelected);
+      if (existingIngredientsSelected.length > 0) {
+        setExistingIngredientsSelected(true);
+      }
+
       const ingredientCount = alreadyInFridgeNames.split(", ").length;
 
       const message = `${alreadyInFridgeNames} ${
         ingredientCount > 1 ? "are" : "is"
-      } already in your fridge`;
+      } already in your kitchen`;
 
-      if (newIngredients.length === 0) {
+      if (alreadyInFridgeNames.length > 0) {
         toast.show(message, {
           type: "warning",
           placement: "center",
@@ -350,52 +391,57 @@ export default function Camera() {
           swipeEnabled: true,
           icon: <Ionicons name="warning-outline" size={24} color="white" />,
         });
-        return;
       }
-
-      const response = await fetch(
-        `${BACKEND_URL}/users/addIngredient/${user.token}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ ingredients: newIngredients }),
+      if (newIngredients.length > 0) {
+        const response = await fetch(
+          `${BACKEND_URL}/users/addIngredient/${user.token}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ ingredients: newIngredients }),
+          }
+        );
+        if (!response.ok) {
+          throw new Error("Failed to add ingredients");
         }
-      );
-      if (!response.ok) {
-        throw new Error("Failed to add ingredients");
+        const responseData = await response.json();
+        console.log("Ingredients added:", responseData);
+
+        dispatch(updateIngredients(newIngredients));
+        setAddedIngredients((prev) => [
+          ...prev,
+          ...newIngredients.map((i) => i.name),
+        ]);
+        setSelectedIngredients([]);
+
+        const newIngredientsNames = newIngredients
+          .map(
+            (ingredient) =>
+              ingredient.name.charAt(0).toUpperCase() + ingredient.name.slice(1)
+          )
+          .join(", ");
+
+        const newIngredientCount = newIngredientsNames.split(", ").length;
+        const newMessage = `${newIngredientsNames} ${
+          newIngredientCount > 1 ? "have" : "has"
+        } been successfully added to your kitchen`;
+
+        toast.show(newMessage, {
+          type: "success",
+          placement: "center",
+          duration: 1000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: (
+            <Ionicons name="checkmark-circle-outline" size={24} color="white" />
+          ),
+        });
+        setTimeout(() => {
+          navigation.navigate("fridge");
+        }, 2000);
       }
-      const responseData = await response.json();
-      console.log("Ingredients added:", responseData);
-
-      dispatch(updateIngredients(newIngredients));
-      setAddedIngredients((prev) => [
-        ...prev,
-        ...newIngredients.map((i) => i.name),
-      ]);
-      setSelectedIngredients([]);
-
-      const newIngredientsNames = newIngredients
-        .map(
-          (ingredient) =>
-            ingredient.name.charAt(0).toUpperCase() + ingredient.name.slice(1)
-        )
-        .join(", ");
-
-      toast.show(`${newIngredientsNames} have been added successfully`, {
-        type: "success",
-        placement: "center",
-        duration: 1000,
-        animationType: "zoom-in",
-        swipeEnabled: true,
-        icon: (
-          <Ionicons name="checkmark-circle-outline" size={24} color="white" />
-        ),
-      });
-      setTimeout(() => {
-        navigation.navigate("fridge");
-      }, 2000);
     } catch (error) {
       console.error("Failed to add ingredients:", error);
       toast.show("Failed to add ingredients. Please try again.", {
@@ -409,21 +455,14 @@ export default function Camera() {
     }
   };
 
-  // Random Lottie loading animation
-  const randomLoadingAnimation = () => {
-    const animations = [
-      require("../../assets/images/animations/Animation1723027836457.json"),
-      require("../../assets/images/animations/Animation1722874735851.json"),
-      require("../../assets/images/animations/Animation1720193319067.json"),
-      require("../../assets/images/animations/Animation1720193239255.json"),
-    ];
-    return animations[Math.floor(Math.random() * animations.length)];
-  };
-
   return (
     <SafeAreaView className="flex-1 items-center justify-center bg-slate-600 pb-16">
       <Background cellSize={25} />
-      <StatusBar barStyle="light-content" />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
 
       <View className="flex justify-center items-center m-2">
         {/* Main screen */}
@@ -552,10 +591,14 @@ export default function Camera() {
                   <BouncyCheckbox
                     onPress={() => toggleIngredient(prediction)}
                     isChecked={
+                      selectedIngredients.includes(prediction) ||
                       addedIngredients.includes(prediction.name) ||
-                      selectedIngredients.includes(prediction)
+                      alreadyInFridge.includes(prediction.name)
                     }
-                    disabled={addedIngredients.includes(prediction.name)}
+                    disabled={
+                      addedIngredients.includes(prediction.name) ||
+                      alreadyInFridge.includes(prediction.name)
+                    }
                     text={
                       prediction.name.charAt(0).toUpperCase() +
                       prediction.name.slice(1) +
@@ -565,11 +608,11 @@ export default function Camera() {
                     }
                     textStyle={{
                       fontFamily: "SpaceMono",
-                      textDecorationLine: addedIngredients.includes(
-                        prediction.name
-                      )
-                        ? "line-through"
-                        : "none",
+                      textDecorationLine:
+                        addedIngredients.includes(prediction.name) ||
+                        alreadyInFridge.includes(prediction.name)
+                          ? "line-through"
+                          : "none",
                     }}
                     fillColor="#FED400"
                     unFillColor="#e2e8f0"

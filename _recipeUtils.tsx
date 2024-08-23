@@ -15,17 +15,19 @@ export type RootStackParamList = {
 
 export const BACKEND_URL = "http://192.168.1.34:3000";
 
-export const fetchRandomRecipe = async () => {
+export const fetchRandomRecipe = async (): Promise<any> => {
   try {
     const response = await fetch(`${BACKEND_URL}/recipes/randomRecipe`);
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Error ${response.status}: ${errorText}`);
     }
+
     const data = await response.json();
-    return data.recipes[0];
+    const recipe = data.recipes[0];
+    return recipe;
   } catch (error: any) {
-    console.log("Error fetching random recipe:", error.message);
+    console.error("Error fetching random recipe:", error.message);
     throw error;
   }
 };
@@ -77,8 +79,7 @@ export const randomStickerImage = () => {
 export const addRecipeToFavourites = async (
   recipeId: number,
   user: any,
-  toast: ToastType,
-  fetchDetails = true
+  toast: ToastType
 ) => {
   if (!user?.token) {
     return;
@@ -88,11 +89,25 @@ export const addRecipeToFavourites = async (
     console.log("Recipe ID before fetch:", recipeId);
 
     const token = user.token;
+
+    // Check if recipe exists in the database
+    const checkExistenceResponse = await fetch(
+      `${BACKEND_URL}/users/checkExistence/${recipeId}`
+    );
+
+    if (!checkExistenceResponse.ok) {
+      throw new Error("Failed to check recipe existence");
+    }
+    const { exists } = await checkExistenceResponse.json();
+
     let fullRecipeData;
 
-    if (fetchDetails) {
-      const recipeData = await fetchRecipeInformation(recipeId);
-      const instructions = await fetchAnalyzedInstructions(recipeId);
+    if (!exists) {
+      // Fetch data if recipe does not exist in the database
+      const [recipeData, instructions] = await Promise.all([
+        fetchRecipeInformation(recipeId),
+        fetchAnalyzedInstructions(recipeId),
+      ]);
 
       if (recipeData && instructions) {
         fullRecipeData = {
@@ -196,33 +211,21 @@ export const removeRecipeFromFavourites = async (
 
 export const goToRecipeCard = async (
   recipeId: number,
-  navigation: {
-    navigate: (
-      arg0: string,
-      arg1: { passedRecipe?: any; fromScreen: string; recipeId?: number }
-    ) => void;
-  },
+  navigation: any,
   fromScreen: string
 ) => {
   try {
-    const response = await fetch(`${BACKEND_URL}/users/fetchAllRecipes`);
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch recipes");
-    }
-
-    const data = await response.json();
-    const existingRecipe = data.recipes.find(
-      (recipe: any) => recipe.id === String(recipeId)
+    const response = await fetch(
+      `${BACKEND_URL}/users/fetchRecipe/${recipeId}`
     );
-
-    if (existingRecipe) {
+    if (response.status === 404) {
+      navigation.navigate("recipeCard", { recipeId: recipeId, fromScreen });
+    } else {
+      const existingRecipe = await response.json();
       navigation.navigate("recipeCard", {
         passedRecipe: existingRecipe,
         fromScreen,
       });
-    } else {
-      navigation.navigate("recipeCard", { recipeId: recipeId, fromScreen });
     }
   } catch (error: any) {
     console.error("Error navigating to recipe card:", error.message);
