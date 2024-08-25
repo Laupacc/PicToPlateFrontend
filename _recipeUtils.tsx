@@ -86,8 +86,6 @@ export const addRecipeToFavourites = async (
   }
 
   try {
-    console.log("Recipe ID before fetch:", recipeId);
-
     const token = user.token;
 
     // Check if recipe exists in the database
@@ -130,8 +128,8 @@ export const addRecipeToFavourites = async (
       body: JSON.stringify({ recipe: fullRecipeData }),
     });
 
+    const data = await response.json();
     if (!response.ok) {
-      const data = await response.json();
       toast.show(data.message || "Error adding recipe to favourites", {
         type: "warning",
         placement: "center",
@@ -144,6 +142,7 @@ export const addRecipeToFavourites = async (
       return;
     }
 
+    console.log("Recipe", recipeId, "added to favourites");
     toast.show("Recipe added to favourites", {
       type: "success",
       placement: "center",
@@ -195,6 +194,7 @@ export const removeRecipeFromFavourites = async (
       throw new Error(data.message || "Error adding recipe to favourites");
     }
 
+    console.log("Recipe", recipeId, "removed from favourites");
     toast.show("Recipe removed from favourites", {
       type: "success",
       placement: "center",
@@ -203,7 +203,6 @@ export const removeRecipeFromFavourites = async (
       swipeEnabled: true,
       icon: <Ionicons name="checkmark-circle" size={24} color="white" />,
     });
-    console.log("Recipe removed from favourites");
   } catch (error: any) {
     console.error("Error removing recipe from favourites:", error.message);
   }

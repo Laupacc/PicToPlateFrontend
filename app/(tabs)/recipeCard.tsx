@@ -89,7 +89,7 @@ export default function RecipeCard() {
     }, [])
   );
 
-  // fetch favourite recipes lists from user
+  // Fetch favourite recipes list from user
   useEffect(() => {
     const fetchFavourites = async () => {
       if (user.token) {
@@ -115,7 +115,7 @@ export default function RecipeCard() {
       }
     };
     fetchFavourites();
-  }, [user.token, userFavourites.length, recipe]);
+  }, [user.token, recipe]);
 
   // Fetch full recipe data from API or database
   useEffect(() => {
@@ -125,14 +125,14 @@ export default function RecipeCard() {
         let currentRecipeId = recipeId;
         let recipeData = null;
 
-        // Check if the recipe was passed so exists in the database
+        // Check if the recipe was passed and exists in the database
         if (passedRecipe) {
           recipeData = passedRecipe.additionalData;
           currentRecipeId = passedRecipe.id;
           setServings(recipeData.servings);
           console.log("Passed recipe");
         } else {
-          // Fetch the recipe data from the API
+          // Fetch the recipe data from the API if it doesn't exist in the database
           const [fetchedRecipeData, instructions] = await Promise.all([
             fetchRecipeInformation(recipeId),
             fetchAnalyzedInstructions(recipeId),
@@ -353,6 +353,22 @@ export default function RecipeCard() {
   const handleAddToFavourites = async (recipeId: number) => {
     setIsFavourite((prev: any) => ({ ...prev, [recipeId]: true }));
     await addRecipeToFavourites(recipeId, user, toast);
+
+    // Refetch favourites after adding
+    const response = await fetch(
+      `${BACKEND_URL}/users/userInformation/${user.token}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      }
+    );
+    const data = await response.json();
+    setUserFavourites(data.favourites);
+    console.log("User favourites updated:", data.favourites.length);
+
     dispatch(addToFavouriteRecipes(recipeId));
   };
 

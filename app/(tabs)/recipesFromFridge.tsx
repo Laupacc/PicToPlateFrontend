@@ -51,9 +51,11 @@ export default function recipesFromFridge() {
   const [userFavourites, setUserFavourites] = useState<any[]>([]);
   const [hasMoreResults, setHasMoreResults] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+
   const [individualSearchMode, setIndividualSearchMode] =
     useState<boolean>(false);
-  const [exhaustedIngredients, setExhaustedIngredients] = useState<Set<string>>(
+  const [usedIngredients, setUsedIngredients] = useState<string[]>([]);
+  const [exhaustedIngredients, setExhaustedIngredients] = useState<Set<any>>(
     new Set()
   );
 
@@ -97,110 +99,149 @@ export default function recipesFromFridge() {
 
   // Search for recipes from kitchen ingredients
   useEffect(() => {
-    const searchRecipesFromFridge = async (individualSearchMode = false) => {
+    const searchRecipesFromFridge = async (
+      searchQuery = "",
+      numberOfRecipes = 10,
+      offset = 0,
+      exhaustedIngredientsParam = new Set(),
+      loadedRecipeIds = new Set(),
+      isIndividualSearchMode = false,
+      usedIngredientsParam: string[] = []
+    ) => {
       if (!searchQuery) {
         return;
       }
 
-      // Clear previous search results
-      setRecipes([]);
-      setExhaustedIngredients(new Set());
-      setIndividualSearchMode(false);
-
-      if (isInitialMount.current || offset === 0) {
+      if (offset === 0) {
         setLoading(true);
+        setRecipes([]);
       }
 
-      // Function to fetch recipes
-      const fetchRecipes = async (
-        ingredients: string,
-        number: number,
-        offset = 0
-      ) => {
-        const response = await fetch(
-          `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${number}&offset=${offset}`
-        );
-        console.log(response.url);
+      const ingredients = searchQuery
+        .toLowerCase()
+        .replace(/\band\b/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .split(" ")
+        .join(",");
 
-        if (!response.ok) {
-          throw new Error("Failed to search recipes");
-        }
-        const data = await response.json();
-        return data;
-      };
+      let URL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${numberOfRecipes}&offset=${offset}`;
 
       try {
-        const search = searchQuery
-          .toLowerCase()
-          .replace(/\band\b/g, " ")
-          .replace(/\s+/g, " ")
-          .trim()
-          .split(" ")
-          .join(",");
+        // Clear previous search results if offset is 0 (new search)
+        if (offset === 0) {
+          setRecipes([]);
+          exhaustedIngredientsParam.clear(); // Clear exhausted ingredients
+          loadedRecipeIds.clear(); // Clear loaded recipe IDs
+        }
 
         let results: any[] = [];
         let totalResults = 0;
 
-        // Fetch recipes with combined ingredients
-        if (!individualSearchMode) {
-          let data = await fetchRecipes(search, numberOfRecipes, offset);
+        // Fetch recipes for combined ingredients if not in individual search mode
+        if (!isIndividualSearchMode) {
+          const response = await fetch(URL);
+          console.log(URL);
+
+          if (!response.ok) {
+            throw new Error("Error fetching recipes");
+          }
+
+          const data = await response.json();
+          console.log("Search results for combined search:", data.totalResults);
+
           results = data.results;
           totalResults = data.totalResults;
-          console.log("Search results for combined search:", totalResults);
 
-          // If no results found, try searching each ingredient individually
+          // Filter out already loaded recipes
+          results = results.filter((recipe) => !loadedRecipeIds.has(recipe.id));
+          results.forEach((recipe) => loadedRecipeIds.add(recipe.id));
+
+          // If no results found in combined search, switch to individual search mode
           if (results.length === 0) {
+            isIndividualSearchMode = true;
             console.log(
-              "No results found for combined search. Trying individual searches..."
+              "No results found for combined search. Switching to individual search mode..."
             );
-            individualSearchMode = true;
+            usedIngredientsParam = ingredients.split(",");
+            setUsedIngredients(usedIngredientsParam);
             setIndividualSearchMode(true);
           }
         }
 
-        // Fetch recipes with individual ingredients
-        if (individualSearchMode) {
-          const individualSearches = search.split(",");
-          results = [];
-          totalResults = 0;
-          for (const ingredient of individualSearches) {
-            // Skip exhausted ingredients
-            if (exhaustedIngredients.has(ingredient)) {
+        // If individual search mode is active, search for each ingredient individually
+        if (isIndividualSearchMode) {
+          for (const ingredient of usedIngredientsParam) {
+            if (exhaustedIngredientsParam.has(ingredient)) {
+              console.log(`Skipping ${ingredient} as it has been exhausted`);
               continue;
             }
-            const individualResults = await fetchRecipes(
-              ingredient,
-              numberOfRecipes,
-              offset
-            );
+
+            const individualURL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredient}&number=${numberOfRecipes}&offset=${offset}`;
+            const data = await fetch(individualURL);
+            console.log(individualURL);
+
+            if (!data.ok) {
+              throw new Error("Error fetching individual ingredient recipes");
+            }
+
+            const individualResults = await data.json();
             console.log(
-              `Search results for ${ingredient}:`,
-              individualResults.totalResults
+              `Search results for ${ingredient}: ${individualResults.totalResults}`
             );
 
-            // If no results found for an ingredient, add it to the exhausted list
-            if (individualResults.results.length === 0) {
-              exhaustedIngredients.add(ingredient);
-              toast.show(`No more results for ${ingredient}`, {
-                type: "info",
-                placement: "center",
-                duration: 1000,
-                animationType: "zoom-in",
-                swipeEnabled: true,
-                icon: (
-                  <Ionicons name="information-circle" size={24} color="white" />
-                ),
-              });
+            // Filter out already loaded recipes
+            const filteredResults = individualResults.results.filter(
+              (recipe: { id: number }) => !loadedRecipeIds.has(recipe.id)
+            );
+            filteredResults.forEach((recipe: { id: number }) =>
+              loadedRecipeIds.add(recipe.id)
+            );
+
+            // If no results for this ingredient, mark it as exhausted
+            if (filteredResults.length === 0) {
+              exhaustedIngredientsParam.add(ingredient);
+              toast.show(
+                `No more results for ${ingredient}, results for other ingredients will be shown`,
+                {
+                  type: "info",
+                  placement: "center",
+                  duration: 1000,
+                  animationType: "zoom-in",
+                  swipeEnabled: true,
+                  icon: (
+                    <Ionicons
+                      name="information-circle"
+                      size={24}
+                      color="white"
+                    />
+                  ),
+                }
+              );
             } else {
-              // Combine results from individual searches
-              results = results.concat(individualResults.results);
+              results = results.concat(filteredResults);
               totalResults += individualResults.totalResults;
             }
           }
-          setExhaustedIngredients(new Set(exhaustedIngredients)); // Update state
+
+          setExhaustedIngredients(new Set(exhaustedIngredientsParam));
         }
 
-        // Check if the recipes are in the user favourites
+        // Update the recipes state
+        if (offset === 0) {
+          setRecipes(results);
+        } else {
+          setRecipes((prevRecipes) => [...prevRecipes, ...results]);
+        }
+
+        // Check if there are more results to load
+        if (totalResults && totalResults > numberOfRecipes + offset) {
+          setHasMoreResults(true);
+        } else {
+          setHasMoreResults(false);
+        }
+
+        // Check if the recipes are in the user's favourites
         if (userFavourites.length > 0 && results.length > 0) {
           const recipeIds = userFavourites.map((fav) => fav.id);
           results = results.map((recipe) => {
@@ -211,24 +252,8 @@ export default function recipesFromFridge() {
             return recipe;
           });
         }
-        // Update the recipes state
-        if (offset === 0) {
-          setRecipes(results);
-        } else {
-          setRecipes((prevRecipes) => [...prevRecipes, ...results]);
-        }
 
-        // Determine if there are more results to load
-        if (totalResults && totalResults > numberOfRecipes + offset) {
-          setHasMoreResults(true);
-        } else {
-          setHasMoreResults(false);
-        }
-
-        if (isInitialMount.current || offset === 0) {
-          setLoading(false);
-          isInitialMount.current = false;
-        }
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching recipes:", error);
         toast.show("Error fetching recipes", {
@@ -239,17 +264,18 @@ export default function recipesFromFridge() {
           swipeEnabled: true,
           icon: <Ionicons name="warning" size={24} color="white" />,
         });
-
-        if (isInitialMount.current || offset === 0) {
-          setLoading(false);
-          isInitialMount.current = false;
-        }
       }
     };
 
-    console.log("Effect triggered");
-
-    searchRecipesFromFridge();
+    searchRecipesFromFridge(
+      searchQuery,
+      numberOfRecipes,
+      offset,
+      exhaustedIngredients,
+      new Set(),
+      individualSearchMode,
+      usedIngredients
+    );
   }, [searchQuery, numberOfRecipes, offset]);
 
   const loadMoreRecipes = () => {
@@ -260,6 +286,21 @@ export default function recipesFromFridge() {
   const handleAddToFavourites = async (recipeId: number) => {
     setIsFavourite((prev) => ({ ...prev, [recipeId]: true }));
     await addRecipeToFavourites(recipeId, user, toast);
+    // Refetch favourites after adding
+    const response = await fetch(
+      `${BACKEND_URL}/users/userInformation/${user.token}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      }
+    );
+    const data = await response.json();
+    setUserFavourites(data.favourites);
+    console.log("User favourites updated:", data.favourites.length);
+
     dispatch(addToFavouriteRecipes(recipeId));
   };
 

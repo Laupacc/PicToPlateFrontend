@@ -175,7 +175,8 @@ export default function Search() {
     offset = 0,
     isIndividualSearchMode = false,
     usedIngredientsParam: string[] = [],
-    exhaustedIngredientsParam = new Set()
+    exhaustedIngredientsParam = new Set(),
+    loadedRecipeIds = new Set()
   ) => {
     if (!search.trim()) {
       toast.show("Please enter an ingredient", {
@@ -216,6 +217,7 @@ export default function Search() {
       if (offset === 0) {
         setRecipesFromIngredients([]);
         setExhaustedIngredients(new Set());
+        loadedRecipeIds.clear();
       }
 
       let results: any[] = [];
@@ -236,8 +238,12 @@ export default function Search() {
         results = recipe.results;
         totalResults = recipe.totalResults;
 
+        // Filter out already loaded recipes
+        results = results.filter((recipe) => !loadedRecipeIds.has(recipe.id));
+        results.forEach((recipe) => loadedRecipeIds.add(recipe.id));
+
+        // Switch to individual search mode
         if (results.length === 0) {
-          // Switch to individual search mode
           isIndividualSearchMode = true;
           console.log(
             "No results found for combined search. Trying individual searches..."
@@ -261,13 +267,26 @@ export default function Search() {
           const individualURL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredient}&number=${number}&offset=${offset}`;
           const data = await fetch(individualURL);
           console.log(individualURL);
+
+          if (!data.ok) {
+            throw new Error("Error fetching individual ingredient recipes");
+          }
+
           const individualResults = await data.json();
           console.log(
             `Search results for ${ingredient}: ${individualResults.totalResults}`
           );
 
+          // Filter out already loaded recipes
+          const filteredResults = individualResults.results.filter(
+            (recipe: { id: number }) => !loadedRecipeIds.has(recipe.id)
+          );
+          filteredResults.forEach((recipe: { id: number }) =>
+            loadedRecipeIds.add(recipe.id)
+          );
+
           // If no results found for this ingredient, mark it as exhausted
-          if (individualResults.results.length === 0) {
+          if (filteredResults.length === 0) {
             exhaustedIngredientsParam.add(ingredient);
             toast.show(
               `No more results for ${ingredient}, results for other ingredients will be shown`,
@@ -284,7 +303,7 @@ export default function Search() {
             );
           } else {
             // Add results to the list
-            results = results.concat(individualResults.results);
+            results = results.concat(filteredResults);
             totalResults += individualResults.totalResults;
           }
         }
@@ -383,6 +402,21 @@ export default function Search() {
   const handleAddToFavourites = async (recipeId: number) => {
     setIsFavourite((prev: any) => ({ ...prev, [recipeId]: true }));
     await addRecipeToFavourites(recipeId, user, toast);
+    // Refetch favourites after adding
+    const response = await fetch(
+      `${BACKEND_URL}/users/userInformation/${user.token}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      }
+    );
+    const data = await response.json();
+    setUserFavourites(data.favourites);
+    console.log("User favourites updated:", data.favourites.length);
+
     dispatch(addToFavouriteRecipes(recipeId));
   };
 

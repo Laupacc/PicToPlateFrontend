@@ -292,7 +292,7 @@ export default function Camera() {
   // Random Lottie loading animation
   const randomLoadingAnimation = () => {
     const animations = [
-      require("../../assets/images/animations/Animation1723027836457.json"),
+      // require("../../assets/images/animations/Animation1723027836457.json"),
       require("../../assets/images/animations/Animation1722874735851.json"),
       require("../../assets/images/animations/Animation1720193319067.json"),
       require("../../assets/images/animations/Animation1720193239255.json"),
@@ -300,6 +300,7 @@ export default function Camera() {
     return animations[Math.floor(Math.random() * animations.length)];
   };
 
+  // Check if the selected ingredients are already in the fridge
   useEffect(() => {
     if (existingIngredientsSelected) {
       setAlreadyInFridge(fridgeItems.map((item) => item.name));
