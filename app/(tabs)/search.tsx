@@ -45,7 +45,6 @@ import {
   removeRecipeFromFavourites,
   goToRecipeCard,
 } from "@/_recipeUtils";
-import RecipeCard from "./recipeCard";
 
 export default function Search() {
   const navigation = useNavigation<any>();
@@ -68,6 +67,10 @@ export default function Search() {
   const [exhaustedIngredients, setExhaustedIngredients] = useState<Set<any>>(
     new Set()
   );
+  const [loadedRecipeIds, setLoadedRecipeIds] = useState<Set<number>>(
+    new Set<number>()
+  );
+
   const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
   const [hasMoreResults, setHasMoreResults] = useState<boolean>(false);
   const [recipesFromIngredients, setRecipesFromIngredients] = useState<any[]>(
@@ -199,25 +202,18 @@ export default function Search() {
       .join(",");
 
     let URL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${number}&offset=${offset}`;
-
-    if (diet.length > 0) {
-      const dietParam = diet.join(",");
-      URL += `&diet=${dietParam}`;
-    }
-    if (intolerances.length > 0) {
-      const intolerancesParam = intolerances.join(",");
-      URL += `&intolerances=${intolerancesParam}`;
-    }
-    if (maxReadyTime) {
-      URL += `&maxReadyTime=${maxReadyTime}`;
-    }
+    if (diet.length > 0) URL += `&diet=${diet.join(",")}`;
+    if (intolerances.length > 0)
+      URL += `&intolerances=${intolerances.join(",")}`;
+    if (maxReadyTime) URL += `&maxReadyTime=${maxReadyTime}`;
 
     try {
       // Clear previous search results
       if (offset === 0) {
         setRecipesFromIngredients([]);
-        setExhaustedIngredients(new Set());
+        exhaustedIngredientsParam.clear();
         loadedRecipeIds.clear();
+        setIndividualSearchMode(false);
       }
 
       let results: any[] = [];
@@ -239,6 +235,9 @@ export default function Search() {
         totalResults = recipe.totalResults;
 
         // Filter out already loaded recipes
+        results = Array.from(
+          new Map(results.map((recipe) => [recipe.id, recipe])).values()
+        );
         results = results.filter((recipe) => !loadedRecipeIds.has(recipe.id));
         results.forEach((recipe) => loadedRecipeIds.add(recipe.id));
 
@@ -246,11 +245,11 @@ export default function Search() {
         if (results.length === 0) {
           isIndividualSearchMode = true;
           console.log(
-            "No results found for combined search. Trying individual searches..."
+            "No results found for initial search. Trying individual ingredients search"
           );
+          setIndividualSearchMode(true);
           usedIngredientsParam = ingredients.split(",");
           setUsedIngredients(usedIngredientsParam);
-          setIndividualSearchMode(true);
         }
       }
 
@@ -264,7 +263,12 @@ export default function Search() {
           }
 
           // Fetch recipes for each ingredients
-          const individualURL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredient}&number=${number}&offset=${offset}`;
+          let individualURL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredient}&number=${number}&offset=${offset}`;
+          if (diet.length > 0) individualURL += `&diet=${diet.join(",")}`;
+          if (intolerances.length > 0)
+            individualURL += `&intolerances=${intolerances.join(",")}`;
+          if (maxReadyTime) individualURL += `&maxReadyTime=${maxReadyTime}`;
+
           const data = await fetch(individualURL);
           console.log(individualURL);
 
@@ -278,37 +282,32 @@ export default function Search() {
           );
 
           // Filter out already loaded recipes
+          results = Array.from(
+            new Map(results.map((recipe) => [recipe.id, recipe])).values()
+          );
           const filteredResults = individualResults.results.filter(
             (recipe: { id: number }) => !loadedRecipeIds.has(recipe.id)
           );
-          filteredResults.forEach((recipe: { id: number }) =>
-            loadedRecipeIds.add(recipe.id)
-          );
+          setLoadedRecipeIds((prevIds) => {
+            const newIds = new Set(prevIds);
+            filteredResults.forEach((recipe: { id: number }) =>
+              newIds.add(recipe.id)
+            );
+            return newIds;
+          });
 
           // If no results found for this ingredient, mark it as exhausted
           if (filteredResults.length === 0) {
-            exhaustedIngredientsParam.add(ingredient);
-            toast.show(
-              `No more results for ${ingredient}, results for other ingredients will be shown`,
-              {
-                type: "info",
-                placement: "center",
-                duration: 1000,
-                animationType: "zoom-in",
-                swipeEnabled: true,
-                icon: (
-                  <Ionicons name="information-circle" size={24} color="white" />
-                ),
-              }
-            );
+            setExhaustedIngredients((prev) => {
+              const newExhausted = new Set(prev);
+              newExhausted.add(ingredient);
+              return newExhausted;
+            });
           } else {
-            // Add results to the list
             results = results.concat(filteredResults);
             totalResults += individualResults.totalResults;
           }
         }
-        // Update the exhausted ingredients
-        setExhaustedIngredients(new Set(exhaustedIngredientsParam));
       }
 
       // If offset is 0, replace the recipes, otherwise append to the existing ones
@@ -371,7 +370,8 @@ export default function Search() {
       numberOfRecipes, // current number of loaded recipes as offset
       individualSearchMode,
       usedIngredients,
-      exhaustedIngredients
+      exhaustedIngredients,
+      loadedRecipeIds
     );
   };
 
@@ -460,6 +460,25 @@ export default function Search() {
     }
   };
 
+  // Trigger Search on Filter Toggle
+  const triggerSearchWithFilters = () => {
+    if (!search.trim()) {
+      return;
+    }
+    complexSearchByIngredients(
+      search,
+      selectedDiet,
+      selectedIntolerance,
+      selectedMaxReadyTime,
+      10,
+      0,
+      individualSearchMode,
+      usedIngredients,
+      exhaustedIngredients,
+      loadedRecipeIds
+    );
+  };
+
   // Toggle Diet Checkbox (multiple can be selected)
   const toggleDiet = (item: string) => {
     if (diet.includes(item)) {
@@ -493,6 +512,7 @@ export default function Search() {
     setIntolerances(selectedIntolerance);
     setMaxReadyTime(selectedMaxReadyTime);
     setOpenFilterModal(false);
+    triggerSearchWithFilters();
   };
 
   // Reset Filters back to default
@@ -540,262 +560,240 @@ export default function Search() {
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
         >
-          <ScrollView
-            contentContainerStyle={{ flexGrow: 1 }}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View className="flex-1 justify-center items-center">
-              {/* Logo */}
-              <View className="flex justify-center items-center">
-                <Image
-                  source={require("../../assets/images/logo8.png")}
-                  className="w-60 h-14"
-                />
-              </View>
+          <View className="flex-1 justify-center items-center">
+            {/* Logo */}
+            <View className="flex justify-center items-center">
+              <Image
+                source={require("../../assets/images/logo8.png")}
+                className="w-60 h-14"
+              />
+            </View>
 
-              {/* Top Four Buttons */}
-              <View className="flex-row justify-center items-center mb-3">
-                <View className="flex-row justify-center items-center mx-1 flex-grow">
-                  {/* Open Trivia Button */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowTrivia(!showTrivia);
-                      fetchTrivia();
-                    }}
-                    className="flex justify-center items-center m-2 p-3 rounded-lg bg-[#1c79b2]"
-                    style={styles.shadow}
-                  >
+            {/* Top Four Buttons */}
+            <View className="flex-row justify-center items-center mb-3">
+              <View className="flex-row justify-center items-center mx-1 flex-grow">
+                {/* Open Trivia Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowTrivia(!showTrivia);
+                    fetchTrivia();
+                  }}
+                  className="flex justify-center items-center m-2 p-3 rounded-lg bg-[#1c79b2]"
+                  style={styles.shadow}
+                >
+                  <View className="flex flex-row justify-center items-center">
                     <Text className="text-md text-white text-center font-Nobile">
                       Trivia
                     </Text>
-                  </TouchableOpacity>
+                    <Image
+                      source={require("../../assets/images/trivia.png")}
+                      className="w-4 h-4 ml-1"
+                    />
+                  </View>
+                </TouchableOpacity>
 
-                  {/* Unit Converter Button */}
-                  <TouchableOpacity
-                    onPress={() => {
-                      setShowConversion(!showConversion);
-                      setShowFilters(false);
-                      setShowDiet(false);
-                      setShowIntolerances(false);
-                      setShowMaxReadyTime(false);
-                    }}
-                    className="flex justify-center items-center m-2 p-3 rounded-lg bg-[#1c79b2]"
-                    style={styles.shadow}
-                  >
+                {/* Unit Converter Button */}
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowConversion(!showConversion);
+                    setShowFilters(false);
+                    setShowDiet(false);
+                    setShowIntolerances(false);
+                    setShowMaxReadyTime(false);
+                  }}
+                  className="flex justify-center items-center m-1 p-3 rounded-lg bg-[#1c79b2]"
+                  style={styles.shadow}
+                >
+                  <View className="flex flex-row justify-center items-center">
                     <Text className="text-md text-white text-center font-Nobile">
                       Unit Converter
                     </Text>
+                    <Image
+                      source={require("../../assets/images/unitConverter.png")}
+                      className="w-4 h-4 ml-1"
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Filter Button */}
+                <View className="flex flex-row justify-center items-center">
+                  <TouchableOpacity
+                    onPress={() => setOpenFilterModal(!openFilterModal)}
+                    className="flex justify-center items-center relative mx-2"
+                    style={styles.shadow}
+                  >
+                    <Image
+                      source={require("@/assets/images/filter5.png")}
+                      alt="button"
+                      className="w-10 h-10"
+                    />
                   </TouchableOpacity>
-
-                  {/* Filter Button */}
-                  <View className="flex flex-row justify-center items-center">
-                    <TouchableOpacity
-                      onPress={() => setOpenFilterModal(!openFilterModal)}
-                      className="flex justify-center items-center relative mx-2"
-                      style={styles.shadow}
-                    >
-                      <Image
-                        source={require("@/assets/images/filter5.png")}
-                        alt="button"
-                        className="w-10 h-10"
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Radom Recipe Button */}
-                <View
-                  className="flex justify-between items-center right-4"
-                  style={styles.shadow}
-                >
-                  <View className="flex justify-center items-center">
-                    <TouchableOpacity
-                      onPress={handleFetchRandomRecipe}
-                      className="flex flex-row justify-center items-center"
-                    >
-                      <BouncingImage>
-                        <View className="relative w-16 h-16 flex justify-center items-center">
-                          <Image
-                            source={require("../../assets/images/randomButton.png")}
-                            className="absolute inset-0 w-full h-full"
-                          />
-                          <Image
-                            source={require("../../assets/images/dice5.png")}
-                            className="w-6 h-6 bottom-2"
-                          />
-                        </View>
-                      </BouncingImage>
-                    </TouchableOpacity>
-                  </View>
                 </View>
               </View>
 
-              {/* Show Unit Converter */}
-              {showConversion && (
-                <View>
-                  <View className="flex justify-center items-center mb-6 p-5 bg-slate-200 rounded-lg border border-slate-400">
-                    <View className="flex flex-row justify-center items-center m-2">
-                      <TextInput
-                        placeholder="Ingredient"
-                        placeholderTextColor={"gray"}
-                        value={ingredientName}
-                        onChangeText={setIngredientName}
-                        className="border-2 border-gray-400 rounded-lg w-40 h-10 mx-2 text-center"
-                      />
-                      <TextInput
-                        placeholder="Amount"
-                        placeholderTextColor={"gray"}
-                        value={sourceAmount}
-                        onChangeText={setSourceAmount}
-                        className="border-2 border-gray-400 rounded-lg w-20 h-10 mx-2 text-center"
-                      />
-                    </View>
-                    <View className="flex flex-row justify-center items-center m-2">
-                      <RNPickerSelect
-                        onValueChange={(value) => setSourceUnit(value)}
-                        items={conversionAmounts}
-                        style={pickerSelectStyles}
-                        value={sourceUnit}
-                        useNativeAndroidPickerStyle={false}
-                        placeholder={{ label: "Unit", value: null }}
-                        Icon={() => {
-                          return (
-                            <Ionicons
-                              name="chevron-down"
-                              size={24}
-                              color="gray"
-                            />
-                          );
-                        }}
-                      />
-                      <RNPickerSelect
-                        onValueChange={(value) => setTargetUnit(value)}
-                        items={conversionAmounts}
-                        style={pickerSelectStyles}
-                        value={targetUnit}
-                        useNativeAndroidPickerStyle={false}
-                        placeholder={{ label: "Unit", value: null }}
-                        Icon={() => {
-                          return (
-                            <Ionicons
-                              name="chevron-down"
-                              size={24}
-                              color="gray"
-                            />
-                          );
-                        }}
-                      />
-                    </View>
-                    <TouchableOpacity
-                      onPress={() => {
-                        convertAmount(
-                          ingredientName,
-                          sourceAmount,
-                          sourceUnit,
-                          targetUnit
-                        );
-                        setShowConversionResult(true);
-                      }}
-                      className="flex justify-center items-center relative my-2"
-                      style={styles.shadow}
-                    >
-                      <Image
-                        source={require("@/assets/images/button/button1.png")}
-                        alt="button"
-                        className="w-36 h-12"
-                      />
-                      <Text className="text-lg text-white absolute text-center font-Nobile">
-                        Convert
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        setIngredientName("");
-                        setSourceAmount("");
-                        setSourceUnit("");
-                        setTargetUnit("");
-                        setConvertedAmount("");
-                        setShowConversionResult(false);
-                        setErrorMessage("");
-                      }}
-                      className="flex justify-center items-center relative mx-2"
-                      style={styles.shadow}
-                    >
-                      <Image
-                        source={require("@/assets/images/button/button11.png")}
-                        alt="button"
-                        className="w-28 h-10"
-                      />
-                      <Text className="text-lg text-white absolute text-center font-Nobile">
-                        Clear
-                      </Text>
-                    </TouchableOpacity>
+              {/* Radom Recipe Button */}
+              <View
+                className="flex justify-between items-center"
+                style={styles.shadow}
+              >
+                <View className="flex justify-center items-center">
+                  <TouchableOpacity
+                    onPress={handleFetchRandomRecipe}
+                    className="flex flex-row justify-center items-center"
+                  >
+                    <BouncingImage>
+                      <View className="relative w-16 h-16 flex justify-center items-center">
+                        <Image
+                          source={require("../../assets/images/randomButton.png")}
+                          className="absolute inset-0 w-full h-full"
+                        />
+                        <Image
+                          source={require("../../assets/images/dice5.png")}
+                          className="w-6 h-6 bottom-2"
+                        />
+                      </View>
+                    </BouncingImage>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
 
-                    {errorMessage !== "" && (
-                      <View className="flex justify-center items-center mt-4">
-                        <Text className="text-center font-Nobile text-red-500 text-[16px]">
-                          {errorMessage}
-                        </Text>
-                      </View>
-                    )}
+            {/* Show Unit Converter */}
+            {showConversion && (
+              <View>
+                <View className="flex justify-center items-center mb-6 p-5 bg-slate-200 rounded-lg border border-slate-400">
+                  <View className="flex flex-row justify-center items-center m-2">
+                    <TextInput
+                      placeholder="Ingredient"
+                      placeholderTextColor={"gray"}
+                      value={ingredientName}
+                      onChangeText={setIngredientName}
+                      className="border-2 border-gray-400 rounded-lg w-40 h-10 mx-2 text-center"
+                    />
+                    <TextInput
+                      placeholder="Amount"
+                      placeholderTextColor={"gray"}
+                      value={sourceAmount}
+                      onChangeText={setSourceAmount}
+                      className="border-2 border-gray-400 rounded-lg w-20 h-10 mx-2 text-center"
+                    />
                   </View>
-                  {showConversionResult && !errorMessage && (
-                    <View className="relative mb-6">
-                      <View
-                        className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1 w-[350px] h-[50px]"
-                        style={styles.shadow}
-                      ></View>
-                      <View className="flex justify-center items-center bg-white rounded-2xl w-[350px] h-[50px]">
-                        <Text className="text-center font-Nobile text-[16px] text-[#475569]">
-                          {convertedAmount !== "" && `${convertedAmount}`}
-                        </Text>
-                      </View>
+                  <View className="flex flex-row justify-center items-center m-2">
+                    <RNPickerSelect
+                      onValueChange={(value) => setSourceUnit(value)}
+                      items={conversionAmounts}
+                      style={pickerSelectStyles}
+                      value={sourceUnit}
+                      useNativeAndroidPickerStyle={false}
+                      placeholder={{ label: "Unit", value: null }}
+                      Icon={() => {
+                        return (
+                          <Ionicons
+                            name="chevron-down"
+                            size={24}
+                            color="gray"
+                          />
+                        );
+                      }}
+                    />
+                    <RNPickerSelect
+                      onValueChange={(value) => setTargetUnit(value)}
+                      items={conversionAmounts}
+                      style={pickerSelectStyles}
+                      value={targetUnit}
+                      useNativeAndroidPickerStyle={false}
+                      placeholder={{ label: "Unit", value: null }}
+                      Icon={() => {
+                        return (
+                          <Ionicons
+                            name="chevron-down"
+                            size={24}
+                            color="gray"
+                          />
+                        );
+                      }}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      convertAmount(
+                        ingredientName,
+                        sourceAmount,
+                        sourceUnit,
+                        targetUnit
+                      );
+                      setShowConversionResult(true);
+                    }}
+                    className="flex justify-center items-center relative my-2"
+                    style={styles.shadow}
+                  >
+                    <Image
+                      source={require("@/assets/images/button/button1.png")}
+                      alt="button"
+                      className="w-36 h-12"
+                    />
+                    <Text className="text-lg text-white absolute text-center font-Nobile">
+                      Convert
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setIngredientName("");
+                      setSourceAmount("");
+                      setSourceUnit("");
+                      setTargetUnit("");
+                      setConvertedAmount("");
+                      setShowConversionResult(false);
+                      setErrorMessage("");
+                    }}
+                    className="flex justify-center items-center relative mx-2"
+                    style={styles.shadow}
+                  >
+                    <Image
+                      source={require("@/assets/images/button/button11.png")}
+                      alt="button"
+                      className="w-28 h-10"
+                    />
+                    <Text className="text-lg text-white absolute text-center font-Nobile">
+                      Clear
+                    </Text>
+                  </TouchableOpacity>
+
+                  {errorMessage !== "" && (
+                    <View className="flex justify-center items-center mt-4">
+                      <Text className="text-center font-Nobile text-red-500 text-[16px]">
+                        {errorMessage}
+                      </Text>
                     </View>
                   )}
                 </View>
-              )}
-
-              {/* Search bar, Search Button, Back to Last Recipe Button */}
-              <View className="flex flex-row justify-center items-center mb-2">
-                {/* Search bar */}
-                <View className="flex justify-center items-center mx-3">
-                  <View className="relative items-center w-full justify-center">
-                    <TextInput
-                      placeholder="Search by ingredient"
-                      placeholderTextColor={"gray"}
-                      value={search}
-                      onChangeText={(text) => setSearch(text)}
-                      onSubmitEditing={() =>
-                        complexSearchByIngredients(
-                          search,
-                          diet,
-                          intolerances,
-                          maxReadyTime,
-                          numberOfRecipes
-                        )
-                      }
-                      className="border border-gray-400 rounded-lg pl-4 w-64 h-10 bg-[#e2e8f0] font-Nobile"
-                    />
-                    <TouchableOpacity
-                      onPress={() => setSearch("")}
-                      className="absolute right-2.5 top-2 -translate-y-3.125"
-                    >
-                      <Image
-                        source={require("@/assets/images/redCross.png")}
-                        alt="clear"
-                        className="w-6 h-6"
-                      />
-                    </TouchableOpacity>
+                {showConversionResult && !errorMessage && (
+                  <View className="relative mb-6">
+                    <View
+                      className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1 w-[350px] h-[50px]"
+                      style={styles.shadow}
+                    ></View>
+                    <View className="flex justify-center items-center bg-white rounded-2xl w-[350px] h-[50px]">
+                      <Text className="text-center font-Nobile text-[16px] text-[#475569]">
+                        {convertedAmount !== "" && `${convertedAmount}`}
+                      </Text>
+                    </View>
                   </View>
-                </View>
+                )}
+              </View>
+            )}
 
-                {/* Search Button */}
-                <View
-                  className="flex justify-center items-center relative"
-                  style={styles.shadow}
-                >
-                  <TouchableOpacity
-                    onPress={() =>
+            {/* Search bar, Search Button, Back to Last Recipe Button */}
+            <View className="flex flex-row justify-center items-center mb-1">
+              {/* Search bar */}
+              <View className="flex justify-center items-center mx-3">
+                <View className="relative items-center w-full justify-center">
+                  <TextInput
+                    placeholder="Search by ingredient"
+                    placeholderTextColor={"gray"}
+                    value={search}
+                    onChangeText={(text) => setSearch(text)}
+                    onSubmitEditing={() =>
                       complexSearchByIngredients(
                         search,
                         diet,
@@ -804,147 +802,176 @@ export default function Search() {
                         numberOfRecipes
                       )
                     }
+                    className="border border-gray-400 rounded-lg pl-4 w-64 h-10 bg-[#e2e8f0] font-Nobile"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setSearch("")}
+                    className="absolute right-2.5 top-2 -translate-y-3.125"
                   >
                     <Image
-                      source={require("@/assets/images/search2.png")}
-                      alt="search"
-                      className="w-9 h-9 mx-1"
+                      source={require("@/assets/images/redCross.png")}
+                      alt="clear"
+                      className="w-6 h-6"
                     />
                   </TouchableOpacity>
                 </View>
+              </View>
 
-                {/* Back to Last Recipe button */}
+              {/* Search Button */}
+              <View
+                className="flex justify-center items-center relative"
+                style={styles.shadow}
+              >
                 <TouchableOpacity
-                  onPress={handleGoToLastRecipeOpened}
-                  className="mx-1"
-                  style={styles.shadow}
+                  onPress={() =>
+                    complexSearchByIngredients(
+                      search,
+                      diet,
+                      intolerances,
+                      maxReadyTime,
+                      numberOfRecipes
+                    )
+                  }
                 >
                   <Image
-                    source={require("@/assets/images/backToRecipeFridge2.png")}
-                    alt="button"
-                    className="w-14 h-12"
+                    source={require("@/assets/images/search2.png")}
+                    alt="search"
+                    className="w-9 h-9 mx-1"
                   />
                 </TouchableOpacity>
               </View>
 
-              {/* Recipe Results */}
-              <ScrollView className="flex-1 m-2">
-                {recipesFromIngredients &&
-                  recipesFromIngredients.length > 0 &&
-                  recipesFromIngredients.map((recipe) => (
-                    <View
-                      className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
-                      key={recipe.id}
-                    >
-                      <Image
-                        source={require("../../assets/images/recipeBack/recipeBack4.png")}
-                        className="absolute inset-0 w-full h-full"
-                        style={styles.shadow}
-                      />
-                      {user.token && (
-                        <TouchableOpacity
-                          className="absolute top-20 right-4"
-                          onPress={() =>
-                            isFavourite[recipe.id]
-                              ? handleRemoveFromFavourites(recipe.id)
-                              : handleAddToFavourites(recipe.id)
-                          }
-                        >
-                          <Image
-                            source={
-                              isFavourite[recipe.id]
-                                ? require("../../assets/images/heart4.png")
-                                : require("../../assets/images/heart5.png")
-                            }
-                            className="w-8 h-8"
-                          />
-                        </TouchableOpacity>
-                      )}
+              {/* Back to Last Recipe button */}
+              <TouchableOpacity
+                onPress={handleGoToLastRecipeOpened}
+                className="mx-1"
+                style={styles.shadow}
+              >
+                <Image
+                  source={require("@/assets/images/backToRecipeFridge2.png")}
+                  alt="button"
+                  className="w-14 h-12"
+                />
+              </TouchableOpacity>
+            </View>
 
-                      <View className="flex items-center justify-center">
-                        <TouchableOpacity
-                          onPress={() => handleGoToRecipeCard(recipe.id)}
-                          key={recipe.id}
-                          className="flex items-center justify-center"
-                        >
-                          <Image
-                            source={
-                              recipe.image
-                                ? { uri: recipe.image }
-                                : require("../../assets/images/picMissing.png")
-                            }
-                            className="rounded-xl w-[200] h-[200] right-4"
-                          />
-
-                          <View className="flex items-center justify-center max-w-[200] mt-4">
-                            <Text className="text-center font-Flux text-[15px]">
-                              {recipe.title}
-                            </Text>
-                          </View>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
-
-                {/* Load more recipes button */}
-                {hasMoreResults && (
-                  <View className="flex justify-center items-center mb-4">
-                    <TouchableOpacity
-                      onPress={loadMoreRecipes}
-                      className="relative flex justify-center items-center"
-                    >
-                      <Image
-                        source={require("@/assets/images/button/button9.png")}
-                        alt="button"
-                        className="w-40 h-12"
-                      />
-                      <Text
-                        className="text-lg text-white absolute font-Nobile"
-                        style={styles.shadow}
-                      >
-                        Load more
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* No recipes found */}
-                {searchPerformed && recipesFromIngredients.length === 0 && (
-                  <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
+            {/* Recipe Results */}
+            <ScrollView className="flex-1">
+              {recipesFromIngredients &&
+                recipesFromIngredients.length > 0 &&
+                recipesFromIngredients.map((recipe) => (
+                  <View
+                    className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
+                    key={recipe.id}
+                  >
                     <Image
                       source={require("../../assets/images/recipeBack/recipeBack4.png")}
                       className="absolute inset-0 w-full h-full"
                       style={styles.shadow}
                     />
-                    <View className="flex items-center justify-center max-w-[180]">
-                      <Text className="font-CreamyCookies text-center text-3xl">
-                        No recipes found with these ingredients
-                      </Text>
-                    </View>
-                  </View>
-                )}
+                    {user.token && (
+                      <TouchableOpacity
+                        className="absolute top-20 right-4"
+                        onPress={() =>
+                          isFavourite[recipe.id]
+                            ? handleRemoveFromFavourites(recipe.id)
+                            : handleAddToFavourites(recipe.id)
+                        }
+                      >
+                        <Image
+                          source={
+                            isFavourite[recipe.id]
+                              ? require("../../assets/images/heart4.png")
+                              : require("../../assets/images/heart5.png")
+                          }
+                          className="w-8 h-8"
+                        />
+                      </TouchableOpacity>
+                    )}
 
-                {/* No search performed yet */}
-                {!searchPerformed && (
-                  <View className="flex items-center justify-center relative mt-4">
-                    <View
-                      className="absolute bg-[#FFBA00] rounded-2xl right-2 bottom-2 w-[300] h-[420]"
-                      style={styles.shadow}
-                    ></View>
-                    <View className="bg-white w-[300] h-[420] m-4 items-center justify-center rounded-2xl">
-                      <Text className="font-Flux text-[18px] text-[#475569] text-center mx-6 my-4">
-                        Use your available ingredients to unlock amazing recipe
-                        ideas!
-                      </Text>
-                      {randomImage && (
-                        <Image source={randomImage} className="w-60 h-60" />
-                      )}
+                    <View className="flex items-center justify-center">
+                      <TouchableOpacity
+                        onPress={() => handleGoToRecipeCard(recipe.id)}
+                        key={recipe.id}
+                        className="flex items-center justify-center"
+                      >
+                        <Image
+                          source={
+                            recipe.image
+                              ? { uri: recipe.image }
+                              : require("../../assets/images/picMissing.png")
+                          }
+                          className="rounded-xl w-[200] h-[200] right-4"
+                        />
+
+                        <View className="flex items-center justify-center max-w-[200] mt-4">
+                          <Text className="text-center font-Flux text-[15px]">
+                            {recipe.title}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
                     </View>
                   </View>
-                )}
-              </ScrollView>
-            </View>
-          </ScrollView>
+                ))}
+
+              {/* Load more recipes button */}
+              {hasMoreResults && (
+                <View className="flex justify-center items-center mb-4">
+                  <TouchableOpacity
+                    onPress={loadMoreRecipes}
+                    className="relative flex justify-center items-center"
+                  >
+                    <Image
+                      source={require("@/assets/images/button/button9.png")}
+                      alt="button"
+                      className="w-40 h-12"
+                    />
+                    <Text
+                      className="text-lg text-white absolute font-Nobile"
+                      style={styles.shadow}
+                    >
+                      Load more
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* No recipes found */}
+              {searchPerformed && recipesFromIngredients.length === 0 && (
+                <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
+                  <Image
+                    source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                    className="absolute inset-0 w-full h-full"
+                    style={styles.shadow}
+                  />
+                  <View className="flex items-center justify-center max-w-[180]">
+                    <Text className="font-CreamyCookies text-center text-3xl">
+                      No recipes found with these ingredients
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              {/* No search performed yet */}
+              {!searchPerformed && (
+                <View className="flex items-center justify-center relative mt-4">
+                  <View
+                    className="absolute bg-[#FFBA00] rounded-2xl right-2 bottom-2 w-[300] h-[420]"
+                    style={styles.shadow}
+                  ></View>
+                  <View className="bg-white w-[300] h-[420] m-4 items-center justify-center rounded-2xl">
+                    <Text className="font-Flux text-[18px] text-[#475569] text-center mx-6 my-4">
+                      Use your available ingredients to unlock amazing recipe
+                      ideas!
+                    </Text>
+                    {randomImage && (
+                      <Image source={randomImage} className="w-60 h-60" />
+                    )}
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+          </View>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
 

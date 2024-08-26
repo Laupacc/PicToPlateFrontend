@@ -652,25 +652,57 @@ export default function Fridge() {
                   fridgeItems.length > 0 && (
                     // User is logged in and fridge items are displayed
                     <>
-                      <View className="border-2 border-slate-400 h-[550] p-1 rounded-3xl mt-2">
-                        <ScrollView ref={scrollViewRef} className="flex-1">
+                      {/* <View className="border-2 border-slate-400 h-[550] p-1 rounded-3xl mt-2 relative"> */}
+                      <View
+                        className="h-[550] p-1 mt-5 relative flex justify-center items-center mb-6 bg-slate-200"
+                        style={styles.shadow}
+                      >
+                        <Image
+                          source={require("../../assets/images/fridge/fridgeSideRight.png")}
+                          className="absolute top-0 right-1 h-[100%] w-[12]"
+                          style={{
+                            resizeMode: "stretch",
+                          }}
+                        />
+                        <Image
+                          source={require("../../assets/images/fridge/fridgeSideLeft.png")}
+                          className="absolute top-0 left-1 h-[100%] w-[12]"
+                          style={{
+                            resizeMode: "stretch",
+                          }}
+                        />
+                        <Image
+                          source={require("../../assets/images/fridge/fridgeTopRounded.png")}
+                          className="absolute -top-4 left-0 right-0 h-[18] w-[420]"
+                          style={{ resizeMode: "stretch" }}
+                        />
+                        <Image
+                          source={require("../../assets/images/fridge/fridgeBottom.png")}
+                          className="absolute -bottom-6 left-0 right-0 h-[33] w-[421]"
+                          style={{ resizeMode: "stretch" }}
+                        />
+
+                        <ScrollView
+                          ref={scrollViewRef}
+                          className="flex-1 px-4 mb-2"
+                        >
                           <View className="flex justify-center items-center mb-2">
                             {fridgeItems &&
                               fridgeItems.map((item, index) => (
-                                <View key={index} className="relative p-1 m-1 ">
+                                <View key={index} className="relative p-1 m-1">
                                   <View
                                     className="absolute bg-[#FF9B50] rounded-2xl -right-0.5 -bottom-0.5"
                                     style={{
-                                      width: screenWidth - 45,
-                                      height: 60,
+                                      width: screenWidth - 65,
+                                      height: 55,
                                       ...styles.shadow,
                                     }}
                                   ></View>
                                   <View
                                     className="flex flex-row justify-between items-center bg-white rounded-2xl p-2"
                                     style={{
-                                      width: screenWidth - 40,
-                                      height: 60,
+                                      width: screenWidth - 65,
+                                      height: 55,
                                     }}
                                   >
                                     <View className="w-5/6">
@@ -851,7 +883,7 @@ export default function Fridge() {
                       className={
                         fridgeItems.length === 0
                           ? "flex flex-row justify-center items-center bottom-24"
-                          : "flex flex-row justify-center items-center mt-1"
+                          : "flex flex-row justify-center items-center"
                       }
                     >
                       <View className="flex justify-center items-center mx-2">

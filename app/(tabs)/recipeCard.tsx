@@ -573,6 +573,7 @@ export default function RecipeCard() {
               </View>
 
               {/* Four Option Buttons */}
+
               <View className="flex flex-row justify-center items-center">
                 {/* Macros Button */}
                 <TouchableOpacity
@@ -584,13 +585,12 @@ export default function RecipeCard() {
                     <Text className="text-md text-white text-center font-Nobile">
                       Macros
                     </Text>
-                    {/* <Image
-                    source={require("../../assets/images/macronutrients.png")}
-                    className="w-4 h-4"
-                  /> */}
+                    <Image
+                      source={require("../../assets/images/macronutrients.png")}
+                      className="w-4 h-4 ml-1"
+                    />
                   </View>
                 </TouchableOpacity>
-
                 {/* Nutritional Values Button */}
                 <TouchableOpacity
                   onPress={() => setShowNutrition(!showNutrition)}
@@ -599,15 +599,14 @@ export default function RecipeCard() {
                 >
                   <View className="flex flex-row justify-center items-center">
                     <Text className="text-md text-white text-center font-Nobile">
-                      Nutritional values
+                      Nutrition
                     </Text>
-                    {/* <Image
-                    source={require("../../assets/images/nutriValues.png")}
-                    className="w-4 h-4"
-                  /> */}
+                    <Image
+                      source={require("../../assets/images/nutriValues.png")}
+                     className="w-4 h-4 ml-1"
+                    />
                   </View>
                 </TouchableOpacity>
-
                 {/* Wine Pairing Button */}
                 <TouchableOpacity
                   onPress={() => {
@@ -620,13 +619,12 @@ export default function RecipeCard() {
                     <Text className="text-md text-white text-center font-Nobile">
                       Wine
                     </Text>
-                    {/* <Image
-                    source={require("../../assets/images/winePairing.png")}
-                    className="w-4 h-4"
-                  /> */}
+                    <Image
+                      source={require("../../assets/images/winePairing.png")}
+                     className="w-4 h-4 ml-1"
+                    />
                   </View>
                 </TouchableOpacity>
-
                 {/* Food Substitute Button */}
                 <TouchableOpacity
                   onPress={() => setShowSubstitutes(!showSubstitutes)}
@@ -635,12 +633,12 @@ export default function RecipeCard() {
                 >
                   <View className="flex flex-row justify-center items-center">
                     <Text className="text-md text-white text-center font-Nobile">
-                      Substitutes
+                      Subs
                     </Text>
-                    {/* <Image
-                    source={require("../../assets/images/foodSubs3.png")}
-                    className="w-4 h-4"
-                  /> */}
+                    <Image
+                      source={require("../../assets/images/foodSubs3.png")}
+                   className="w-4 h-4 ml-1"
+                    />
                   </View>
                 </TouchableOpacity>
               </View>
@@ -1084,7 +1082,7 @@ export default function RecipeCard() {
       {/* Nutritional Value Modal */}
       <Modal visible={showNutrition} onDismiss={() => setShowNutrition(false)}>
         <View className="flex justify-center items-center">
-          <View className="bg-slate-300 rounded-2xl p-2 w-[90%]">
+          <View className="bg-slate-300 rounded-2xl p-2 w-[90%] bottom-10">
             {recipe && (
               <>
                 <TouchableOpacity
@@ -1164,7 +1162,7 @@ export default function RecipeCard() {
         onDismiss={() => setIngredientModalVisible(false)}
       >
         <View className="flex justify-center items-center">
-          <View className="bg-slate-300 rounded-2xl p-2 w-[90%]">
+          <View className="bg-slate-300 rounded-2xl p-2 w-[90%] bottom-10">
             {selectedIngredientNutrition && (
               <>
                 <TouchableOpacity

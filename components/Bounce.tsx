@@ -30,7 +30,7 @@ const BouncingImage = ({ children }: { children: React.ReactNode }) => {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        setTimeout(bounceAnimation, 12000);
+        setTimeout(bounceAnimation, 8000);
       });
     };
 
