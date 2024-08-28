@@ -20,10 +20,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "react-native-toast-notifications";
-import { Modal, List } from "react-native-paper";
+import { Modal } from "react-native-paper";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Feather, Ionicons, Entypo } from "@expo/vector-icons";
 import moment from "moment";
 import Background from "@/components/Background";
 import BouncingImage from "@/components/Bounce";
@@ -49,19 +49,27 @@ export default function Fridge() {
 
   const [fridgeItems, setFridgeItems] = useState<any[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<any[]>([]);
+  const [directInput, setDirectInput] = useState<string>("");
   const [search, setSearch] = useState<string>("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedFromSearch, setSelectedFromSearch] = useState<any[]>([]);
   const [selectedToRemove, setSelectedToRemove] = useState<any[]>([]);
   const [isSearchModalVisible, setIsSearchModalVisible] =
     useState<boolean>(false);
+  const [selectedSortOption, setSelectedSortOption] = useState<{
+    criteria: string;
+    sortOrder: string;
+  } | null>(null);
   const [isFilterModalVisible, setIsFilterModalVisible] =
     useState<boolean>(false);
-  const [searchMessage, setSearchMessage] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [directInput, setDirectInput] = useState<string>("");
+  const [openNameFilter, setOpenNameFilter] = useState<boolean>(false);
+  const [openDateAddedFilter, setOpenDateAddedFilter] =
+    useState<boolean>(false);
+  const [openCheckedFilter, setOpenCheckedFilter] = useState<boolean>(false);
 
+  const [searchMessage, setSearchMessage] = useState<string>("");
   const [lastSearchQuery, setLastSearchQuery] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const screenWidth = Dimensions.get("window").width;
   const calculatedHeight = screenWidth * (9 / 16);
@@ -93,10 +101,7 @@ export default function Fridge() {
           throw new Error("Failed to fetch fridge items");
         }
         const data = await response.json();
-        console.log(
-          "Fridge items:",
-          data.ingredients.map((item: any) => item.name)
-        );
+        console.log("Fridge items:", data.ingredients.length);
 
         const allItems = data.ingredients.map((item: any) => ({
           name: item.name,
@@ -123,7 +128,7 @@ export default function Fridge() {
     if (scrollViewRef.current) {
       scrollViewRef.current.scrollToEnd({ animated: true });
     }
-  }, [fridgeItems]);
+  }, [fridgeItems.length]);
 
   // Search recipes from selected ingredients
   const searchRecipesFromIngredientsSelected = async () => {
@@ -167,19 +172,20 @@ export default function Fridge() {
         throw new Error("Failed to autocomplete search ingredient");
       }
       const data = await response.json();
-      console.log("Autocomplete search ingredient:", data);
 
-      if (
-        !data.some(
-          (item: any) => item.name.toLowerCase() === query.toLowerCase()
-        )
-      ) {
-        data.unshift({ name: query });
-      }
+      // Add the search query to the top of the list if it doesn't already exist
+      // if (
+      //   !data.some(
+      //     (item: any) => item.name.toLowerCase() === query.toLowerCase()
+      //   )
+      // ) {
+      //   data.unshift({ name: query });
+      // }
 
       setSearch(query);
       setSearchResults(data);
       setSearchMessage("");
+
       if (data.length === 1) {
         setSearchMessage("No suggestion found");
       } else if (data.length === 0) {
@@ -196,6 +202,10 @@ export default function Fridge() {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const constructImageUrl = (imageFileName: string) => {
+    return `https://img.spoonacular.com/ingredients_100x100/${imageFileName}`;
   };
 
   // Select ingredients from search modal
@@ -525,11 +535,11 @@ export default function Fridge() {
         sortedIngredients.sort((a, b) =>
           sortOrder === "asc" ? a.checked - b.checked : b.checked - a.checked
         );
-        console.log(sortedIngredients);
         break;
       default:
         break;
     }
+    console.log(sortedIngredients);
     setFridgeItems(sortedIngredients);
   };
 
@@ -590,8 +600,110 @@ export default function Fridge() {
                   My Kitchen
                 </Text>
               </View>
-              <View className="flex-1 justify-around items-center">
-                {/* User not logged in, fridge items empty, fridge items */}
+
+              <View className="flex-1 justify-around items-center mt-1">
+                {/* Search Bar, Add, Search, Filter buttons */}
+                {user.token && !loading && (
+                  <View className="flex justify-center items-center mt-3 mb-1">
+                    <View
+                      className={
+                        fridgeItems.length === 0
+                          ? "flex flex-row justify-center items-center bottom-24"
+                          : "flex flex-row justify-center items-center"
+                      }
+                    >
+                      {/* Search Bar */}
+                      <View className="flex justify-center items-center mx-1">
+                        <View className="items-center justify-center relative w-full">
+                          <KeyboardAvoidingView
+                            behavior={
+                              Platform.OS === "ios" ? "padding" : "height"
+                            }
+                          >
+                            <TextInput
+                              placeholder="Add or search for ingredient"
+                              placeholderTextColor={"gray"}
+                              value={directInput && search}
+                              onChangeText={(text) => {
+                                setSearch(text);
+                                setDirectInput(text);
+                              }}
+                              className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-60 h-10 font-Nobile"
+                            />
+                            <TouchableOpacity
+                              onPress={() => {
+                                setSearch("");
+                                setDirectInput("");
+                              }}
+                              style={{
+                                position: "absolute",
+                                right: 10,
+                                top: "50%",
+                                transform: [{ translateY: -12.5 }],
+                              }}
+                            >
+                              <Image
+                                source={require("@/assets/images/redCross.png")}
+                                alt="clear"
+                                className="w-6 h-6"
+                              />
+                            </TouchableOpacity>
+                          </KeyboardAvoidingView>
+                        </View>
+                      </View>
+
+                      {/* Add button */}
+                      <TouchableOpacity
+                        onPress={addDirectIngredientToFridge}
+                        style={styles.shadow}
+                      >
+                        <Image
+                          source={require("@/assets/images/addIcon.png")}
+                          alt="add"
+                          className="w-9 h-9 mx-1"
+                        />
+                      </TouchableOpacity>
+
+                      {/* Search Button */}
+                      <TouchableOpacity
+                        onPress={async () => {
+                          const success = await autocompleteSearchIngredient(
+                            search
+                          );
+                          if (success) {
+                            setIsSearchModalVisible(true);
+                          }
+                        }}
+                        style={styles.shadow}
+                      >
+                        <Image
+                          source={require("@/assets/images/search2.png")}
+                          alt="search"
+                          className="w-9 h-9 mx-1"
+                        />
+                      </TouchableOpacity>
+
+                      {/* Filter button */}
+                      {fridgeItems.length > 0 && (
+                        <TouchableOpacity
+                          onPress={() =>
+                            setIsFilterModalVisible(!isFilterModalVisible)
+                          }
+                          className="mx-1"
+                          style={styles.shadow}
+                        >
+                          <Image
+                            source={require("@/assets/images/filter5.png")}
+                            alt="button"
+                            className="w-10 h-10 mx-1"
+                          />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                )}
+
+                {/* User not logged in */}
                 {!user.token ? (
                   <View className="relative">
                     <View
@@ -626,13 +738,14 @@ export default function Fridge() {
                     </View>
                   </View>
                 ) : loading ? (
+                  // Loading spinner
                   <ActivityIndicator
                     size="large"
                     color="#237CB0"
                     className="flex-1"
                   />
                 ) : user.token && fridgeItems.length === 0 ? (
-                  // User is logged in but fridge is empty
+                  // Fridge is empty
                   <View className="flex justify-center items-center mx-20">
                     <Text className="font-CreamyCookies text-3xl text-center">
                       You don't have any ingredients in your kitchen yet. Add
@@ -650,59 +763,68 @@ export default function Fridge() {
                 ) : (
                   user.token &&
                   fridgeItems.length > 0 && (
-                    // User is logged in and fridge items are displayed
+                    // Fridge items displayed
                     <>
                       {/* <View className="border-2 border-slate-400 h-[550] p-1 rounded-3xl mt-2 relative"> */}
                       <View
-                        className="h-[550] p-1 mt-5 relative flex justify-center items-center mb-6 bg-slate-200"
-                        style={styles.shadow}
+                        className=" flex justify-center items-center bg-slate-200 h-[520] p-1 mt-5 mb-6 overflow-visible"
+                        style={{
+                          width: screenWidth - 20,
+                          ...styles.shadow,
+                        }}
                       >
                         <Image
                           source={require("../../assets/images/fridge/fridgeSideRight.png")}
-                          className="absolute top-0 right-1 h-[100%] w-[12]"
+                          className="absolute top-0 right-0 h-full w-[10]"
                           style={{
                             resizeMode: "stretch",
                           }}
                         />
                         <Image
                           source={require("../../assets/images/fridge/fridgeSideLeft.png")}
-                          className="absolute top-0 left-1 h-[100%] w-[12]"
+                          className="absolute top-0 left-0 h-full w-[10]"
                           style={{
                             resizeMode: "stretch",
                           }}
                         />
                         <Image
-                          source={require("../../assets/images/fridge/fridgeTopRounded.png")}
-                          className="absolute -top-4 left-0 right-0 h-[18] w-[420]"
-                          style={{ resizeMode: "stretch" }}
+                          source={require("../../assets/images/fridge/fridgeTop.png")}
+                          className="absolute -top-4 left-0 right-0 h-[18]"
+                          style={{
+                            resizeMode: "stretch",
+                            width: screenWidth - 20,
+                          }}
                         />
                         <Image
                           source={require("../../assets/images/fridge/fridgeBottom.png")}
-                          className="absolute -bottom-6 left-0 right-0 h-[33] w-[421]"
-                          style={{ resizeMode: "stretch" }}
+                          className="absolute -bottom-6 left-0 right-0 h-[35]"
+                          style={{
+                            resizeMode: "stretch",
+                            width: screenWidth - 20,
+                          }}
                         />
 
                         <ScrollView
                           ref={scrollViewRef}
                           className="flex-1 px-4 mb-2"
                         >
-                          <View className="flex justify-center items-center mb-2">
+                          <View className="flex justify-center items-center mb-4 mt-2">
                             {fridgeItems &&
                               fridgeItems.map((item, index) => (
                                 <View key={index} className="relative p-1 m-1">
                                   <View
-                                    className="absolute bg-[#FF9B50] rounded-2xl -right-0.5 -bottom-0.5"
+                                    className="absolute bg-[#FF9B50] rounded-2xl left-2 top-2"
                                     style={{
-                                      width: screenWidth - 65,
-                                      height: 55,
+                                      width: screenWidth - 75,
+                                      height: 50,
                                       ...styles.shadow,
                                     }}
                                   ></View>
                                   <View
                                     className="flex flex-row justify-between items-center bg-white rounded-2xl p-2"
                                     style={{
-                                      width: screenWidth - 65,
-                                      height: 55,
+                                      width: screenWidth - 75,
+                                      height: 50,
                                     }}
                                   >
                                     <View className="w-5/6">
@@ -807,7 +929,8 @@ export default function Fridge() {
                         </ScrollView>
                       </View>
 
-                      <View className="flex flex-row justify-center items-center">
+                      {/* Search Recipes, Remove Ingredients, Back to Recipes Buttons */}
+                      <View className="flex-row justify-center items-center">
                         {/* Search Recipes Button */}
                         <View className="flex justify-center items-center">
                           <TouchableOpacity
@@ -826,7 +949,7 @@ export default function Fridge() {
                           </TouchableOpacity>
                         </View>
 
-                        {/* Remove Ingredients Button */}
+                        {/* Delete Ingredients Button */}
                         <View className="flex justify-center items-center">
                           <TouchableOpacity
                             onPress={removeSelectedIngredients}
@@ -844,119 +967,24 @@ export default function Fridge() {
                           </TouchableOpacity>
                         </View>
 
-                        {/* Filter button */}
-                        <TouchableOpacity
-                          onPress={() =>
-                            setIsFilterModalVisible(!isFilterModalVisible)
-                          }
-                          className="mx-1"
-                          style={styles.shadow}
-                        >
-                          <Image
-                            source={require("@/assets/images/filter5.png")}
-                            alt="button"
-                            className="w-10 h-10"
-                          />
-                        </TouchableOpacity>
-
                         {/* Back to recipes button */}
                         <TouchableOpacity
                           onPress={goBackToRecipesFromFridge}
-                          className="mx-1"
                           style={styles.shadow}
                         >
                           <Image
-                            source={require("@/assets/images/backToRecipeFridge2.png")}
+                            source={require("@/assets/images/yellowArrowRight.png")}
                             alt="button"
-                            className="w-14 h-12"
+                            className="w-12 h-12 ml-4"
                           />
                         </TouchableOpacity>
                       </View>
                     </>
                   )
                 )}
-
-                {/* Search Bar, Add button, Search Button */}
-                {user.token && !loading && (
-                  <View className="flex justify-center items-center">
-                    <View
-                      className={
-                        fridgeItems.length === 0
-                          ? "flex flex-row justify-center items-center bottom-24"
-                          : "flex flex-row justify-center items-center"
-                      }
-                    >
-                      <View className="flex justify-center items-center mx-2">
-                        <View className="items-center justify-center relative w-full">
-                          <KeyboardAvoidingView
-                            behavior={
-                              Platform.OS === "ios" ? "padding" : "height"
-                            }
-                          >
-                            <TextInput
-                              placeholder="Add or search for ingredient"
-                              placeholderTextColor={"gray"}
-                              value={directInput && search}
-                              onChangeText={(text) => {
-                                setSearch(text);
-                                setDirectInput(text);
-                              }}
-                              className="bg-[#e2e8f0] border border-gray-400 pl-4 rounded-lg w-64 h-10 font-Nobile"
-                            />
-                            <TouchableOpacity
-                              onPress={() => {
-                                setSearch("");
-                                setDirectInput("");
-                              }}
-                              style={{
-                                position: "absolute",
-                                right: 10,
-                                top: "50%",
-                                transform: [{ translateY: -12.5 }],
-                              }}
-                            >
-                              <Image
-                                source={require("@/assets/images/redCross.png")}
-                                alt="clear"
-                                className="w-6 h-6"
-                              />
-                            </TouchableOpacity>
-                          </KeyboardAvoidingView>
-                        </View>
-                      </View>
-                      <TouchableOpacity
-                        onPress={addDirectIngredientToFridge}
-                        style={styles.shadow}
-                      >
-                        <Image
-                          source={require("@/assets/images/addIcon.png")}
-                          alt="add"
-                          className="w-9 h-9 mx-2"
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={async () => {
-                          const success = await autocompleteSearchIngredient(
-                            search
-                          );
-                          if (success) {
-                            setIsSearchModalVisible(true);
-                          }
-                        }}
-                        style={styles.shadow}
-                      >
-                        <Image
-                          source={require("@/assets/images/search2.png")}
-                          alt="search"
-                          className="w-9 h-9 mx-2"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
               </View>
 
-              {/* Take a picture arrow */}
+              {/* Take a picture arrow when fridge empty */}
               {user.token && !loading && fridgeItems.length === 0 && (
                 <View className="flex m-10 justify-center items-center">
                   <Text className="font-CreamyCookies text-2xl text-center">
@@ -982,7 +1010,7 @@ export default function Fridge() {
           onDismiss={() => setIsSearchModalVisible(false)}
         >
           <View className="flex justify-center items-center">
-            <View className="bg-white p-10 rounded-lg items-center justify-center">
+            <View className="bg-white p-12 rounded-lg items-center justify-center">
               <TouchableOpacity
                 onPress={() => setIsSearchModalVisible(false)}
                 className="absolute top-4 right-4"
@@ -992,15 +1020,30 @@ export default function Fridge() {
                   className="w-6 h-6"
                 />
               </TouchableOpacity>
-              <View className="flex justify-center items-center m-4">
+              <View className="flex justify-center items-center mx-5">
                 {searchResults.map((item, index) => (
-                  <View key={index} className="w-52 p-1">
+                  <View key={index} className="w-56 p-1">
                     <BouncyCheckbox
                       size={25}
                       fillColor="#FF3649"
                       unFillColor="#e2e8f0"
-                      text={
-                        item.name.charAt(0).toUpperCase() + item.name.slice(1)
+                      // text={
+                      //   item.name.charAt(0).toUpperCase() + item.name.slice(1)
+                      // }
+                      textComponent={
+                        <View className="flex-row justify-center items-center">
+                          <Text className="text-base text-slate-600 ml-4 font-Nobile">
+                            {item.name.charAt(0).toUpperCase() +
+                              item.name.slice(1)}
+                          </Text>
+                          <Image
+                            source={{
+                              uri: constructImageUrl(item.image),
+                            }}
+                            className="w-10 h-10 ml-2"
+                            resizeMode="contain"
+                          />
+                        </View>
                       }
                       textStyle={{
                         fontFamily: "Nobile",
@@ -1026,7 +1069,7 @@ export default function Fridge() {
                     setSearch("");
                   }
                 }}
-                className="relative flex justify-center items-center"
+                className="relative flex justify-center items-center mt-2"
               >
                 <Image
                   source={require("@/assets/images/button/button5.png")}
@@ -1051,7 +1094,7 @@ export default function Fridge() {
         onDismiss={() => setIsFilterModalVisible(false)}
       >
         <View className="flex justify-center items-center">
-          <View className="bg-white rounded-2xl p-10 items-center justify-center">
+          <View className="bg-slate-100 rounded-2xl p-12 mb-12">
             <TouchableOpacity
               onPress={() => setIsFilterModalVisible(false)}
               className="absolute top-3 right-3"
@@ -1061,106 +1104,245 @@ export default function Fridge() {
                 className="w-6 h-6"
               />
             </TouchableOpacity>
-            <List.Section className="flex justify-center items-center">
-              <List.Accordion
-                style={[styles.accordion, { borderColor: "#64E6A6" }]}
-                id={1}
-                title="Name"
-                titleStyle={{
-                  fontFamily: "Nobile",
-                  color: "#475569",
-                  fontSize: 15,
-                }}
-                left={(props) => (
-                  <MaterialCommunityIcons
-                    {...props}
-                    name="sort-alphabetical-variant"
-                    size={24}
-                  />
-                )}
+            <TouchableOpacity
+              onPress={() => {
+                setOpenNameFilter(!openNameFilter);
+              }}
+              className="flex-row justify-between items-center my-2 p-2 bg-[#64E6A6] rounded-lg w-44"
+              style={styles.shadow}
+            >
+              <Image
+                source={require("../../assets/images/AtoZ.png")}
+                className="w-6 h-6 ml-1"
+              />
+              <Text className="text-base font-Nobile text-slate-800">Name</Text>
+              <Entypo name="chevron-down" size={24} color="#1e293b" />
+            </TouchableOpacity>
+            {openNameFilter && (
+              <View
+                className="flex justify-center items-center bg-white rounded-xl p-4"
+                style={styles.shadow}
               >
-                <List.Item
-                  title="⚬ A → Z"
+                <BouncyCheckbox
+                  isChecked={
+                    selectedSortOption?.criteria === "name" &&
+                    selectedSortOption?.sortOrder === "asc"
+                  }
+                  size={25}
+                  fillColor={"#58ca91"}
+                  unFillColor="#e2e8f0"
+                  innerIconStyle={{
+                    borderColor: "#64E6A6",
+                  }}
+                  text="A → Z"
+                  textStyle={{
+                    fontFamily: "Nobile",
+                    textDecorationLine: "none",
+                    margin: 4,
+                  }}
+                  iconStyle={{ borderColor: "#FF9B50" }}
                   onPress={() => {
                     filterIngredients("name", "asc");
-                    setIsFilterModalVisible(false);
+                    setSelectedSortOption({
+                      criteria: "name",
+                      sortOrder: "asc",
+                    });
+                    setTimeout(() => {
+                      setIsFilterModalVisible(false);
+                    }, 500);
                   }}
                 />
-                <List.Item
-                  title="⚬ Z → A"
+                <BouncyCheckbox
+                  isChecked={
+                    selectedSortOption?.criteria === "name" &&
+                    selectedSortOption?.sortOrder === "desc"
+                  }
+                  size={25}
+                  fillColor={"#58ca91"}
+                  unFillColor="#e2e8f0"
+                  innerIconStyle={{
+                    borderColor: "#64E6A6",
+                  }}
+                  text="Z → A"
+                  textStyle={{
+                    fontFamily: "Nobile",
+                    textDecorationLine: "none",
+                    margin: 4,
+                  }}
+                  iconStyle={{ borderColor: "#FF9B50" }}
                   onPress={() => {
                     filterIngredients("name", "desc");
-                    setIsFilterModalVisible(false);
+                    setSelectedSortOption({
+                      criteria: "name",
+                      sortOrder: "desc",
+                    });
+                    setTimeout(() => {
+                      setIsFilterModalVisible(false);
+                    }, 500);
                   }}
                 />
-              </List.Accordion>
-              <List.Accordion
-                style={[styles.accordion, { borderColor: "#fa9c55" }]}
-                id={2}
-                title="Selected"
-                titleStyle={{
-                  fontFamily: "Nobile",
-                  color: "#475569",
-                  fontSize: 15,
-                }}
-                left={(props) => (
-                  <MaterialCommunityIcons {...props} name="target" size={24} />
-                )}
+              </View>
+            )}
+            <TouchableOpacity
+              onPress={() => {
+                setOpenDateAddedFilter(!openDateAddedFilter);
+              }}
+              className="flex-row justify-between items-center my-2 p-2 bg-[#fa9c55] rounded-lg w-44"
+              style={styles.shadow}
+            >
+              <Image
+                source={require("../../assets/images/calendar2.png")}
+                className="w-6 h-6 ml-1"
+              />
+              <Text className="text-base font-Nobile text-slate-800">
+                Date Added
+              </Text>
+              <Entypo name="chevron-down" size={24} color="#1e293b" />
+            </TouchableOpacity>
+            {openDateAddedFilter && (
+              <View
+                className="flex justify-center items-center bg-white rounded-xl p-4"
+                style={styles.shadow}
               >
-                <List.Item
-                  title="⚬ ⬜️ to ☑️"
-                  onPress={() => {
-                    filterIngredients("checked", "asc");
-                    setIsFilterModalVisible(false);
+                <BouncyCheckbox
+                  isChecked={
+                    selectedSortOption?.criteria === "dateAdded" &&
+                    selectedSortOption?.sortOrder === "asc"
+                  }
+                  size={25}
+                  fillColor={"#f38028"}
+                  unFillColor="#e2e8f0"
+                  innerIconStyle={{ borderColor: "#fa9c55" }}
+                  text="Old → New"
+                  textStyle={{
+                    fontFamily: "Nobile",
+                    textDecorationLine: "none",
+                    margin: 4,
                   }}
-                />
-                <List.Item
-                  title="⚬ ☑️ to ⬜️"
-                  onPress={() => {
-                    filterIngredients("checked", "desc");
-                    setIsFilterModalVisible(false);
-                  }}
-                />
-              </List.Accordion>
-              <List.Accordion
-                style={[styles.accordion, { borderColor: "#0cbac7" }]}
-                id={3}
-                title="Date"
-                titleStyle={{
-                  fontFamily: "Nobile",
-                  color: "#475569",
-                  fontSize: 15,
-                }}
-                left={(props) => (
-                  <MaterialCommunityIcons
-                    {...props}
-                    name="calendar-month-outline"
-                    size={24}
-                  />
-                )}
-              >
-                <List.Item
-                  title="⚬ Old → New"
                   onPress={() => {
                     filterIngredients("dateAdded", "asc");
-                    setIsFilterModalVisible(false);
+                    setSelectedSortOption({
+                      criteria: "dateAdded",
+                      sortOrder: "asc",
+                    });
+                    setTimeout(() => {
+                      setIsFilterModalVisible(false);
+                    }, 500);
                   }}
                 />
-                <List.Item
-                  title="⚬ New → Old"
+                <BouncyCheckbox
+                  isChecked={
+                    selectedSortOption?.criteria === "dateAdded" &&
+                    selectedSortOption?.sortOrder === "desc"
+                  }
+                  size={25}
+                  fillColor={"#f38028"}
+                  unFillColor="#e2e8f0"
+                  innerIconStyle={{ borderColor: "#fa9c55" }}
+                  text="New → Old"
+                  textStyle={{
+                    fontFamily: "Nobile",
+                    textDecorationLine: "none",
+                    margin: 4,
+                  }}
                   onPress={() => {
                     filterIngredients("dateAdded", "desc");
-                    setIsFilterModalVisible(false);
+                    setSelectedSortOption({
+                      criteria: "dateAdded",
+                      sortOrder: "desc",
+                    });
+                    setTimeout(() => {
+                      setIsFilterModalVisible(false);
+                    }, 500);
                   }}
                 />
-              </List.Accordion>
-            </List.Section>
+              </View>
+            )}
+            <TouchableOpacity
+              onPress={() => {
+                setOpenCheckedFilter(!openCheckedFilter);
+              }}
+              className="flex-row justify-between items-center my-2 p-2 bg-[#0cbac7] rounded-lg w-44"
+              style={styles.shadow}
+            >
+              <Image
+                source={require("../../assets/images/selected.png")}
+                className="w-6 h-6 ml-1"
+              />
+              <Text className="text-base font-Nobile text-slate-800">
+                Selected
+              </Text>
+              <Entypo name="chevron-down" size={24} color="#1e293b" />
+            </TouchableOpacity>
+            {openCheckedFilter && (
+              <View
+                className="flex justify-center items-center bg-white rounded-xl p-4"
+                style={styles.shadow}
+              >
+                <BouncyCheckbox
+                  isChecked={
+                    selectedSortOption?.criteria === "checked" &&
+                    selectedSortOption?.sortOrder === "asc"
+                  }
+                  size={25}
+                  fillColor={"#0098a3"}
+                  unFillColor="#e2e8f0"
+                  innerIconStyle={{ borderColor: "#0cbac7" }}
+                  text="⬜️ → ☑️"
+                  textStyle={{
+                    fontFamily: "Nobile",
+                    textDecorationLine: "none",
+                    margin: 4,
+                  }}
+                  onPress={() => {
+                    filterIngredients("checked", "asc");
+                    setSelectedSortOption({
+                      criteria: "checked",
+                      sortOrder: "asc",
+                    });
+                    setTimeout(() => {
+                      setIsFilterModalVisible(false);
+                    }, 500);
+                  }}
+                />
+                <BouncyCheckbox
+                  isChecked={
+                    selectedSortOption?.criteria === "checked" &&
+                    selectedSortOption?.sortOrder === "desc"
+                  }
+                  size={25}
+                  fillColor={"#0098a3"}
+                  unFillColor="#e2e8f0"
+                  innerIconStyle={{ borderColor: "#0cbac7" }}
+                  text="☑️ → ⬜️"
+                  textStyle={{
+                    fontFamily: "Nobile",
+                    textDecorationLine: "none",
+                    margin: 4,
+                  }}
+                  onPress={() => {
+                    filterIngredients("checked", "desc");
+                    setSelectedSortOption({
+                      criteria: "checked",
+                      sortOrder: "desc",
+                    });
+                    setTimeout(() => {
+                      setIsFilterModalVisible(false);
+                    }, 500);
+                  }}
+                />
+              </View>
+            )}
             <TouchableOpacity
               onPress={() => {
                 setFridgeItems(ingredients);
+                setSelectedSortOption(null);
+                setOpenNameFilter(false);
+                setOpenDateAddedFilter(false);
+                setOpenCheckedFilter(false);
                 setIsFilterModalVisible(false);
               }}
-              className="relative flex justify-center items-center top-3"
+              className="flex justify-center items-center top-5 mt-4"
               style={styles.shadow}
             >
               <Text className="text-lg font-Nobile text-slate-800">
@@ -1183,16 +1365,16 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 6,
+    elevation: 5,
   },
   accordion: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    width: 192, // 48 * 4 (since React Native uses pixels)
+    width: 192,
     borderWidth: 2,
-    borderRadius: 8, // rounded-lg
-    height: 64, // 16 * 4
-    marginBottom: 8, // 2 * 4
+    borderRadius: 8,
+    height: 64,
+    marginBottom: 8,
   },
 });

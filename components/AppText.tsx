@@ -8,7 +8,15 @@ const styles = StyleSheet.create({
   },
 });
 
-const AppText = ({ children, style, ...otherProps }) => {
+const AppText = ({
+  children,
+  style,
+  ...otherProps
+}: {
+  children: React.ReactNode;
+  style: any;
+  otherProps: any;
+}) => {
   return (
     <Text style={[styles.text, style]} {...otherProps}>
       {children}

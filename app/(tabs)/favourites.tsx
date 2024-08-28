@@ -142,6 +142,7 @@ export default function Favourites() {
         ) : loading ? (
           <LottieView
             source={require("../../assets/images/animations/Animation1722874174540.json")}
+            // source={require("../../assets/images/animations/Animation1722874735851.json")}
             autoPlay
             loop
             style={{

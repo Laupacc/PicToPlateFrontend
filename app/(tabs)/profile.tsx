@@ -109,7 +109,7 @@ export default function Profile() {
       const oldIngredients = userInfo.ingredients.filter(
         (item: any) => new Date(item.dateAdded) < sevenDaysAgo
       );
-      console.log(oldIngredients);
+      console.log("Old ingredients:", oldIngredients.length);
       setOldIngredients(oldIngredients);
       setLoading(false);
     }
@@ -610,17 +610,20 @@ export default function Profile() {
 
   // Avatar images
   const avatarImages = {
-    friedChicken: require("../../assets/images/avatars/friedChicken.png"),
+    salad: require("../../assets/images/avatars/salad.png"),
     hamburger: require("../../assets/images/avatars/hamburger.png"),
-    pizza: require("../../assets/images/avatars/pizza.png"),
     ramen: require("../../assets/images/avatars/ramen.png"),
+    taco: require("../../assets/images/avatars/taco.png"),
+    friedChicken: require("../../assets/images/avatars/friedChicken.png"),
+    sushi: require("../../assets/images/avatars/sushi.png"),
+    coffee: require("../../assets/images/avatars/coffee.png"),
+    donut: require("../../assets/images/avatars/donut.png"),
+    poutine: require("../../assets/images/avatars/poutine.png"),
+    pizza: require("../../assets/images/avatars/pizza.png"),
     steak: require("../../assets/images/avatars/steak.png"),
     fruitBowl: require("../../assets/images/avatars/fruitBowl.png"),
-    sushi: require("../../assets/images/avatars/sushi.png"),
-    poutine: require("../../assets/images/avatars/poutine.png"),
-    taco: require("../../assets/images/avatars/taco.png"),
     thaiFood: require("../../assets/images/avatars/thaiFood.png"),
-    salad: require("../../assets/images/avatars/salad.png"),
+    iceCream: require("../../assets/images/avatars/iceCream.png"),
     fish: require("../../assets/images/avatars/fish.png"),
   };
 
@@ -758,7 +761,7 @@ export default function Profile() {
                           ]
                         : require("../../assets/images/avatars/poutine.png")
                     }
-                    className="w-20 h-20"
+                    className="w-20 h-20 mt-2"
                   />
                 </View>
 
@@ -804,7 +807,7 @@ export default function Profile() {
                 ) : (
                   <TouchableOpacity
                     onPress={handleLogout}
-                    className="flex flex-row justify-center items-center mt-3"
+                    className="flex flex-row justify-center items-center mt-2"
                   >
                     <Text className="text-lg font-Nobile m-1">Logout</Text>
                     <AntDesign
@@ -1171,7 +1174,7 @@ export default function Profile() {
         onDismiss={() => setIsAvatarPickerVisible(false)}
       >
         <View className="flex justify-center items-center">
-          <View className=" bg-slate-100 rounded-lg p-4 w-[85%]">
+          <View className=" bg-slate-100 rounded-lg p-4 w-[85%] bottom-6">
             <TouchableOpacity
               onPress={() => setIsAvatarPickerVisible(false)}
               className="items-end p-1"

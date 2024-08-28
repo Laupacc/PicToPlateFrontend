@@ -48,8 +48,8 @@ import {
 
 export default function Search() {
   const navigation = useNavigation<any>();
-  const dispatch = useDispatch();
   const toast = useToast();
+  const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.user.value);
   const favourites = useSelector(
     (state: RootState) => state.recipes.favourites
@@ -58,8 +58,13 @@ export default function Search() {
   const [trivia, setTrivia] = useState<string>("");
   const [showTrivia, setShowTrivia] = useState<boolean>(false);
   const [triviaLoading, setTriviaLoading] = useState<boolean>(false);
-  const [recipe, setRecipe] = useState<any[]>([]);
+
+  const [randomRecipe, setRandomRecipe] = useState<any[]>([]);
+  const [lastRecipeOpened, setLastRecipeOpened] = useState<any>(null);
+
   const [search, setSearch] = useState<string>("");
+  const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
+  const [hasMoreResults, setHasMoreResults] = useState<boolean>(false);
   const [numberOfRecipes, setNumberOfRecipes] = useState<number>(10);
   const [individualSearchMode, setIndividualSearchMode] =
     useState<boolean>(false);
@@ -67,18 +72,18 @@ export default function Search() {
   const [exhaustedIngredients, setExhaustedIngredients] = useState<Set<any>>(
     new Set()
   );
-  const [loadedRecipeIds, setLoadedRecipeIds] = useState<Set<number>>(
-    new Set<number>()
-  );
-
-  const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
-  const [hasMoreResults, setHasMoreResults] = useState<boolean>(false);
+  // const [loadedRecipeIds, setLoadedRecipeIds] = useState<Set<number>>(
+  //   new Set<number>()
+  // );
   const [recipesFromIngredients, setRecipesFromIngredients] = useState<any[]>(
     []
   );
-  const [lastRecipeOpened, setLastRecipeOpened] = useState<any>(null);
+  const [userFavourites, setUserFavourites] = useState<any[]>([]);
+  const [isFavourite, setIsFavourite] = useState<{ [key: number]: boolean }>(
+    {}
+  );
 
-  const [showFilters, setShowFilters] = useState<boolean>(false);
+  // Filter Modal States
   const [openFilterModal, setOpenFilterModal] = useState<boolean>(false);
   const [maxReadyTime, setMaxReadyTime] = useState<number | null>(null);
   const [diet, setDiet] = useState<string[]>([]);
@@ -92,6 +97,7 @@ export default function Search() {
     number | null
   >(null);
 
+  // Unit Converter States
   const [ingredientName, setIngredientName] = useState<string>("");
   const [sourceAmount, setSourceAmount] = useState<string>("");
   const [sourceUnit, setSourceUnit] = useState<string>("");
@@ -102,10 +108,6 @@ export default function Search() {
     useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const [isFavourite, setIsFavourite] = useState<{ [key: number]: boolean }>(
-    {}
-  );
-  const [userFavourites, setUserFavourites] = useState<any[]>([]);
   const [randomImage, setRandomImage] = useState<any>(null);
 
   // Set status bar style
@@ -123,7 +125,7 @@ export default function Search() {
   const handleFetchRandomRecipe = async () => {
     try {
       const recipe = await fetchRandomRecipe();
-      setRecipe(recipe);
+      setRandomRecipe(recipe);
       setLastRecipeOpened(recipe.id);
 
       // Check if recipe exists in the database
@@ -208,7 +210,7 @@ export default function Search() {
     if (maxReadyTime) URL += `&maxReadyTime=${maxReadyTime}`;
 
     try {
-      // Clear previous search results
+      // Clear previous search results if offset is 0 (new search)
       if (offset === 0) {
         setRecipesFromIngredients([]);
         exhaustedIngredientsParam.clear();
@@ -219,7 +221,7 @@ export default function Search() {
       let results: any[] = [];
       let totalResults = 0;
 
-      // Fetch recipes for combined ingredients
+      // Fetch recipes for initial search
       if (!isIndividualSearchMode) {
         const response = await fetch(URL);
         console.log(URL);
@@ -234,18 +236,16 @@ export default function Search() {
         results = recipe.results;
         totalResults = recipe.totalResults;
 
-        // Filter out already loaded recipes
-        results = Array.from(
-          new Map(results.map((recipe) => [recipe.id, recipe])).values()
-        );
+        // Filter out already loaded recipes so no duplicates are shown
         results = results.filter((recipe) => !loadedRecipeIds.has(recipe.id));
+        // Add the new recipes to the loaded recipes
         results.forEach((recipe) => loadedRecipeIds.add(recipe.id));
 
-        // Switch to individual search mode
+        // If no results found, switch to individual search mode
         if (results.length === 0) {
           isIndividualSearchMode = true;
           console.log(
-            "No results found for initial search. Trying individual ingredients search"
+            "No results found. Searching for each ingredient individually"
           );
           setIndividualSearchMode(true);
           usedIngredientsParam = ingredients.split(",");
@@ -253,7 +253,7 @@ export default function Search() {
         }
       }
 
-      // If no results found in combined search, try individual searches
+      // Search for each ingredient individually
       if (isIndividualSearchMode) {
         for (const ingredient of usedIngredientsParam) {
           // Skip API call if no more results for this ingredient
@@ -270,7 +270,7 @@ export default function Search() {
           if (maxReadyTime) individualURL += `&maxReadyTime=${maxReadyTime}`;
 
           const data = await fetch(individualURL);
-          console.log(individualURL);
+          console.log(`URL for ${ingredient}: ${individualURL}`);
 
           if (!data.ok) {
             throw new Error("Error fetching individual ingredient recipes");
@@ -281,28 +281,40 @@ export default function Search() {
             `Search results for ${ingredient}: ${individualResults.totalResults}`
           );
 
-          // Filter out already loaded recipes
-          results = Array.from(
-            new Map(results.map((recipe) => [recipe.id, recipe])).values()
-          );
+          // Filter out already loaded recipes so no duplicates are shown
           const filteredResults = individualResults.results.filter(
             (recipe: { id: number }) => !loadedRecipeIds.has(recipe.id)
           );
-          setLoadedRecipeIds((prevIds) => {
-            const newIds = new Set(prevIds);
-            filteredResults.forEach((recipe: { id: number }) =>
-              newIds.add(recipe.id)
-            );
-            return newIds;
-          });
+          // Add the new recipes to the loaded recipes
+          filteredResults.forEach((recipe: { id: number }) =>
+            loadedRecipeIds.add(recipe.id)
+          );
+          // Add the new recipes to the loaded recipes
+          // setLoadedRecipeIds(
+          //   (prevIds) =>
+          //     new Set([
+          //       ...prevIds,
+          //       ...filteredResults.map((recipe: { id: number }) => recipe.id),
+          //     ])
+          // );
 
-          // If no results found for this ingredient, mark it as exhausted
+          // If no results found for this ingredient, add it to exhausted list
           if (filteredResults.length === 0) {
-            setExhaustedIngredients((prev) => {
-              const newExhausted = new Set(prev);
-              newExhausted.add(ingredient);
-              return newExhausted;
-            });
+            exhaustedIngredientsParam.add(ingredient);
+            setExhaustedIngredients(new Set(exhaustedIngredientsParam));
+            toast.show(
+              `No more results for ${ingredient}, results for other ingredients will be shown`,
+              {
+                type: "info",
+                placement: "center",
+                duration: 2000,
+                animationType: "zoom-in",
+                swipeEnabled: true,
+                icon: (
+                  <Ionicons name="information-circle" size={24} color="white" />
+                ),
+              }
+            );
           } else {
             results = results.concat(filteredResults);
             totalResults += individualResults.totalResults;
@@ -311,29 +323,22 @@ export default function Search() {
       }
 
       // If offset is 0, replace the recipes, otherwise append to the existing ones
-      if (offset === 0) {
-        setRecipesFromIngredients(results);
-      } else {
-        setRecipesFromIngredients((prevRecipes) => [
-          ...prevRecipes,
-          ...results,
-        ]);
-      }
+      setRecipesFromIngredients(
+        offset === 0 ? results : recipesFromIngredients.concat(results)
+      );
 
       // Check if there are more results to load
-      if (totalResults && totalResults > number + offset) {
-        setHasMoreResults(true);
-      } else {
-        setHasMoreResults(false);
-      }
+      setHasMoreResults(totalResults > number + offset);
 
       // Check if the recipes are in the user's favourites
-      if (userFavourites.length > 0 && results.length > 0) {
-        const recipeIds = userFavourites.map((fav) => fav.id);
+      if (userFavourites.length && results.length) {
+        const favouriteIdsSet = new Set(
+          userFavourites.map((fav) => String(fav.id))
+        );
+
         results = results.map((recipe) => {
-          const recipeIdString = String(recipe.id);
-          if (recipeIds.includes(recipeIdString)) {
-            setIsFavourite((prev: any) => ({ ...prev, [recipe.id]: true }));
+          if (favouriteIdsSet.has(String(recipe.id))) {
+            setIsFavourite((prev) => ({ ...prev, [recipe.id]: true }));
           }
           return recipe;
         });
@@ -351,7 +356,7 @@ export default function Search() {
       toast.show("Error fetching recipes", {
         type: "warning",
         placement: "center",
-        duration: 1000,
+        duration: 2000,
         animationType: "zoom-in",
         swipeEnabled: true,
         icon: <Ionicons name="warning" size={24} color="white" />,
@@ -367,11 +372,10 @@ export default function Search() {
       intolerances,
       maxReadyTime,
       10,
-      numberOfRecipes, // current number of loaded recipes as offset
+      numberOfRecipes,
       individualSearchMode,
       usedIngredients,
-      exhaustedIngredients,
-      loadedRecipeIds
+      exhaustedIngredients
     );
   };
 
@@ -474,8 +478,7 @@ export default function Search() {
       0,
       individualSearchMode,
       usedIngredients,
-      exhaustedIngredients,
-      loadedRecipeIds
+      exhaustedIngredients
     );
   };
 
@@ -571,91 +574,77 @@ export default function Search() {
 
             {/* Top Four Buttons */}
             <View className="flex-row justify-center items-center mb-3">
-              <View className="flex-row justify-center items-center mx-1 flex-grow">
-                {/* Open Trivia Button */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowTrivia(!showTrivia);
-                    fetchTrivia();
-                  }}
-                  className="flex justify-center items-center m-2 p-3 rounded-lg bg-[#1c79b2]"
-                  style={styles.shadow}
-                >
-                  <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-white text-center font-Nobile">
-                      Trivia
-                    </Text>
-                    <Image
-                      source={require("../../assets/images/trivia.png")}
-                      className="w-4 h-4 ml-1"
-                    />
-                  </View>
-                </TouchableOpacity>
-
-                {/* Unit Converter Button */}
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowConversion(!showConversion);
-                    setShowFilters(false);
-                    setShowDiet(false);
-                    setShowIntolerances(false);
-                    setShowMaxReadyTime(false);
-                  }}
-                  className="flex justify-center items-center m-1 p-3 rounded-lg bg-[#1c79b2]"
-                  style={styles.shadow}
-                >
-                  <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-white text-center font-Nobile">
-                      Unit Converter
-                    </Text>
-                    <Image
-                      source={require("../../assets/images/unitConverter.png")}
-                      className="w-4 h-4 ml-1"
-                    />
-                  </View>
-                </TouchableOpacity>
-
-                {/* Filter Button */}
-                <View className="flex flex-row justify-center items-center">
-                  <TouchableOpacity
-                    onPress={() => setOpenFilterModal(!openFilterModal)}
-                    className="flex justify-center items-center relative mx-2"
-                    style={styles.shadow}
-                  >
-                    <Image
-                      source={require("@/assets/images/filter5.png")}
-                      alt="button"
-                      className="w-10 h-10"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
               {/* Radom Recipe Button */}
-              <View
-                className="flex justify-between items-center"
+              <TouchableOpacity
+                onPress={handleFetchRandomRecipe}
+                className="m-2"
                 style={styles.shadow}
               >
-                <View className="flex justify-center items-center">
-                  <TouchableOpacity
-                    onPress={handleFetchRandomRecipe}
-                    className="flex flex-row justify-center items-center"
-                  >
-                    <BouncingImage>
-                      <View className="relative w-16 h-16 flex justify-center items-center">
-                        <Image
-                          source={require("../../assets/images/randomButton.png")}
-                          className="absolute inset-0 w-full h-full"
-                        />
-                        <Image
-                          source={require("../../assets/images/dice5.png")}
-                          className="w-6 h-6 bottom-2"
-                        />
-                      </View>
-                    </BouncingImage>
-                  </TouchableOpacity>
+                <BouncingImage>
+                  <View className="relative w-16 h-16 flex justify-center items-center">
+                    <Image
+                      source={require("../../assets/images/randomButton.png")}
+                      className="absolute inset-0 w-full h-full"
+                    />
+                    <Image
+                      source={require("../../assets/images/dice5.png")}
+                      className="w-6 h-6 bottom-2"
+                    />
+                  </View>
+                </BouncingImage>
+              </TouchableOpacity>
+
+              {/* Trivia Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowTrivia(!showTrivia);
+                  fetchTrivia();
+                }}
+                className="flex justify-center items-center mx-2 p-3 rounded-lg bg-[#1c79b2]"
+                style={styles.shadow}
+              >
+                <View className="flex flex-row justify-center items-center">
+                  <Text className="text-md text-white text-center font-Nobile">
+                    Trivia
+                  </Text>
+                  <Image
+                    source={require("../../assets/images/trivia.png")}
+                    className="w-4 h-4 ml-1"
+                  />
                 </View>
-              </View>
+              </TouchableOpacity>
+
+              {/* Unit Converter Button */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowConversion(!showConversion);
+                }}
+                className="flex justify-center items-center mx-2 p-3 rounded-lg bg-[#1c79b2]"
+                style={styles.shadow}
+              >
+                <View className="flex flex-row justify-center items-center">
+                  <Text className="text-md text-white text-center font-Nobile">
+                    Unit Converter
+                  </Text>
+                  <Image
+                    source={require("../../assets/images/unitConverter.png")}
+                    className="w-4 h-4 ml-1"
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {/* Back to Last Recipe button */}
+              <TouchableOpacity
+                onPress={handleGoToLastRecipeOpened}
+                style={styles.shadow}
+                className="m-2"
+              >
+                <Image
+                  source={require("@/assets/images/yellowArrowRight.png")}
+                  alt="button"
+                  className="w-12 h-10"
+                />
+              </TouchableOpacity>
             </View>
 
             {/* Show Unit Converter */}
@@ -783,10 +772,10 @@ export default function Search() {
               </View>
             )}
 
-            {/* Search bar, Search Button, Back to Last Recipe Button */}
+            {/* Search Bar, Search Button, Filter Button */}
             <View className="flex flex-row justify-center items-center mb-1">
-              {/* Search bar */}
-              <View className="flex justify-center items-center mx-3">
+              {/* Search Bar */}
+              <View className="flex justify-center items-center mx-1">
                 <View className="relative items-center w-full justify-center">
                   <TextInput
                     placeholder="Search by ingredient"
@@ -841,18 +830,20 @@ export default function Search() {
                 </TouchableOpacity>
               </View>
 
-              {/* Back to Last Recipe button */}
-              <TouchableOpacity
-                onPress={handleGoToLastRecipeOpened}
-                className="mx-1"
-                style={styles.shadow}
-              >
-                <Image
-                  source={require("@/assets/images/backToRecipeFridge2.png")}
-                  alt="button"
-                  className="w-14 h-12"
-                />
-              </TouchableOpacity>
+              {/* Filter Button */}
+              <View className="flex flex-row justify-center items-center">
+                <TouchableOpacity
+                  onPress={() => setOpenFilterModal(!openFilterModal)}
+                  className="flex justify-center items-center relative"
+                  style={styles.shadow}
+                >
+                  <Image
+                    source={require("@/assets/images/filter5.png")}
+                    alt="button"
+                    className="w-10 h-10 mx-1"
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Recipe Results */}
@@ -861,7 +852,7 @@ export default function Search() {
                 recipesFromIngredients.length > 0 &&
                 recipesFromIngredients.map((recipe) => (
                   <View
-                    className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
+                    className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460] mb-2"
                     key={recipe.id}
                   >
                     <Image
@@ -916,7 +907,7 @@ export default function Search() {
 
               {/* Load more recipes button */}
               {hasMoreResults && (
-                <View className="flex justify-center items-center mb-4">
+                <View className="flex justify-center items-center mb-8">
                   <TouchableOpacity
                     onPress={loadMoreRecipes}
                     className="relative flex justify-center items-center"
@@ -1063,7 +1054,11 @@ export default function Search() {
                 className="flex-row justify-between items-center my-2 p-2 bg-[#64E6A6] rounded-lg w-44"
                 style={styles.shadow}
               >
-                <Text className="text-center font-Nobile ml-4 text-slate-800">
+                <Image
+                  source={require("../../assets/images/diets.png")}
+                  className="w-6 h-6"
+                />
+                <Text className="text-base font-Nobile text-slate-800">
                   Diet
                 </Text>
                 <Entypo name="chevron-down" size={24} color="#1e293b" />
@@ -1120,7 +1115,11 @@ export default function Search() {
                 className="flex-row justify-between items-center my-2 bg-[#fa9c55] rounded-lg p-2 w-44"
                 style={styles.shadow}
               >
-                <Text className="text-center font-Nobile ml-4 text-slate-800">
+                <Image
+                  source={require("../../assets/images/intolerances.png")}
+                  className="w-6 h-6"
+                />
+                <Text className="text-base font-Nobile text-slate-800">
                   Intolerances
                 </Text>
                 <Entypo name="chevron-down" size={24} color="#1e293b" />
@@ -1177,7 +1176,11 @@ export default function Search() {
                 className="flex-row justify-between items-center my-2 bg-[#0cbac7] rounded-lg p-2 w-44"
                 style={styles.shadow}
               >
-                <Text className="text-center font-Nobile ml-4 text-slate-800">
+                <Image
+                  source={require("../../assets/images/timer3.png")}
+                  className="w-6 h-6"
+                />
+                <Text className="text-base font-Nobile text-slate-800">
                   Max Time
                 </Text>
                 <Entypo name="chevron-down" size={24} color="#1e293b" />
@@ -1237,7 +1240,7 @@ export default function Search() {
                 style={styles.shadow}
               >
                 <Text className="text-base font-Nobile text-slate-800">
-                  Reset Options
+                  Clear Options
                 </Text>
               </TouchableOpacity>
             </View>

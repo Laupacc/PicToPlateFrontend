@@ -292,7 +292,6 @@ export default function Camera() {
   // Random Lottie loading animation
   const randomLoadingAnimation = () => {
     const animations = [
-      // require("../../assets/images/animations/Animation1723027836457.json"),
       require("../../assets/images/animations/Animation1722874735851.json"),
       require("../../assets/images/animations/Animation1720193319067.json"),
       require("../../assets/images/animations/Animation1720193239255.json"),

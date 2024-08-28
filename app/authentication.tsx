@@ -51,6 +51,17 @@ export default function Authentication() {
   const [email, setEmail] = useState<string>("");
   const [rememberMe, setRememberMe] = useState<boolean>(false);
 
+  // Set status bar style
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setBarStyle("dark-content");
+      if (Platform.OS === "android") {
+        StatusBar.setBackgroundColor("transparent");
+        StatusBar.setTranslucent(true);
+      }
+    }, [])
+  );
+
   // Check if email is in a valid format
   const validateEmail = (email: string) => {
     const regex = /\S+@\S+\.\S+/;
@@ -286,15 +297,6 @@ export default function Authentication() {
     setForgotPasswordModal(!forgotPasswordModal);
   };
 
-  // async function getValueFor(key) {
-  //   const result = await SecureStore.getItemAsync(key);
-  //   if (result) {
-  //     alert("🔐 Here's your value 🔐 \n" + result);
-  //   } else {
-  //     alert("No values stored under that key.");
-  //   }
-  // }
-
   // Hide the logo when keyboard is visible
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -315,16 +317,6 @@ export default function Authentication() {
       keyboardDidHideListener.remove();
     };
   }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      StatusBar.setBarStyle("dark-content");
-      if (Platform.OS === "android") {
-        StatusBar.setBackgroundColor("transparent");
-        StatusBar.setTranslucent(true);
-      }
-    }, [])
-  );
 
   return (
     <View className="flex-1 justify-center items-center">
