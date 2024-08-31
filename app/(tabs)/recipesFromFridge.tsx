@@ -8,7 +8,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { Modal } from "react-native-paper";
+import { Modal, Badge } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -134,7 +134,8 @@ export default function recipesFromFridge() {
     if (!searchQuery) {
       return;
     }
-    handleResetFilters();
+
+    // handleResetFilters();
 
     if (offset === 0) {
       setLoading(true);
@@ -148,7 +149,7 @@ export default function recipesFromFridge() {
       .split(" ")
       .join(",");
 
-    let URL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredients}&number=${numberOfRecipes}&offset=${offset}`;
+    let URL = `${BACKEND_URL}/recipes/complexSearchByIngredientsOrCuisine?ingredients=${ingredients}&number=${numberOfRecipes}&offset=${offset}`;
     if (diet.length > 0) URL += `&diet=${diet.join(",")}`;
     if (intolerances.length > 0)
       URL += `&intolerances=${intolerances.join(",")}`;
@@ -209,7 +210,7 @@ export default function recipesFromFridge() {
           }
 
           // Fetch recipes for each ingredients
-          let individualURL = `${BACKEND_URL}/recipes/complexSearchByIngredients?ingredients=${ingredient}&number=${numberOfRecipes}&offset=${offset}`;
+          let individualURL = `${BACKEND_URL}/recipes/complexSearchByIngredientsOrCuisine?ingredients=${ingredient}&number=${numberOfRecipes}&offset=${offset}`;
           if (diet.length > 0) individualURL += `&diet=${diet.join(",")}`;
           if (intolerances.length > 0)
             individualURL += `&intolerances=${intolerances.join(",")}`;
@@ -240,19 +241,6 @@ export default function recipesFromFridge() {
           if (filteredResults.length === 0) {
             exhaustedIngredientsParam.add(ingredient);
             setExhaustedIngredients(new Set(exhaustedIngredientsParam));
-            toast.show(
-              `No more results for ${ingredient}, results for other ingredients will be shown`,
-              {
-                type: "info",
-                placement: "center",
-                duration: 2000,
-                animationType: "zoom-in",
-                swipeEnabled: true,
-                icon: (
-                  <Ionicons name="information-circle" size={24} color="white" />
-                ),
-              }
-            );
           } else {
             results = results.concat(filteredResults);
             totalResults += individualResults.totalResults;
@@ -334,7 +322,7 @@ export default function recipesFromFridge() {
 
   // Toggle Diet Checkbox (multiple can be selected)
   const toggleDiet = (item: string) => {
-    if (diet.includes(item)) {
+    if (selectedDiet.includes(item)) {
       setSelectedDiet(selectedDiet.filter((x) => x !== item));
     } else {
       setSelectedDiet([...selectedDiet, item]);
@@ -343,7 +331,7 @@ export default function recipesFromFridge() {
 
   // Toggle Intolerances Checkbox (multiple can be selected)
   const toggleIntolerances = (item: string) => {
-    if (intolerances.includes(item)) {
+    if (selectedIntolerance.includes(item)) {
       setSelectedIntolerance(selectedIntolerance.filter((x) => x !== item));
     } else {
       setSelectedIntolerance([...selectedIntolerance, item]);
@@ -352,7 +340,7 @@ export default function recipesFromFridge() {
 
   // Toggle Max Ready Time Checkbox (only one can be selected)
   const toggleMaxReadyTime = (time: number) => {
-    if (maxReadyTime === time) {
+    if (selectedMaxReadyTime === time) {
       setSelectedMaxReadyTime(null);
     } else {
       setSelectedMaxReadyTime(time);
@@ -364,7 +352,6 @@ export default function recipesFromFridge() {
     setDiet(selectedDiet);
     setIntolerances(selectedIntolerance);
     setMaxReadyTime(selectedMaxReadyTime);
-    setOpenFilterModal(false);
     triggerSearchWithFilters();
   };
 
@@ -373,6 +360,14 @@ export default function recipesFromFridge() {
     setSelectedDiet([]);
     setSelectedIntolerance([]);
     setSelectedMaxReadyTime(null);
+  };
+
+  // Close Filter Modal and options
+  const handleCloseFilterModal = () => {
+    setOpenFilterModal(false);
+    setShowDiet(false);
+    setShowIntolerances(false);
+    setShowMaxReadyTime(false);
   };
 
   // Add recipe to favourites list
@@ -419,8 +414,9 @@ export default function recipesFromFridge() {
       />
       <Background cellSize={25} />
 
-      {/* Arrow to go back to fridge and title */}
+      {/* Arrow, Title, Filter */}
       <View className="flex-row justify-between items-center">
+        {/* Go Back Arrow */}
         <TouchableOpacity
           onPress={() => navigation.navigate("fridge")}
           className=" flex-1 items-start ml-8"
@@ -430,6 +426,8 @@ export default function recipesFromFridge() {
             className="w-12 h-10"
           />
         </TouchableOpacity>
+
+        {/* Title */}
         <View
           className="flex justify-center items-center relative m-2 w-[220] h-[60]"
           style={styles.shadow}
@@ -442,6 +440,8 @@ export default function recipesFromFridge() {
             Recipes
           </Text>
         </View>
+
+        {/* Filter Button */}
         <TouchableOpacity
           onPress={() => setOpenFilterModal(!openFilterModal)}
           className="flex-1 items-end mr-8"
@@ -451,6 +451,22 @@ export default function recipesFromFridge() {
             alt="button"
             className="w-10 h-10"
           />
+          <Badge
+            visible={
+              selectedDiet.length > 0 ||
+              selectedIntolerance.length > 0 ||
+              selectedMaxReadyTime !== null
+            }
+            size={20}
+            style={{
+              backgroundColor: "#ef4444",
+              position: "absolute",
+              top: -6,
+              right: -6,
+            }}
+          >
+            +
+          </Badge>
         </TouchableOpacity>
       </View>
 
@@ -466,9 +482,10 @@ export default function recipesFromFridge() {
                 className="absolute inset-0 w-full h-full"
                 style={styles.shadow}
               />
-              <View className="flex items-center justify-center max-w-[180]">
+              <View className="flex items-center justify-center max-w-[190]">
                 <Text className="font-CreamyCookies text-center text-3xl">
-                  No recipes found with these ingredients
+                  No recipes were found with this combination of ingredients of
+                  filters
                 </Text>
               </View>
             </View>
@@ -558,10 +575,7 @@ export default function recipesFromFridge() {
       <Modal
         visible={openFilterModal}
         onDismiss={() => {
-          setShowDiet(false);
-          setShowIntolerances(false);
-          setShowMaxReadyTime(false);
-          setOpenFilterModal(false);
+          handleCloseFilterModal();
         }}
       >
         {/* Filters */}
@@ -569,10 +583,7 @@ export default function recipesFromFridge() {
           <View className="bg-slate-100 rounded-2xl p-12 mb-12">
             <TouchableOpacity
               onPress={() => {
-                setShowDiet(false);
-                setShowIntolerances(false);
-                setShowMaxReadyTime(false);
-                setOpenFilterModal(false);
+                handleCloseFilterModal();
               }}
               className="absolute top-2 right-2 p-1"
             >
@@ -593,6 +604,18 @@ export default function recipesFromFridge() {
                 className="flex-row justify-between items-center my-2 p-2 bg-[#64E6A6] rounded-lg w-44"
                 style={styles.shadow}
               >
+                <Badge
+                  visible={selectedDiet.length > 0}
+                  size={20}
+                  style={{
+                    backgroundColor: "#33a069",
+                    position: "absolute",
+                    top: -6,
+                    right: -6,
+                  }}
+                >
+                  {selectedDiet.length}
+                </Badge>
                 <Image
                   source={require("../../assets/images/diets.png")}
                   className="w-6 h-6"
@@ -654,6 +677,18 @@ export default function recipesFromFridge() {
                 className="flex-row justify-between items-center my-2 bg-[#fa9c55] rounded-lg p-2 w-44"
                 style={styles.shadow}
               >
+                <Badge
+                  visible={selectedIntolerance.length > 0}
+                  size={20}
+                  style={{
+                    backgroundColor: "#e76b0d",
+                    position: "absolute",
+                    top: -6,
+                    right: -6,
+                  }}
+                >
+                  {selectedIntolerance.length}
+                </Badge>
                 <Image
                   source={require("../../assets/images/intolerances.png")}
                   className="w-6 h-6"
@@ -715,6 +750,18 @@ export default function recipesFromFridge() {
                 className="flex-row justify-between items-center my-2 bg-[#0cbac7] rounded-lg p-2 w-44"
                 style={styles.shadow}
               >
+                <Badge
+                  visible={selectedMaxReadyTime !== null}
+                  size={20}
+                  style={{
+                    backgroundColor: "#00737c",
+                    position: "absolute",
+                    top: -6,
+                    right: -6,
+                  }}
+                >
+                  1
+                </Badge>
                 <Image
                   source={require("../../assets/images/timer3.png")}
                   className="w-6 h-6"
@@ -767,11 +814,16 @@ export default function recipesFromFridge() {
               )}
 
               <TouchableOpacity
-                onPress={handleOkPress}
+                onPress={() => {
+                  handleOkPress();
+                  handleCloseFilterModal();
+                }}
                 className="flex justify-center items-center my-4"
                 style={styles.shadow}
               >
-                <Text className="text-2xl font-Nobile text-slate-800">OK</Text>
+                <Text className="text-2xl font-Nobile text-slate-800">
+                  Submit
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleResetFilters}

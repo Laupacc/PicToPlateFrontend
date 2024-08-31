@@ -11,6 +11,7 @@ import {
   StatusBar,
 } from "react-native";
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { ScrollView } from "react-native-gesture-handler";
 import { DataTable, Modal } from "react-native-paper";
@@ -89,7 +90,7 @@ export default function RecipeCard() {
     }, [])
   );
 
-  // Fetch favourite recipes list from user
+  // Fetch favourite recipes list from user and add recipe to recently viewed
   useEffect(() => {
     const fetchFavourites = async () => {
       if (user.token) {
@@ -112,6 +113,9 @@ export default function RecipeCard() {
           console.error("Error fetching user favourites:", error.message);
           setFavouritesFetched(true);
         }
+      }
+      if (recipe) {
+        addToRecentlyViewed(recipe);
       }
     };
     fetchFavourites();
@@ -203,6 +207,47 @@ export default function RecipeCard() {
       console.log("No recipe provided for favourite check.");
     }
   }, [favouritesFetched, userFavourites]);
+
+  // Function to add a recipe to the recently viewed list
+  const addToRecentlyViewed = async (recipe: { id: any }) => {
+    try {
+      const recentlyViewed = await AsyncStorage.getItem(
+        "recentlyViewedRecipes"
+      );
+      let updatedViewedRecipes = recentlyViewed
+        ? JSON.parse(recentlyViewed)
+        : [];
+
+      // Check if the recipe is already in the list, remove it to avoid duplication
+      updatedViewedRecipes = updatedViewedRecipes.filter(
+        (item: { id: any }) => item.id !== recipe.id
+      );
+
+      // Add the new recipe to the beginning of the list
+      updatedViewedRecipes.unshift(recipe);
+
+      // Limit the list to the last 10 viewed recipes
+      if (updatedViewedRecipes.length > 10) {
+        updatedViewedRecipes.pop();
+      }
+
+      // Save the updated list back to local storage
+      await AsyncStorage.setItem(
+        "recentlyViewedRecipes",
+        JSON.stringify(updatedViewedRecipes)
+      );
+      console.log("Recently viewed recipes updated");
+    } catch (error: any) {
+      console.error("Error updating recently viewed recipes:", error.message);
+    }
+  };
+
+  // Call this function whenever a recipe is viewed
+  // useEffect(() => {
+  //   if (recipe) {
+  //     addToRecentlyViewed(recipe);
+  //   }
+  // }, [recipe]);
 
   const handleFetchRandomRecipe = async () => {
     try {
@@ -569,7 +614,7 @@ export default function RecipeCard() {
               </View>
 
               {/* Four Option Buttons */}
-              <View className="flex flex-row justify-center items-center">
+              <View className="flex flex-row justify-center items-center mb-1">
                 {/* Macros Button */}
                 <TouchableOpacity
                   onPress={() => setShowMacros(!showMacros)}
@@ -641,44 +686,44 @@ export default function RecipeCard() {
               {/* Macros */}
               {showMacros && (
                 <View className="flex flex-row justify-center items-start my-2">
-                  <View className="relative mx-1" style={styles.shadow}>
+                  <View className="relative mx-3" style={styles.shadow}>
                     <Image
-                      source={require("../../assets/images/stickers/redTape2.png")}
-                      className="w-32 h-14"
+                      source={require("../../assets/images/stickers/postitRed.png")}
+                      className="w-24 h-24"
                     />
-                    <View className="absolute top-1 left-10">
-                      <Text className="font-bold text-base text-center text-slate-900">
+                    <View className="absolute top-8 left-0 right-0">
+                      <Text className="font-Maax text-lg text-center text-slate-800">
                         {recipe.nutrition.caloricBreakdown.percentProtein}%
                       </Text>
-                      <Text className="font-bold text-md text-center text-slate-900">
+                      <Text className="font-Maax text-base text-center text-slate-800">
                         Protein
                       </Text>
                     </View>
                   </View>
-                  <View className="relative mx-1" style={styles.shadow}>
+                  <View className="relative mx-3" style={styles.shadow}>
                     <Image
-                      source={require("../../assets/images/stickers/greenTape.png")}
-                      className="w-28 h-16"
+                      source={require("../../assets/images/stickers/postitGreen.png")}
+                      className="w-24 h-24"
                     />
-                    <View className="absolute left-7 top-2">
-                      <Text className="font-bold text-base text-center text-slate-900">
+                    <View className="absolute top-8 left-0 right-0">
+                      <Text className="font-Maax text-lg text-center text-slate-800">
                         {recipe.nutrition.caloricBreakdown.percentFat}%
                       </Text>
-                      <Text className="font-bold text-md text-center text-slate-900">
+                      <Text className="font-Maax text-base text-center text-slate-800">
                         Fat
                       </Text>
                     </View>
                   </View>
-                  <View className="relative mx-1" style={styles.shadow}>
+                  <View className="relative mx-3" style={styles.shadow}>
                     <Image
-                      source={require("../../assets/images/stickers/yellowTape4.png")}
-                      className="w-32 h-14"
+                      source={require("../../assets/images/stickers/postitYellow.png")}
+                      className="w-24 h-24"
                     />
-                    <View className="absolute top-2 left-10">
-                      <Text className="font-bold text-base text-center text-slate-900">
+                    <View className="absolute top-8 left-0 right-0">
+                      <Text className="font-Maax text-lg text-center text-slate-800">
                         {recipe.nutrition.caloricBreakdown.percentCarbs}%
                       </Text>
-                      <Text className="font-bold text-md text-center text-slate-900">
+                      <Text className="font-Maax text-base text-center text-slate-800">
                         Carbs
                       </Text>
                     </View>

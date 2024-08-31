@@ -8,7 +8,14 @@ export default function Background({ cellSize }: { cellSize: number }) {
   const numberOfHorizontalLines = Math.ceil(height / cellSize);
 
   return (
-    <View style={{ position: "absolute", width, height }}>
+    <View
+      style={{
+        position: "absolute",
+        width,
+        height,
+        // backgroundColor: "#eae8e8",
+      }}
+    >
       <Svg height={height} width={width}>
         {Array.from({ length: numberOfVerticalLines }).map((_, index) => (
           <Line

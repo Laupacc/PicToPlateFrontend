@@ -29,6 +29,7 @@ export default function RootLayout() {
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Nobile: require("../assets/fonts/Nobile-Regular.ttf"),
     NobileBold: require("../assets/fonts/Nobile-Bold.ttf"),
+    NobileMedium: require("../assets/fonts/Nobile-Medium.ttf"),
     Maax: require("../assets/fonts/Maax.ttf"),
     Steradian: require("../assets/fonts/Steradian-Rg.ttf"),
     ConceptDraft: require("../assets/fonts/ConceptDraft.otf"),

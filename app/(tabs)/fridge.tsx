@@ -13,20 +13,21 @@ import {
   Keyboard,
   StatusBar,
 } from "react-native";
+import { Modal, Badge } from "react-native-paper";
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useRoute } from "@react-navigation/native";
 import { TextInput, ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "react-native-toast-notifications";
-import { Modal } from "react-native-paper";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import RNBounceable from "@freakycoder/react-native-bounceable";
 import { Feather, Ionicons, Entypo } from "@expo/vector-icons";
 import moment from "moment";
 import Background from "@/components/Background";
 import BouncingImage from "@/components/Bounce";
+import SpeechToText from "@/components/SpeechToText";
 import { BACKEND_URL } from "@/_recipeUtils";
 import { RootState } from "@/store/store";
 import {
@@ -39,6 +40,10 @@ export default function Fridge() {
   const navigation = useNavigation<any>();
   const dispatch = useDispatch();
   const toast = useToast();
+  const route = useRoute();
+  const transcription = route.params
+    ? (route.params as { transcription: string }).transcription
+    : "";
   const user = useSelector((state: RootState) => state.user.value);
   const ingredients = useSelector(
     (state: RootState) => state.fridge.ingredients
@@ -416,6 +421,18 @@ export default function Fridge() {
     }
   };
 
+  // Add ingredients from speech-to-text transcription
+  useEffect(() => {
+    if (transcription.length > 0) {
+      const ingredients = transcription.split(",").map((item) => ({
+        name: item.trim(),
+        dateAdded: new Date().toISOString(),
+      }));
+      setSelectedFromSearch(ingredients);
+      setIsSearchModalVisible(true);
+    }
+  }, [transcription]);
+
   // Select several ingredients to remove
   const toggleIngredientSelectedToRemove = (ingredient: any) => {
     if (selectedToRemove.includes(ingredient)) {
@@ -539,8 +556,15 @@ export default function Fridge() {
       default:
         break;
     }
-    console.log(sortedIngredients);
     setFridgeItems(sortedIngredients);
+  };
+
+  // Close all sort and filter options
+  const closeSortFilterOptions = () => {
+    setOpenNameFilter(false);
+    setOpenDateAddedFilter(false);
+    setOpenCheckedFilter(false);
+    setIsFilterModalVisible(false);
   };
 
   // Go back to recipesFromFridge screen if there has already been a search query
@@ -576,7 +600,6 @@ export default function Fridge() {
         backgroundColor="transparent"
         translucent={true}
       />
-
       <Background cellSize={25} />
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -612,6 +635,8 @@ export default function Fridge() {
                           : "flex flex-row justify-center items-center"
                       }
                     >
+                      <SpeechToText targetScreen="fridge" />
+
                       {/* Search Bar */}
                       <View className="flex justify-center items-center mx-1">
                         <View className="items-center justify-center relative w-full">
@@ -697,6 +722,18 @@ export default function Fridge() {
                             alt="button"
                             className="w-10 h-10 mx-1"
                           />
+                          <Badge
+                            visible={selectedSortOption !== null}
+                            size={20}
+                            style={{
+                              position: "absolute",
+                              top: -5,
+                              right: -5,
+                              backgroundColor: "#FF3649",
+                            }}
+                          >
+                            +
+                          </Badge>
                         </TouchableOpacity>
                       )}
                     </View>
@@ -1095,6 +1132,7 @@ export default function Fridge() {
       >
         <View className="flex justify-center items-center">
           <View className="bg-slate-100 rounded-2xl p-12 mb-12">
+            {/* Close button */}
             <TouchableOpacity
               onPress={() => setIsFilterModalVisible(false)}
               className="absolute top-3 right-3"
@@ -1104,6 +1142,8 @@ export default function Fridge() {
                 className="w-6 h-6"
               />
             </TouchableOpacity>
+
+            {/* Name Button */}
             <TouchableOpacity
               onPress={() => {
                 setOpenNameFilter(!openNameFilter);
@@ -1111,6 +1151,18 @@ export default function Fridge() {
               className="flex-row justify-between items-center my-2 p-2 bg-[#64E6A6] rounded-lg w-44"
               style={styles.shadow}
             >
+              <Badge
+                visible={selectedSortOption?.criteria === "name"}
+                size={20}
+                style={{
+                  backgroundColor: "#33a069",
+                  position: "absolute",
+                  top: -6,
+                  right: -6,
+                }}
+              >
+                1
+              </Badge>
               <Image
                 source={require("../../assets/images/AtoZ.png")}
                 className="w-6 h-6 ml-1"
@@ -1118,6 +1170,8 @@ export default function Fridge() {
               <Text className="text-base font-Nobile text-slate-800">Name</Text>
               <Entypo name="chevron-down" size={24} color="#1e293b" />
             </TouchableOpacity>
+
+            {/* Show name options */}
             {openNameFilter && (
               <View
                 className="flex justify-center items-center bg-white rounded-xl p-4"
@@ -1148,7 +1202,7 @@ export default function Fridge() {
                       sortOrder: "asc",
                     });
                     setTimeout(() => {
-                      setIsFilterModalVisible(false);
+                      closeSortFilterOptions();
                     }, 500);
                   }}
                 />
@@ -1177,12 +1231,14 @@ export default function Fridge() {
                       sortOrder: "desc",
                     });
                     setTimeout(() => {
-                      setIsFilterModalVisible(false);
+                      closeSortFilterOptions();
                     }, 500);
                   }}
                 />
               </View>
             )}
+
+            {/* Date Added Button */}
             <TouchableOpacity
               onPress={() => {
                 setOpenDateAddedFilter(!openDateAddedFilter);
@@ -1190,6 +1246,18 @@ export default function Fridge() {
               className="flex-row justify-between items-center my-2 p-2 bg-[#fa9c55] rounded-lg w-44"
               style={styles.shadow}
             >
+              <Badge
+                visible={selectedSortOption?.criteria === "dateAdded"}
+                size={20}
+                style={{
+                  backgroundColor: "#e76b0d",
+                  position: "absolute",
+                  top: -6,
+                  right: -6,
+                }}
+              >
+                1
+              </Badge>
               <Image
                 source={require("../../assets/images/calendar2.png")}
                 className="w-6 h-6 ml-1"
@@ -1199,6 +1267,8 @@ export default function Fridge() {
               </Text>
               <Entypo name="chevron-down" size={24} color="#1e293b" />
             </TouchableOpacity>
+
+            {/* Show date added options */}
             {openDateAddedFilter && (
               <View
                 className="flex justify-center items-center bg-white rounded-xl p-4"
@@ -1226,7 +1296,7 @@ export default function Fridge() {
                       sortOrder: "asc",
                     });
                     setTimeout(() => {
-                      setIsFilterModalVisible(false);
+                      closeSortFilterOptions();
                     }, 500);
                   }}
                 />
@@ -1252,12 +1322,14 @@ export default function Fridge() {
                       sortOrder: "desc",
                     });
                     setTimeout(() => {
-                      setIsFilterModalVisible(false);
+                      closeSortFilterOptions();
                     }, 500);
                   }}
                 />
               </View>
             )}
+
+            {/* Selected Button */}
             <TouchableOpacity
               onPress={() => {
                 setOpenCheckedFilter(!openCheckedFilter);
@@ -1265,6 +1337,18 @@ export default function Fridge() {
               className="flex-row justify-between items-center my-2 p-2 bg-[#0cbac7] rounded-lg w-44"
               style={styles.shadow}
             >
+              <Badge
+                visible={selectedSortOption?.criteria === "checked"}
+                size={20}
+                style={{
+                  backgroundColor: "#00737c",
+                  position: "absolute",
+                  top: -6,
+                  right: -6,
+                }}
+              >
+                1
+              </Badge>
               <Image
                 source={require("../../assets/images/selected.png")}
                 className="w-6 h-6 ml-1"
@@ -1274,6 +1358,8 @@ export default function Fridge() {
               </Text>
               <Entypo name="chevron-down" size={24} color="#1e293b" />
             </TouchableOpacity>
+
+            {/* Show selected options */}
             {openCheckedFilter && (
               <View
                 className="flex justify-center items-center bg-white rounded-xl p-4"
@@ -1301,7 +1387,7 @@ export default function Fridge() {
                       sortOrder: "asc",
                     });
                     setTimeout(() => {
-                      setIsFilterModalVisible(false);
+                      closeSortFilterOptions();
                     }, 500);
                   }}
                 />
@@ -1327,20 +1413,19 @@ export default function Fridge() {
                       sortOrder: "desc",
                     });
                     setTimeout(() => {
-                      setIsFilterModalVisible(false);
+                      closeSortFilterOptions();
                     }, 500);
                   }}
                 />
               </View>
             )}
+
+            {/* Clear Sort Button */}
             <TouchableOpacity
               onPress={() => {
                 setFridgeItems(ingredients);
                 setSelectedSortOption(null);
-                setOpenNameFilter(false);
-                setOpenDateAddedFilter(false);
-                setOpenCheckedFilter(false);
-                setIsFilterModalVisible(false);
+                closeSortFilterOptions();
               }}
               className="flex justify-center items-center top-5 mt-4"
               style={styles.shadow}

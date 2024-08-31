@@ -11,6 +11,7 @@ module.exports = {
       fontFamily: {
         Nobile: ['Nobile'],
         NobileBold: ['NobileBold'],
+        NobileMedium: ['NobileMedium'],
         Flux: ['Flux'],
         Maax: ['Maax'],
         CreamyCookies: ['CreamyCookies'],

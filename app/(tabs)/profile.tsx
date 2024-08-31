@@ -675,6 +675,7 @@ export default function Profile() {
           className="w-60 h-14"
         />
       </View>
+
       {loading ? (
         <ActivityIndicator
           size="large"

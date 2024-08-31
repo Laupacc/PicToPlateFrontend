@@ -18,9 +18,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigation } from "expo-router";
 import { useToast } from "react-native-toast-notifications";
+import { useNavigation } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { manipulateAsync } from "expo-image-manipulator";
 import {
   CameraView,
   useCameraPermissions,

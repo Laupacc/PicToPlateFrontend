@@ -141,5 +141,34 @@
     { "label": "ml", "value": "ml" },
     { "label": "l", "value": "l" }
   ],
-  "maxReadyTimeOptions": [15, 30, 45, 60, 90, 120, 150, 180]
+  "maxReadyTimeOptions": [15, 30, 45, 60, 90, 120, 150, 180],
+  "cuisines": [
+    "African",
+    "Asian",
+    "American",
+    "British",
+    "Cajun",
+    "Caribbean",
+    "Chinese",
+    "Eastern European",
+    "European",
+    "French",
+    "German",
+    "Greek",
+    "Indian",
+    "Irish",
+    "Italian",
+    "Japanese",
+    "Jewish",
+    "Korean",
+    "Latin American",
+    "Mediterranean",
+    "Mexican",
+    "Middle Eastern",
+    "Nordic",
+    "Southern",
+    "Spanish",
+    "Thai",
+    "Vietnamese"
+  ]
 }
