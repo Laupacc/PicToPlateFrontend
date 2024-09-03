@@ -7,6 +7,7 @@ import {
   StatusBar,
   Platform,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { Modal, Badge } from "react-native-paper";
 import { useFocusEffect } from "@react-navigation/native";
@@ -79,6 +80,8 @@ export default function recipesFromFridge() {
   const [exhaustedIngredients, setExhaustedIngredients] = useState<Set<any>>(
     new Set()
   );
+  const screenWidth = Dimensions.get("window").width;
+  const isSmallScreen = screenWidth < 400;
 
   // Set status bar style
   useFocusEffect(
@@ -492,8 +495,7 @@ export default function recipesFromFridge() {
           ) : (
             <ScrollView>
               {/* Display recipes */}
-              {recipes &&
-                recipes.length > 0 &&
+              {recipes?.length > 0 &&
                 recipes.map((recipe) => (
                   <View
                     className="flex-1 items-center justify-center relative w-[360] h-[460]"
@@ -521,26 +523,56 @@ export default function recipesFromFridge() {
                         className="w-8 h-8"
                       />
                     </TouchableOpacity>
-                    <View className="flex items-center justify-center">
+
+                    <View className="flex items-center justify-start h-full pt-8">
                       <TouchableOpacity
                         onPress={() => handleGoToRecipeCard(recipe.id)}
                         key={recipe.id}
                         className="flex items-center justify-center"
                       >
-                        <Image
-                          source={
-                            recipe.image
-                              ? { uri: recipe.image }
-                              : require("../../assets/images/picMissing.png")
-                          }
-                          className="rounded-xl w-[200] h-[200] right-4"
-                        />
-                        <View className="flex items-center justify-center max-w-[200] mt-4">
-                          <Text className="text-center font-Flux text-[15px]">
-                            {recipe.title}
+                        {/* Fixed Image */}
+                        <View className="w-[200px] h-[200px]">
+                          <Image
+                            source={
+                              recipe.image
+                                ? { uri: recipe.image }
+                                : require("../../assets/images/picMissing.png")
+                            }
+                            className="rounded-xl w-full h-full top-12 right-4"
+                          />
+                        </View>
+
+                        {/* Title */}
+                        <View className="flex items-center justify-center top-16 right-4">
+                          <Text className="font-Flux text-center max-w-[200px]">
+                            {recipe.title.length > 60
+                              ? recipe.title.substring(0, 60) + "..."
+                              : recipe.title}
                           </Text>
                         </View>
                       </TouchableOpacity>
+                    </View>
+
+                    {/* Details */}
+                    <View className="flex-row justify-center items-center absolute bottom-10">
+                      <View className="flex justify-center items-center right-10">
+                        <Image
+                          source={require("../../assets/images/money.png")}
+                          className="w-8 h-8"
+                        />
+                        <Text className="text-md">
+                          ${(recipe.pricePerServing / 100).toFixed(2)}
+                        </Text>
+                      </View>
+                      <View className="flex justify-center items-center left-6">
+                        <Image
+                          source={require("../../assets/images/timer2.png")}
+                          className="w-8 h-8"
+                        />
+                        <Text className="text-md">
+                          {recipe.readyInMinutes} mins
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 ))}
@@ -580,7 +612,7 @@ export default function recipesFromFridge() {
       >
         {/* Filters */}
         <View className="flex justify-center items-center">
-          <View className="bg-slate-100 rounded-2xl p-12 mb-12">
+          <View className="bg-slate-100 rounded-2xl p-12 mb-16">
             <TouchableOpacity
               onPress={() => {
                 handleCloseFilterModal();
@@ -818,7 +850,11 @@ export default function recipesFromFridge() {
                   handleOkPress();
                   handleCloseFilterModal();
                 }}
-                className="flex justify-center items-center my-4"
+                className={
+                  isSmallScreen
+                    ? "flex justify-center items-center"
+                    : "flex justify-center items-center my-4"
+                }
                 style={styles.shadow}
               >
                 <Text className="text-2xl font-Nobile text-slate-800">

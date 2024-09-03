@@ -10,6 +10,8 @@ import {
   Alert,
   ActivityIndicator,
   StatusBar,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
 } from "react-native";
 import React, { useEffect, useState, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
@@ -40,6 +42,7 @@ export default function Profile() {
     (state: RootState) => state.fridge.ingredients
   );
 
+  const [dynamicHeight, setDynamicHeight] = useState<number>(0);
   const [userInfo, setUserInfo] = useState<any>({});
   const [newPassword, setNewPassword] = useState<string>("");
   const [newUsername, setNewUsername] = useState<string>("");
@@ -62,7 +65,9 @@ export default function Profile() {
   const [deleteAccountInput, setDeleteAccountInput] = useState<string>("");
 
   const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
   const calculatedHeight = screenWidth * (9 / 16);
+  const isSmallScreen = screenWidth < 400;
 
   // Set status bar style
   useFocusEffect(
@@ -668,6 +673,7 @@ export default function Profile() {
         translucent={true}
       />
       <Background cellSize={25} />
+
       {/* Logo */}
       <View className="flex justify-center items-center">
         <Image
@@ -676,240 +682,278 @@ export default function Profile() {
         />
       </View>
 
-      {loading ? (
+      {loading && (
         <ActivityIndicator
           size="large"
           color="#237CB0"
-          className="flex-1 bottom-16"
+          className="flex-1 top-1/2 absolute"
         />
-      ) : (
-        <View className="flex-1 justify-center items-center">
-          {/* Top Box */}
-          <View className="flex justify-center items-center mb-4 -mt-16">
-            <View className="flex justify-center items-center relative">
-              <View
-                className="absolute bg-[#9333ea] rounded-2xl -right-1.5 -bottom-1.5"
-                style={{
-                  width: screenWidth - 45,
-                  height: 250,
-                  ...styles.shadow,
-                }}
-              ></View>
-              <View
-                className="flex justify-center items-center bg-white rounded-2xl"
-                style={{
-                  width: screenWidth - 45,
-                  height: 250,
-                }}
-              >
-                {/* Menu Button */}
-                {user.token && (
-                  <View className="absolute top-3 right-1">
+      )}
+
+      <ScrollView>
+        {!loading && (
+          <View className="flex justify-center items-center">
+            {/* Top Box */}
+            <View className="flex justify-center items-center mb-4">
+              <View className="flex justify-center items-center relative">
+                <View
+                  className="absolute bg-[#9333ea] rounded-2xl -right-1.5 -bottom-1.5"
+                  style={{
+                    width: screenWidth - 55,
+                    height: isSmallScreen
+                      ? screenHeight * 0.28
+                      : screenHeight * 0.3,
+                    ...styles.shadow,
+                  }}
+                ></View>
+                <View
+                  className="flex justify-center items-center bg-white rounded-2xl"
+                  style={{
+                    width: screenWidth - 55,
+                    height: isSmallScreen
+                      ? screenHeight * 0.28
+                      : screenHeight * 0.3,
+                  }}
+                >
+                  {/* Menu Button */}
+                  {user.token && (
+                    <View className="absolute top-3 right-1">
+                      <TouchableOpacity
+                        onPress={() => setOpenMenu(!openMenu)}
+                        className="flex justify-center items-center relative mx-2"
+                      >
+                        <Image
+                          source={require("../../assets/images/menuIcon.png")}
+                          className="w-10 h-10"
+                        />
+                      </TouchableOpacity>
+                      {openMenu && (
+                        <View className="flex justify-center items-center mt-3 -mr-1">
+                          <TouchableOpacity
+                            onPress={() => setIsAvatarPickerVisible(true)}
+                            className=""
+                          >
+                            <Image
+                              source={require("../../assets/images/changeImage.png")}
+                              className="w-10 h-10"
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => setIsUpdateInfoModalVisible(true)}
+                            className="mt-2"
+                          >
+                            <Image
+                              source={require("../../assets/images/updateInfo.png")}
+                              className="w-10 h-10"
+                            />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => {
+                              setJokeModalVisible(true);
+                              fetchJoke();
+                            }}
+                            className="mt-3 mr-1"
+                          >
+                            <Image
+                              source={require("../../assets/images/clown.png")}
+                              className="w-10 h-10"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
+                  )}
+
+                  {/* Avatar */}
+                  <View>
+                    <Image
+                      source={
+                        user.token &&
+                        avatarImages[
+                          selectedAvatar as keyof typeof avatarImages
+                        ]
+                          ? avatarImages[
+                              selectedAvatar as keyof typeof avatarImages
+                            ]
+                          : require("../../assets/images/avatars/poutine.png")
+                      }
+                      className="w-20 h-20 mt-2"
+                    />
+                  </View>
+
+                  {/* User info */}
+                  {user.token ? (
+                    <View className="flex justify-center items-center mt-2">
+                      <View className="bg-slate-100 border border-slate-200 rounded-lg w-52 h-10 font-Nobile justify-center items-center m-1">
+                        <Text className="text-xl text-cyan-600">
+                          {userInfo.username}
+                        </Text>
+                      </View>
+                      <View className="bg-slate-100 border border-slate-200 rounded-lg w-52 h-10 font-Nobile justify-center items-center m-1">
+                        <Text className="text-md text-cyan-600">
+                          {userInfo.email}
+                        </Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View className="bg-slate-100 border border-slate-200 rounded-lg w-32 h-10 font-Nobile justify-center items-center mt-4">
+                      <Text className="text-xl text-cyan-600">Guest</Text>
+                    </View>
+                  )}
+
+                  {/* Login, logout*/}
+                  {!user.token ? (
+                    <View className="flex mt-8 items-center justify-center">
+                      <Link
+                        href="/authentication"
+                        className="flex flex-row justify-center items-center"
+                      >
+                        <View className="flex flex-row justify-center items-center">
+                          <Text
+                            className={
+                              isSmallScreen
+                                ? "text-base font-Nobile mx-1"
+                                : "text-lg font-Nobile mx-1"
+                            }
+                          >
+                            Login
+                          </Text>
+                          <AntDesign
+                            name="login"
+                            size={24}
+                            color="black"
+                            className="w-9 h-9"
+                          ></AntDesign>
+                        </View>
+                      </Link>
+                      <Text> to see your profile</Text>
+                    </View>
+                  ) : (
                     <TouchableOpacity
-                      onPress={() => setOpenMenu(!openMenu)}
-                      className="flex justify-center items-center relative mx-2"
+                      onPress={handleLogout}
+                      className="flex flex-row justify-center items-center mt-2"
                     >
-                      <Image
-                        source={require("../../assets/images/menuIcon.png")}
-                        className="w-10 h-10"
-                      />
+                      <Text
+                        className={
+                          isSmallScreen
+                            ? "text-base font-Nobile mx-1"
+                            : "text-lg font-Nobile mx-1"
+                        }
+                      >
+                        Logout
+                      </Text>
+                      <AntDesign
+                        name="logout"
+                        size={24}
+                        color="black"
+                        className="w-9 h-9"
+                      ></AntDesign>
                     </TouchableOpacity>
-                    {openMenu && (
-                      <View className="flex justify-center items-center mt-3 -mr-1">
-                        <TouchableOpacity
-                          onPress={() => setIsAvatarPickerVisible(true)}
-                          className=""
-                        >
-                          <Image
-                            source={require("../../assets/images/changeImage.png")}
-                            className="w-10 h-10"
-                          />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => setIsUpdateInfoModalVisible(true)}
-                          className="mt-2"
-                        >
-                          <Image
-                            source={require("../../assets/images/updateInfo.png")}
-                            className="w-10 h-10"
-                          />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => {
-                            setJokeModalVisible(true);
-                            fetchJoke();
-                          }}
-                          className="mt-3 mr-1"
-                        >
-                          <Image
-                            source={require("../../assets/images/clown.png")}
-                            className="w-10 h-10"
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    )}
-                  </View>
-                )}
-
-                {/* Avatar */}
-                <View>
-                  <Image
-                    source={
-                      user.token &&
-                      avatarImages[selectedAvatar as keyof typeof avatarImages]
-                        ? avatarImages[
-                            selectedAvatar as keyof typeof avatarImages
-                          ]
-                        : require("../../assets/images/avatars/poutine.png")
-                    }
-                    className="w-20 h-20 mt-2"
-                  />
+                  )}
                 </View>
-
-                {/* User info */}
-                {user.token ? (
-                  <View className="flex justify-center items-center mt-2">
-                    <View className="bg-slate-100 border border-slate-200 rounded-lg w-60 h-10 font-Nobile justify-center items-center m-1">
-                      <Text className="text-xl text-cyan-600">
-                        {userInfo.username}
-                      </Text>
-                    </View>
-                    <View className="bg-slate-100 border border-slate-200 rounded-lg w-60 h-10 font-Nobile justify-center items-center m-1">
-                      <Text className="text-md text-cyan-600">
-                        {userInfo.email}
-                      </Text>
-                    </View>
-                  </View>
-                ) : (
-                  <View className="bg-slate-100 border border-slate-200 rounded-lg w-32 h-10 font-Nobile justify-center items-center mt-4">
-                    <Text className="text-xl text-cyan-600">Guest</Text>
-                  </View>
-                )}
-
-                {/* Login, logout*/}
-                {!user.token ? (
-                  <View className="flex mt-8 items-center justify-center">
-                    <Link
-                      href="/authentication"
-                      className="flex flex-row justify-center items-center"
-                    >
-                      <View className="flex flex-row justify-center items-center">
-                        <Text className="text-lg font-Nobile mx-1">Login</Text>
-                        <AntDesign
-                          name="login"
-                          size={24}
-                          color="black"
-                          className="w-9 h-9"
-                        ></AntDesign>
-                      </View>
-                    </Link>
-                    <Text> to see your profile</Text>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    onPress={handleLogout}
-                    className="flex flex-row justify-center items-center mt-2"
-                  >
-                    <Text className="text-lg font-Nobile m-1">Logout</Text>
-                    <AntDesign
-                      name="logout"
-                      size={24}
-                      color="black"
-                      className="w-9 h-9"
-                    ></AntDesign>
-                  </TouchableOpacity>
-                )}
               </View>
             </View>
-          </View>
 
-          {user.token ? (
-            <>
-              {/* Postits*/}
-              <View className="flex flex-row justify-center items-center">
-                {/* Middle Postit 1*/}
-                <View
-                  className="flex justify-center items-center relative w-40 h-44 mx-2"
-                  style={styles.shadow}
-                >
-                  <Image
-                    source={postitImages[0]}
-                    className="absolute inset-0 w-full h-full"
-                  />
-                  <View className="relative justify-center items-center mt-4">
-                    <Image
-                      source={require("../../assets/images/heart4.png")}
-                      className="w-14 h-14 absolute"
-                    />
-                    <Text className="text-center text-xl font-SpaceMono text-black">
-                      {userInfo.favourites?.length}
-                    </Text>
-                  </View>
-                  <Text className="text-center text-base font-SpaceMono text-slate-700 mt-2">
-                    favourite recipes
-                  </Text>
-                </View>
-
-                {/* Middle Postit 2 */}
-                <View
-                  className="flex justify-center items-center relative w-40 h-44 mx-2"
-                  style={styles.shadow}
-                >
-                  <Image
-                    source={postitImages[1]}
-                    className="absolute inset-0 w-full h-full"
-                  />
-                  <View className="relative justify-center items-center mt-4">
-                    <Image
-                      source={require("../../assets/images/groceryBag.png")}
-                      className="w-14 h-14 absolute"
-                    />
-                    <Text className="text-center text-xl font-SpaceMono text-black top-2">
-                      {userInfo.ingredients?.length}
-                    </Text>
-                  </View>
-                  <Text className="text-center text-base font-SpaceMono text-slate-700 mt-4">
-                    ingredients saved
-                  </Text>
-                </View>
-              </View>
-
-              {/* Old ingredients */}
-              <View className="flex justify-center items-center">
-                <View className="relative m-1 mb-4">
+            {user.token && (
+              <View>
+                {/* Postits*/}
+                <View className="flex flex-row justify-center items-center">
+                  {/* Middle Postit 1*/}
                   <View
                     className={
-                      oldIngredients.length > 0
-                        ? "absolute bg-[#d45858] rounded-2xl right-0.5 bottom-0.5"
-                        : "absolute bg-[#6deb84] rounded-2xl right-0.5 bottom-0.5"
+                      isSmallScreen
+                        ? "flex justify-center items-center relative w-36 h-40 mx-2"
+                        : "flex justify-center items-center relative w-40 h-44 mx-2"
                     }
-                    style={{
-                      width: screenWidth - 45,
-                      height: calculatedHeight,
-                      ...styles.shadow,
-                    }}
-                  ></View>
-                  <View
-                    className="flex justify-center items-center bg-white rounded-2xl m-2 p-2"
-                    style={{
-                      width: screenWidth - 40,
-                      height: calculatedHeight,
-                    }}
+                    style={styles.shadow}
                   >
-                    {oldIngredients.length > 0 ? (
-                      <>
-                        <View className="flex-row justify-center items-center w-full p-2 bg-[#f03838e9] rounded-t-2xl mb-2">
-                          <Image
-                            source={require("../../assets/images/warning.png")}
-                            className="w-8 h-8 mr-1"
-                          />
-                          <Text className="text-center text-base text-slate-900 font-Maax">
-                            {oldIngredients.length} ingredient(s) added over a
-                            week ago
-                          </Text>
-                        </View>
-                        <ScrollView className="flex-1">
-                          <View className="p-1 flex justify-center items-center w-[370]">
+                    <Image
+                      source={postitImages[0]}
+                      className="absolute inset-0 w-full h-full"
+                    />
+                    <View className="relative justify-center items-center mt-4">
+                      <Image
+                        source={require("../../assets/images/heart4.png")}
+                        className="w-14 h-14 absolute"
+                      />
+                      <Text className="text-center text-xl font-SpaceMono text-black">
+                        {userInfo.favourites?.length}
+                      </Text>
+                    </View>
+                    <Text className="text-center text-base font-SpaceMono text-slate-700 mt-2">
+                      favourite recipes
+                    </Text>
+                  </View>
+
+                  {/* Middle Postit 2 */}
+                  <View
+                    className={
+                      isSmallScreen
+                        ? "flex justify-center items-center relative w-36 h-40 mx-2"
+                        : "flex justify-center items-center relative w-40 h-44 mx-2"
+                    }
+                    style={styles.shadow}
+                  >
+                    <Image
+                      source={postitImages[1]}
+                      className="absolute inset-0 w-full h-full"
+                    />
+                    <View className="relative justify-center items-center mt-4">
+                      <Image
+                        source={require("../../assets/images/groceryBag.png")}
+                        className="w-14 h-14 absolute"
+                      />
+                      <Text className="text-center text-xl font-SpaceMono text-black top-2">
+                        {userInfo.ingredients?.length}
+                      </Text>
+                    </View>
+                    <Text className="text-center text-base font-SpaceMono text-slate-700 mt-4">
+                      ingredients saved
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Old ingredients */}
+                <View className="flex justify-center items-center mb-20">
+                  <View className="relative m-1">
+                    <View
+                      className={
+                        oldIngredients.length > 0
+                          ? "absolute bg-[#d45858] rounded-2xl right-0.5 bottom-0.5"
+                          : "absolute bg-[#6deb84] rounded-2xl right-0.5 bottom-0.5"
+                      }
+                      style={{
+                        width: screenWidth - 45,
+                        height: dynamicHeight,
+                        ...styles.shadow,
+                      }}
+                    ></View>
+                    <View
+                      className="flex justify-center items-center bg-white rounded-2xl m-2 p-2"
+                      style={{
+                        width: screenWidth - 40,
+                      }}
+                      onLayout={(event) => {
+                        const { height } = event.nativeEvent.layout;
+                        setDynamicHeight(height);
+                      }}
+                    >
+                      {oldIngredients.length > 0 ? (
+                        <>
+                          <View className="flex-row justify-center items-center w-full p-2 bg-[#f03838e9] rounded-t-2xl mb-2">
+                            <Image
+                              source={require("../../assets/images/warning.png")}
+                              className={
+                                isSmallScreen ? "w-6 h-6 mr-1" : "w-8 h-8 mr-1"
+                              }
+                            />
+                            <Text className="text-center text-base text-slate-900 font-Maax">
+                              {oldIngredients.length} ingredient(s) added over a
+                              week ago
+                            </Text>
+                          </View>
+
+                          <View className="p-1 flex justify-center items-center">
                             {oldIngredients.map((item, index) => (
                               <BouncyCheckbox
                                 isChecked={true}
@@ -921,6 +965,7 @@ export default function Profile() {
                                   color: "#334155",
                                   paddingHorizontal: 3,
                                   paddingVertical: 5,
+                                  fontSize: isSmallScreen ? 14 : 16,
                                 }}
                                 fillColor="#FED400"
                                 unFillColor="#e2e8f0"
@@ -939,234 +984,270 @@ export default function Profile() {
                               />
                             ))}
                           </View>
-                        </ScrollView>
-                      </>
-                    ) : (
-                      <>
-                        <View className="flex-row justify-center items-center w-full p-2 bg-[#6deb84] rounded-t-2xl mb-2">
-                          <Image
-                            source={require("../../assets/images/checkGreen.png")}
-                            className="w-8 h-8 mr-1"
-                          />
-                          <Text className="text-center text-base text-slate-900 font-Maax">
-                            No ingredients added over a week ago
-                          </Text>
-                        </View>
-                        <View className="flex justify-center items-center flex-1">
-                          <Text className="text-xl font-Flux text-slate-700">
-                            Well done!
-                          </Text>
-                          <Text className="text-xl font-Flux text-slate-700 mb-1">
-                            Everything is fresh!
-                          </Text>
-                          <Image
-                            source={require("../../assets/images/applause.png")}
-                            className="w-20 h-20"
-                          />
-                        </View>
-                      </>
-                    )}
+                        </>
+                      ) : (
+                        <>
+                          <View className="flex-row justify-center items-center w-full p-2 bg-[#6deb84] rounded-t-2xl mb-2">
+                            <Image
+                              source={require("../../assets/images/checkGreen.png")}
+                              className={
+                                isSmallScreen ? "w-6 h-6 mr-1" : "w-8 h-8 mr-1"
+                              }
+                            />
+                            <Text className="text-center text-base text-slate-900 font-Maax">
+                              No ingredients added over a week ago
+                            </Text>
+                          </View>
+                          <View className="flex justify-center items-center flex-1">
+                            <Text className="text-xl font-Flux text-slate-700">
+                              Well done!
+                            </Text>
+                            <Text className="text-xl font-Flux text-slate-700 mb-1">
+                              Everything is fresh!
+                            </Text>
+                            <Image
+                              source={require("../../assets/images/applause.png")}
+                              className="w-20 h-20"
+                            />
+                          </View>
+                        </>
+                      )}
+                    </View>
                   </View>
                 </View>
               </View>
-            </>
-          ) : (
-            <View className="flex justify-center items-center mt-4">
-              <View className="flex justify-center items-center relative">
-                <View
-                  className="absolute bg-[#f03838] rounded-2xl -right-1.5 -bottom-1.5"
-                  style={{
-                    width: screenWidth - 65,
-                    height: 220,
-                    ...styles.shadow,
-                  }}
-                ></View>
-                <View
-                  className="flex justify-center items-center bg-white rounded-2xl"
-                  style={{
-                    width: screenWidth - 65,
-                    height: 220,
-                  }}
-                >
-                  <Text className="text-xl text-center font-SpaceMono mx-4">
-                    Create an account to save your ingredients and get recipes
-                    based on what you have!
+            )}
+
+            {/* User not logged in, guest message */}
+            {!user.token && (
+              <View className="flex justify-center items-center mt-4">
+                <View className="flex justify-center items-center relative">
+                  <View
+                    className="absolute bg-[#f03838] rounded-2xl -right-1.5 -bottom-1.5"
+                    style={{
+                      width: screenWidth - 65,
+                      height: isSmallScreen ? 160 : 220,
+                      ...styles.shadow,
+                    }}
+                  ></View>
+                  <View
+                    className="flex justify-center items-center bg-white rounded-2xl"
+                    style={{
+                      width: screenWidth - 65,
+                      height: isSmallScreen ? 160 : 220,
+                    }}
+                  >
+                    <Text
+                      className={
+                        isSmallScreen
+                          ? "text-base text-center font-SpaceMono mx-5"
+                          : "text-xl text-center font-SpaceMono mx-4"
+                      }
+                    >
+                      Create an account to save your ingredients and get recipes
+                      based on what you have!
+                    </Text>
+                  </View>
+                </View>
+                <View className="flex justify-center items-center mt-6 mb-10 mx-6">
+                  <Text
+                    className={
+                      isSmallScreen
+                        ? "font-SpaceMono text-lg text-center"
+                        : "font-SpaceMono text-xl text-center"
+                    }
+                  >
+                    Snap a picture of your ingredients and get started!
                   </Text>
+                  <BouncingImage>
+                    <Image
+                      source={require("../../assets/images/arrowDown.png")}
+                      className="w-12 h-12 top-8"
+                    />
+                  </BouncingImage>
                 </View>
               </View>
-              <View className="flex justify-center items-center mt-6 mb-10 mx-6">
-                <Text className="font-SpaceMono text-xl text-center">
-                  Snap a picture of your ingredients and get started!
-                </Text>
-                <BouncingImage>
-                  <Image
-                    source={require("../../assets/images/arrowDown.png")}
-                    className="w-12 h-12 top-8"
-                  />
-                </BouncingImage>
-              </View>
-            </View>
-          )}
-        </View>
-      )}
+            )}
+          </View>
+        )}
+      </ScrollView>
 
       {/* Update info modal */}
       <Modal
         visible={isUpdateInfoModalVisible}
         onDismiss={() => closeUpdateInfoModal()}
       >
-        <View className="flex justify-center items-center">
-          <View className="flex justify-around items-center bg-slate-50 rounded-lg p-8">
-            <TouchableOpacity
-              onPress={() => closeUpdateInfoModal()}
-              className="absolute top-2 right-2 p-1"
+        <TouchableWithoutFeedback>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1 }}
+              keyboardShouldPersistTaps="handled"
             >
-              <Image
-                source={require("../../assets/images/cross.png")}
-                className="w-6 h-6"
-              />
-            </TouchableOpacity>
-            <Text className="text-center text-2xl font-Nobile text-slate-600 mb-2 p-4">
-              Update Information
-            </Text>
-            <View className="flex justify-center items-center mb-6">
-              <View className="flex-row justify-center items-center">
-                <TextInput
-                  placeholder="New Username"
-                  value={newUsername}
-                  onChangeText={(text) => setNewUsername(text)}
-                  autoCapitalize="none"
-                  className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
-                />
-                <View style={styles.shadow}>
-                  <TouchableOpacity onPress={updateUsername}>
-                    <Image
-                      source={require("../../assets/images/yesIcon.png")}
-                      className="w-10 h-10 m-1"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View className="flex-row justify-center items-center">
-                <TextInput
-                  placeholder="New Email"
-                  value={newEmail}
-                  onChangeText={(text) => setNewEmail(text)}
-                  autoCapitalize="none"
-                  className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
-                />
-                <View style={styles.shadow}>
-                  <TouchableOpacity onPress={updateEmail}>
-                    <Image
-                      source={require("../../assets/images/yesIcon.png")}
-                      className="w-10 h-10 m-1"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <View className="flex-row justify-center items-center">
-                <View className="relative">
-                  <TextInput
-                    placeholder="New Password"
-                    value={newPassword}
-                    onChangeText={(text) => setNewPassword(text)}
-                    secureTextEntry={!isNewPasswordVisible}
-                    autoCapitalize="none"
-                    className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
-                  />
+              <View
+                className={
+                  isSmallScreen
+                    ? "flex justify-center items-center bottom-8 p-10"
+                    : "flex justify-center items-center bottom-4 p-10"
+                }
+              >
+                <View className="flex justify-around items-center bg-slate-50 rounded-lg p-10">
                   <TouchableOpacity
-                    onPress={toggleIsNewPasswordVisible}
-                    className="absolute right-5 top-5"
+                    onPress={() => closeUpdateInfoModal()}
+                    className="absolute top-3 right-3 p-1"
                   >
                     <Image
-                      source={
-                        isNewPasswordVisible
-                          ? require("../../assets/images/eyeHide.png")
-                          : require("../../assets/images/eyeView.png")
-                      }
+                      source={require("../../assets/images/cross.png")}
                       className="w-6 h-6"
                     />
                   </TouchableOpacity>
-                </View>
-                <View style={styles.shadow}>
-                  <TouchableOpacity onPress={updatePassword}>
-                    <Image
-                      source={require("../../assets/images/yesIcon.png")}
-                      className="w-10 h-10 m-1"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-            <View className="flex justify-center items-center">
-              <TouchableOpacity
-                onPress={() => setDangerZoneOpen(!dangerZoneOpen)}
-                className="flex-row justify-center items-center mb-4"
-              >
-                <Text className="text-center text-base font-Nobile text-red-600 mx-2">
-                  Danger Zone
-                </Text>
-                <Image
-                  source={require("../../assets/images/dangerZone2.png")}
-                  className="w-10 h-10"
-                />
-              </TouchableOpacity>
-
-              {dangerZoneOpen && (
-                <View className="flex justify-center items-center w-64">
-                  <View className="flex justify-center items-center border-2 rounded-xl border-red-500 p-4">
-                    <Text className="text-center text-base font-NobileBold text-red-600 mb-2">
-                      Delete Account
-                    </Text>
-                    <Text className="text-justify text-md font-Nobile text-red-600 mb-2 w-64">
-                      Are you sure you want to delete your account. This action
-                      cannot be undone. If you wish to proceed, please type
-                      "DELETEACCOUNT" in the box below.
-                    </Text>
-                    <View className="flex-row justify-center items-center my-2">
+                  <Text className="text-center text-2xl font-Nobile text-slate-600 mb-2 p-4">
+                    Update Information
+                  </Text>
+                  <View className="flex justify-center items-center mb-6">
+                    <View className="flex-row justify-center items-center">
                       <TextInput
-                        placeholder="DELETEACCOUNT"
-                        value={deleteAccountInput}
-                        onChangeText={(text) => setDeleteAccountInput(text)}
+                        placeholder="New Username"
+                        value={newUsername}
+                        onChangeText={(text) => setNewUsername(text)}
                         autoCapitalize="none"
-                        className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 mx-3 font-Nobile"
+                        className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
                       />
                       <View style={styles.shadow}>
+                        <TouchableOpacity onPress={updateUsername}>
+                          <Image
+                            source={require("../../assets/images/yesIcon.png")}
+                            className="w-10 h-10 m-1"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                    <View className="flex-row justify-center items-center">
+                      <TextInput
+                        placeholder="New Email"
+                        value={newEmail}
+                        onChangeText={(text) => setNewEmail(text)}
+                        autoCapitalize="none"
+                        className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
+                      />
+                      <View style={styles.shadow}>
+                        <TouchableOpacity onPress={updateEmail}>
+                          <Image
+                            source={require("../../assets/images/yesIcon.png")}
+                            className="w-10 h-10 m-1"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                    <View className="flex-row justify-center items-center">
+                      <View className="relative">
+                        <TextInput
+                          placeholder="New Password"
+                          value={newPassword}
+                          onChangeText={(text) => setNewPassword(text)}
+                          secureTextEntry={!isNewPasswordVisible}
+                          autoCapitalize="none"
+                          className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
+                        />
                         <TouchableOpacity
-                          onPress={() => {
-                            if (deleteAccountInput === "DELETEACCOUNT") {
-                              deleteAccount();
-                            } else {
-                              toast.show("Please type DELETEACCOUNT", {
-                                type: "danger",
-                                placement: "center",
-                                duration: 1000,
-                                animationType: "zoom-in",
-                                swipeEnabled: true,
-                                icon: (
-                                  <Ionicons
-                                    name="warning"
-                                    size={24}
-                                    color="white"
-                                  />
-                                ),
-                              });
-                            }
-                          }}
+                          onPress={toggleIsNewPasswordVisible}
+                          className="absolute right-5 top-5"
                         >
                           <Image
-                            source={require("../../assets/images/redCross.png")}
-                            className="w-10 h-10"
+                            source={
+                              isNewPasswordVisible
+                                ? require("../../assets/images/eyeHide.png")
+                                : require("../../assets/images/eyeView.png")
+                            }
+                            className="w-6 h-6"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                      <View style={styles.shadow}>
+                        <TouchableOpacity onPress={updatePassword}>
+                          <Image
+                            source={require("../../assets/images/yesIcon.png")}
+                            className="w-10 h-10 m-1"
                           />
                         </TouchableOpacity>
                       </View>
                     </View>
                   </View>
+                  <View className="flex justify-center items-center">
+                    <TouchableOpacity
+                      onPress={() => setDangerZoneOpen(!dangerZoneOpen)}
+                      className="flex-row justify-center items-center mb-4"
+                    >
+                      <Text className="text-center text-base font-Nobile text-red-600 mx-2">
+                        Danger Zone
+                      </Text>
+                      <Image
+                        source={require("../../assets/images/dangerZone2.png")}
+                        className="w-10 h-10"
+                      />
+                    </TouchableOpacity>
+
+                    {dangerZoneOpen && (
+                      <View className="flex justify-center items-center w-64">
+                        <View className="flex justify-center items-center border-2 rounded-xl border-red-500 p-4">
+                          <Text className="text-center text-base font-NobileBold text-red-600 mb-2">
+                            Delete Account
+                          </Text>
+                          <Text className="text-justify text-md font-Nobile text-red-600 mb-2 w-64">
+                            Are you sure you want to delete your account. This
+                            action cannot be undone. If you wish to proceed,
+                            please type "DELETEACCOUNT" in the box below.
+                          </Text>
+                          <View className="flex-row justify-center items-center my-2">
+                            <TextInput
+                              placeholder="DELETEACCOUNT"
+                              value={deleteAccountInput}
+                              onChangeText={(text) =>
+                                setDeleteAccountInput(text)
+                              }
+                              autoCapitalize="none"
+                              className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 mx-3 font-Nobile"
+                            />
+                            <View style={styles.shadow}>
+                              <TouchableOpacity
+                                onPress={() => {
+                                  if (deleteAccountInput === "DELETEACCOUNT") {
+                                    deleteAccount();
+                                  } else {
+                                    toast.show("Please type DELETEACCOUNT", {
+                                      type: "danger",
+                                      placement: "center",
+                                      duration: 1000,
+                                      animationType: "zoom-in",
+                                      swipeEnabled: true,
+                                      icon: (
+                                        <Ionicons
+                                          name="warning"
+                                          size={24}
+                                          color="white"
+                                        />
+                                      ),
+                                    });
+                                  }
+                                }}
+                              >
+                                <Image
+                                  source={require("../../assets/images/redCross.png")}
+                                  className="w-10 h-10"
+                                />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    )}
+                  </View>
                 </View>
-              )}
-            </View>
-          </View>
-        </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* Avatar Picker Modal */}
@@ -1175,7 +1256,7 @@ export default function Profile() {
         onDismiss={() => setIsAvatarPickerVisible(false)}
       >
         <View className="flex justify-center items-center">
-          <View className=" bg-slate-100 rounded-lg p-4 w-[85%] bottom-6">
+          <View className="bg-slate-100 rounded-lg p-4 w-[85%] bottom-6">
             <TouchableOpacity
               onPress={() => setIsAvatarPickerVisible(false)}
               className="items-end p-1"
@@ -1201,7 +1282,9 @@ export default function Profile() {
                 >
                   <Image
                     source={avatarImages[avatarId as keyof typeof avatarImages]}
-                    className="w-20 h-20 m-2"
+                    className={
+                      isSmallScreen ? "w-16 h-16 m-2" : "w-20 h-20 m-2"
+                    }
                   />
                 </TouchableOpacity>
               ))}

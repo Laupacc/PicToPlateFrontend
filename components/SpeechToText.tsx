@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
 import { WebView } from "react-native-webview";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import { BACKEND_URL } from "@/_recipeUtils";
-import { useNavigation } from "expo-router";
-import { useToast } from "react-native-toast-notifications";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
+import { useNavigation } from "expo-router";
+import { useToast } from "react-native-toast-notifications";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import { BACKEND_URL } from "@/_recipeUtils";
 
 const SpeechToText = ({ targetScreen }: { targetScreen: string }) => {
   const navigation = useNavigation<any>();
@@ -14,6 +20,9 @@ const SpeechToText = ({ targetScreen }: { targetScreen: string }) => {
   const [recording, setRecording] = useState<Audio.Recording | undefined>();
   const [permissionResponse, requestPermission] = Audio.usePermissions();
   const [transcription, setTranscription] = useState<string>("");
+
+  const screenWidth = Dimensions.get("window").width;
+  const isSmallScreen = screenWidth < 400;
 
   // Function to start recording audio
   const startRecording = async () => {
@@ -91,17 +100,29 @@ const SpeechToText = ({ targetScreen }: { targetScreen: string }) => {
 
       if (data.error) {
         console.log("Error from Watson: no transcription results found");
-        // navigation.navigate(targetScreen, { transcription: "" });
+        transcription = "No transcription results found";
       } else {
+        transcription = data;
         console.log("Transcription:", data);
-        transcription = data || "";
       }
+      if (
+        transcription === "No transcription results found" ||
+        transcription.startsWith("%HESITATION")
+      ) {
+        toast.show("No transcription found", {
+          type: "warning",
+          placement: "center",
+          duration: 1000,
+          animationType: "zoom-in",
+          swipeEnabled: true,
+          icon: <Ionicons name="warning" size={24} color="white" />,
+        });
+      }
+
       setTranscription(transcription);
       navigation.navigate(targetScreen, { transcription });
     } catch (error) {
-      console.error("Error sending recording to Watson:", error);
-      setTranscription("");
-      navigation.navigate(targetScreen);
+      console.log("Error sending recording to Watson:", error);
     }
   };
 
@@ -194,7 +215,7 @@ const SpeechToText = ({ targetScreen }: { targetScreen: string }) => {
       <TouchableOpacity onPressIn={startRecording} onPressOut={stopRecording}>
         <Image
           source={require("@/assets/images/microphoneOn.png")}
-          className="w-10 h-10"
+          className={isSmallScreen ? "w-9 h-9" : "w-10 h-10"}
         />
       </TouchableOpacity>
     </View>

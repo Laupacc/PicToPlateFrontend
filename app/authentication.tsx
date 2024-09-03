@@ -565,59 +565,58 @@ export default function Authentication() {
                   </View>
                 </View>
               )}
-
-              {/* Forgot Password Modal */}
-              <Modal
-                visible={forgotPasswordModal}
-                onDismiss={toggleForgotPasswordModal}
-              >
-                <View className="flex justify-center items-center">
-                  <View
-                    className="flex justify-around items-center bg-slate-100 rounded-lg p-10"
-                    style={styles.shadow}
-                  >
-                    <TouchableOpacity
-                      onPress={() => {
-                        toggleForgotPasswordModal();
-                        setEmail("");
-                      }}
-                      className="absolute top-2 right-2 p-1"
-                    >
-                      <Image
-                        source={require("../assets/images/cross.png")}
-                        className="w-6 h-6"
-                      />
-                    </TouchableOpacity>
-                    <Text className="text-lg text-center font-Nobile mb-4">
-                      Reset Password
-                    </Text>
-                    <TextInput
-                      placeholder="Enter your email"
-                      autoCapitalize="none"
-                      className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
-                      value={email}
-                      onChangeText={(text) => setEmail(text)}
-                    />
-                    <TouchableOpacity
-                      onPress={() => handleForgotPassword()}
-                      className="relative flex justify-center items-center mt-2"
-                    >
-                      <Image
-                        source={require("../assets/images/button/button1.png")}
-                        alt="button"
-                        className="w-32 h-10"
-                      />
-                      <Text className="text-lg text-white absolute font-Nobile">
-                        Submit ✔︎
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Modal>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+      {/* Forgot Password Modal */}
+      <Modal
+        visible={forgotPasswordModal}
+        onDismiss={toggleForgotPasswordModal}
+      >
+        <View className="flex justify-center items-center">
+          <View
+            className="flex justify-around items-center bg-slate-100 rounded-lg p-10"
+            style={styles.shadow}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                toggleForgotPasswordModal();
+                setEmail("");
+              }}
+              className="absolute top-2 right-2 p-1"
+            >
+              <Image
+                source={require("../assets/images/cross.png")}
+                className="w-6 h-6"
+              />
+            </TouchableOpacity>
+            <Text className="text-lg text-center font-Nobile mb-4">
+              Reset Password
+            </Text>
+            <TextInput
+              placeholder="Enter your email"
+              autoCapitalize="none"
+              className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
+              value={email}
+              onChangeText={(text) => setEmail(text)}
+            />
+            <TouchableOpacity
+              onPress={() => handleForgotPassword()}
+              className="relative flex justify-center items-center mt-2"
+            >
+              <Image
+                source={require("../assets/images/button/button1.png")}
+                alt="button"
+                className="w-32 h-10"
+              />
+              <Text className="text-lg text-white absolute font-Nobile">
+                Submit ✔︎
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

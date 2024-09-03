@@ -12,7 +12,7 @@ import {
   Keyboard,
   ActivityIndicator,
   StatusBar,
-  FlatList,
+  Dimensions,
 } from "react-native";
 import React, { useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -48,6 +48,7 @@ import {
   addRecipeToFavourites,
   removeRecipeFromFavourites,
   goToRecipeCard,
+  randomStickerImage,
 } from "@/_recipeUtils";
 
 export default function Search() {
@@ -72,6 +73,7 @@ export default function Search() {
   const [recentlyViewedRecipes, setRecentlyViewedRecipes] = useState<any[]>([]);
   const [showHome, setShowHome] = useState<boolean>(true);
   const [showSearch, setShowSearch] = useState<boolean>(false);
+  const [randomStickers, setRandomStickers] = useState<any[]>([]);
 
   const [search, setSearch] = useState<string>("");
   const [cuisine, setCuisine] = useState<string>("");
@@ -119,6 +121,11 @@ export default function Search() {
   const [showConversionResult, setShowConversionResult] =
     useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+
+  const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
+  const calculatedHeight = screenWidth * (9 / 16);
+  const isSmallScreen = screenWidth < 400;
 
   // Set status bar style
   useFocusEffect(
@@ -228,7 +235,11 @@ export default function Search() {
       return;
     }
 
-    // handleResetFilters();
+    if (search.trim() && cuisine) {
+      cuisine = "";
+      setCuisine("");
+    }
+
     let ingredients = "";
     if (search.trim()) {
       ingredients = search
@@ -248,9 +259,8 @@ export default function Search() {
     }
 
     // Add cuisine to the URL if provided
-    let cuisineType = "";
     if (cuisine) {
-      cuisineType = cuisine.toLowerCase().trim();
+      const cuisineType = cuisine.toLowerCase().trim();
       URL += `&cuisine=${encodeURIComponent(cuisineType)}`;
     }
 
@@ -403,10 +413,10 @@ export default function Search() {
     }
   };
 
-  // Transcribe speech to text
+  // Transcribe speech to text and search for recipes
   useEffect(() => {
     if (transcription && transcription !== "No transcription results found") {
-      const cleanedTranscription = transcription
+      const formatedTranscription = transcription
         .toLowerCase()
         .replace(/\band\b/g, " ")
         .replace(/\s+/g, " ")
@@ -414,30 +424,21 @@ export default function Search() {
         .split(" ")
         .join(",");
 
-      if (cleanedTranscription) {
+      if (formatedTranscription) {
         complexSearchByIngredients(
-          cleanedTranscription,
+          formatedTranscription,
           diet,
           intolerances,
           maxReadyTime,
           10,
-          numberOfRecipes,
-          individualSearchMode,
-          usedIngredients,
-          exhaustedIngredients,
-          loadedRecipeIds,
-          cuisine
+          0,
+          false,
+          [],
+          new Set(),
+          new Set(),
+          ""
         );
       }
-    } else {
-      toast.show("No transcription found", {
-        type: "warning",
-        placement: "center",
-        duration: 1000,
-        animationType: "zoom-in",
-        swipeEnabled: true,
-        icon: <Ionicons name="warning" size={24} color="white" />,
-      });
     }
   }, [transcription]);
 
@@ -657,28 +658,38 @@ export default function Search() {
     return cuisineImages[cuisine as keyof typeof cuisineImages];
   };
 
-  // Random Sticker Images
-  const setRandomStickerImages = () => {
-    const allStickerImages = [
+  // Function to get random sticker images
+  const setRandomStickerImages = (count: number) => {
+    const images = [
       require("../../assets/images/stickers/stickerB1.png"),
       require("../../assets/images/stickers/stickerB2.png"),
       require("../../assets/images/stickers/stickerB3.png"),
       require("../../assets/images/stickers/stickerB4.png"),
     ];
-    return allStickerImages[
-      Math.floor(Math.random() * allStickerImages.length)
-    ];
+
+    const stickers = Array.from(
+      { length: count },
+      () => images[Math.floor(Math.random() * images.length)]
+    );
+
+    setRandomStickers(stickers);
   };
 
-  // Set random cuisine type and sticker on mount
+  // Set random sticker images
+  useEffect(() => {
+    if (cuisines.length > 0) {
+      setRandomStickerImages(cuisines.length);
+    }
+  }, [cuisines]);
+
+  // Set random cuisine type
   useEffect(() => {
     const randomCuisineTypes = cuisines.sort(() => Math.random() - 0.5);
     setCuisine(randomCuisineTypes[0]);
-    setRandomStickerImages();
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 items-center justify-center pb-16">
+    <SafeAreaView className="flex-1 items-center justify-center pb-10">
       <StatusBar
         barStyle="dark-content"
         backgroundColor="transparent"
@@ -728,11 +739,21 @@ export default function Search() {
                   setShowTrivia(!showTrivia);
                   fetchTrivia();
                 }}
-                className="flex justify-center items-center mx-2 p-3 rounded-lg bg-[#1c79b2]"
+                className={
+                  isSmallScreen
+                    ? "flex justify-center items-center mx-2 p-2 rounded-lg bg-[#1c79b2]"
+                    : "flex justify-center items-center mx-2 p-3 rounded-lg bg-[#1c79b2]"
+                }
                 style={styles.shadow}
               >
                 <View className="flex flex-row justify-center items-center">
-                  <Text className="text-md text-white text-center font-Nobile">
+                  <Text
+                    className={
+                      isSmallScreen
+                        ? "text-sm text-white text-center font-Nobile"
+                        : "text-md text-white text-center font-Nobile"
+                    }
+                  >
                     Trivia
                   </Text>
                   <Image
@@ -747,11 +768,21 @@ export default function Search() {
                 onPress={() => {
                   setShowConversion(!showConversion);
                 }}
-                className="flex justify-center items-center mx-2 p-3 rounded-lg bg-[#1c79b2]"
+                className={
+                  isSmallScreen
+                    ? "flex justify-center items-center mx-2 p-2 rounded-lg bg-[#1c79b2]"
+                    : "flex justify-center items-center mx-2 p-3 rounded-lg bg-[#1c79b2]"
+                }
                 style={styles.shadow}
               >
                 <View className="flex flex-row justify-center items-center">
-                  <Text className="text-md text-white text-center font-Nobile">
+                  <Text
+                    className={
+                      isSmallScreen
+                        ? "text-sm text-white text-center font-Nobile"
+                        : "text-md text-white text-center font-Nobile"
+                    }
+                  >
                     Unit Converter
                   </Text>
                   <Image
@@ -770,7 +801,7 @@ export default function Search() {
                 <Image
                   source={require("@/assets/images/yellowArrowRight.png")}
                   alt="button"
-                  className="w-12 h-10"
+                  className={isSmallScreen ? "w-10 h-8" : "w-12 h-10"}
                 />
               </TouchableOpacity>
             </View>
@@ -902,7 +933,36 @@ export default function Search() {
 
             {/* Search Bar, Search Button, Filter Button */}
             <View className="flex flex-row justify-center items-center mb-1">
-              <SpeechToText targetScreen="search" />
+              {/* Filter Button */}
+              <View className="flex flex-row justify-center items-center mx-2">
+                <TouchableOpacity
+                  onPress={() => setOpenFilterModal(!openFilterModal)}
+                  className="flex justify-center items-center relative"
+                  style={styles.shadow}
+                >
+                  <Image
+                    source={require("@/assets/images/filter5.png")}
+                    alt="button"
+                    className={isSmallScreen ? "w-9 h-9" : "w-10 h-10"}
+                  />
+                  <Badge
+                    visible={
+                      selectedDiet.length > 0 ||
+                      selectedIntolerance.length > 0 ||
+                      selectedMaxReadyTime !== null
+                    }
+                    size={20}
+                    style={{
+                      backgroundColor: "#ef4444",
+                      position: "absolute",
+                      top: -6,
+                      right: -6,
+                    }}
+                  >
+                    +
+                  </Badge>
+                </TouchableOpacity>
+              </View>
 
               {/* Search Bar */}
               <View className="flex justify-center items-center mx-1">
@@ -921,7 +981,7 @@ export default function Search() {
                         numberOfRecipes
                       )
                     }
-                    className="border border-gray-400 rounded-lg pl-4 w-64 h-10 bg-[#e2e8f0] font-Nobile"
+                    className="border border-gray-400 rounded-lg pl-4 w-56 h-10 bg-[#e2e8f0] font-Nobile"
                   />
                   <TouchableOpacity
                     onPress={() => setSearch("")}
@@ -955,41 +1015,13 @@ export default function Search() {
                   <Image
                     source={require("@/assets/images/search2.png")}
                     alt="search"
-                    className="w-9 h-9 mx-2"
+                    className={isSmallScreen ? "w-8 h-8 mx-2" : "w-9 h-9 mx-2"}
                   />
                 </TouchableOpacity>
               </View>
 
-              {/* Filter Button */}
-              <View className="flex flex-row justify-center items-center">
-                <TouchableOpacity
-                  onPress={() => setOpenFilterModal(!openFilterModal)}
-                  className="flex justify-center items-center relative"
-                  style={styles.shadow}
-                >
-                  <Image
-                    source={require("@/assets/images/filter5.png")}
-                    alt="button"
-                    className="w-10 h-10 mx-1"
-                  />
-                  <Badge
-                    visible={
-                      selectedDiet.length > 0 ||
-                      selectedIntolerance.length > 0 ||
-                      selectedMaxReadyTime !== null
-                    }
-                    size={20}
-                    style={{
-                      backgroundColor: "#ef4444",
-                      position: "absolute",
-                      top: -6,
-                      right: -6,
-                    }}
-                  >
-                    +
-                  </Badge>
-                </TouchableOpacity>
-              </View>
+              {/* Microphone icon */}
+              <SpeechToText targetScreen="search" />
             </View>
 
             {/* Home and Search Buttons */}
@@ -1023,20 +1055,20 @@ export default function Search() {
               </View>
             )}
 
+            {/* Home Screen with Categories and Recent Recipes */}
             <ScrollView className="flex-1">
-              {/* Home Screen with Categories and Recent Recipes */}
               {showHome && (
                 <View>
                   {/* Categories */}
                   <View>
-                    <Text className="font-NobileBold text-lg text-slate-700 mt-4 ml-5">
+                    <Text className="font-NobileBold text-lg text-slate-700 mt-4 ml-6">
                       Categories
                     </Text>
                     <ScrollView
                       horizontal={true}
                       showsHorizontalScrollIndicator={false}
                     >
-                      <View className="flex-row  items-center justify-center relative mb-1 mx-4">
+                      <View className="flex-row items-center justify-center relative mb-1 mx-4">
                         {cuisines.map((cuisine, index) => (
                           <TouchableOpacity
                             key={index}
@@ -1060,24 +1092,41 @@ export default function Search() {
                             style={styles.shadow}
                           >
                             <View
-                              className="absolute bg-[#FFBA00] rounded-2xl right-3 top-5 w-32 h-32"
+                              className={
+                                isSmallScreen
+                                  ? "absolute bg-[#FFBA00] rounded-2xl right-3 top-5 w-28 h-28"
+                                  : "absolute bg-[#FFBA00] rounded-2xl right-3 top-5 w-32 h-32"
+                              }
                               style={styles.shadow}
                             ></View>
-                            <View className="w-32 h-32 m-4 items-center justify-center rounded-2xl">
+                            <View className="m-4 items-center justify-center rounded-2xl">
                               <Image
                                 source={imageForCuisine(cuisine)}
-                                className="w-32 h-32 rounded-2xl"
+                                className={
+                                  isSmallScreen
+                                    ? "w-28 h-28 rounded-2xl"
+                                    : "w-32 h-32 rounded-2xl"
+                                }
                               />
                             </View>
                             <View
-                              className="flex justify-center items-center w-36 h-10 relative"
-                              style={styles.shadow}
+                              className={
+                                isSmallScreen
+                                  ? "flex justify-center items-center w-32 h-8 relative"
+                                  : "flex justify-center items-center w-36 h-10 relative"
+                              }
                             >
                               <Image
-                                source={setRandomStickerImages()}
+                                source={randomStickers[index]}
                                 className="absolute inset-0 w-full h-full"
                               />
-                              <Text className="text-md text-center font-NobileBold text-slate-700">
+                              <Text
+                                className={
+                                  isSmallScreen
+                                    ? "text-xs text-center font-NobileBold text-slate-700"
+                                    : "text-md text-center font-NobileBold text-slate-700"
+                                }
+                              >
                                 {cuisine}
                               </Text>
                             </View>
@@ -1088,83 +1137,134 @@ export default function Search() {
                   </View>
 
                   {/* Recent Recipes */}
-                  <View>
-                    <Text className="font-NobileBold text-lg text-slate-700 mt-4 ml-5">
-                      Recent recipes
-                    </Text>
-                    <ScrollView
-                      horizontal={true}
-                      showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={{
-                        marginLeft: 10,
-                      }}
-                    >
-                      {recentlyViewedRecipes &&
-                        recentlyViewedRecipes.length > 0 &&
-                        recentlyViewedRecipes.map((recipe: any) => (
-                          <View
-                            className="flex-1 items-center justify-center relative rounded-2xl w-[220] h-[270] my-1"
-                            key={recipe.id}
-                          >
-                            <Image
-                              source={require("../../assets/images/recipeBack/recipeBack4.png")}
-                              className="absolute inset-0 w-full h-full"
-                              style={styles.shadow}
-                            />
-                            {user.token && (
-                              <TouchableOpacity
-                                className="absolute top-10 right-3"
-                                onPress={() =>
-                                  isFavourite[recipe.id]
-                                    ? handleRemoveFromFavourites(recipe.id)
-                                    : handleAddToFavourites(recipe.id)
-                                }
-                              >
-                                <Image
-                                  source={
+                  {recentlyViewedRecipes?.length ? (
+                    <View>
+                      <Text className="font-NobileBold text-lg text-slate-700 mt-4 ml-6">
+                        Recent recipes
+                      </Text>
+                      <ScrollView
+                        horizontal={true}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{
+                          marginLeft: 10,
+                          paddingBottom: 30,
+                        }}
+                      >
+                        {recentlyViewedRecipes?.length > 0 &&
+                          recentlyViewedRecipes.map((recipe: any) => (
+                            <View
+                              className="flex-1 items-center justify-center relative rounded-2xl w-[220] h-[270] my-1"
+                              key={recipe.id}
+                            >
+                              <Image
+                                source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                                className="absolute inset-0 w-full h-full"
+                                style={styles.shadow}
+                              />
+                              {user.token && (
+                                <TouchableOpacity
+                                  className="absolute top-10 right-3"
+                                  onPress={() =>
                                     isFavourite[recipe.id]
-                                      ? require("../../assets/images/heart4.png")
-                                      : require("../../assets/images/heart5.png")
+                                      ? handleRemoveFromFavourites(recipe.id)
+                                      : handleAddToFavourites(recipe.id)
                                   }
-                                  className="w-5 h-5"
-                                />
-                              </TouchableOpacity>
-                            )}
-                            <View className="flex items-center justify-center">
-                              <TouchableOpacity
-                                onPress={() => handleGoToRecipeCard(recipe.id)}
-                                key={recipe.id}
-                                className="flex items-center justify-center"
-                              >
-                                <Image
-                                  source={
-                                    recipe.image
-                                      ? { uri: recipe.image }
-                                      : require("../../assets/images/picMissing.png")
+                                >
+                                  <Image
+                                    source={
+                                      isFavourite[recipe.id]
+                                        ? require("../../assets/images/heart4.png")
+                                        : require("../../assets/images/heart5.png")
+                                    }
+                                    className="w-5 h-5"
+                                  />
+                                </TouchableOpacity>
+                              )}
+
+                              <View className="flex items-center justify-start h-full">
+                                <TouchableOpacity
+                                  onPress={() =>
+                                    handleGoToRecipeCard(recipe.id)
                                   }
-                                  className="rounded-xl w-[115] h-[115] right-2"
-                                />
-                                <View className="flex items-center justify-center max-w-[140] mt-2 right-2">
-                                  <Text className="text-center font-Flux text-xs">
-                                    {recipe.title}
+                                  key={recipe.id}
+                                  className="flex items-center justify-center"
+                                >
+                                  {/* Fixed Image */}
+                                  <View className="w-[115px] h-[115px]">
+                                    <Image
+                                      source={
+                                        recipe.image
+                                          ? { uri: recipe.image }
+                                          : require("../../assets/images/picMissing.png")
+                                      }
+                                      className="rounded-xl w-full h-full top-12 right-2"
+                                    />
+                                  </View>
+
+                                  {/* Title */}
+                                  <View className="flex items-center justify-center top-14 right-2">
+                                    <Text className="font-Flux text-center max-w-[140px] text-xs">
+                                      {recipe.title.length > 20
+                                        ? recipe.title.substring(0, 20) + "..."
+                                        : recipe.title}
+                                    </Text>
+                                  </View>
+                                </TouchableOpacity>
+                              </View>
+
+                              {/* Details */}
+                              <View className="flex-row justify-center items-center absolute bottom-6">
+                                <View className="flex justify-center items-center right-6">
+                                  <Image
+                                    source={require("../../assets/images/money.png")}
+                                    className="w-5 h-5"
+                                  />
+                                  <Text className="text-xs">
+                                    ${(recipe.pricePerServing / 100).toFixed(2)}
                                   </Text>
                                 </View>
-                              </TouchableOpacity>
+                                <View className="flex justify-center items-center left-4">
+                                  <Image
+                                    source={require("../../assets/images/timer2.png")}
+                                    className="w-5 h-5"
+                                  />
+                                  <Text className="text-xs">
+                                    {recipe.readyInMinutes} mins
+                                  </Text>
+                                </View>
+                              </View>
                             </View>
-                          </View>
-                        ))}
-                    </ScrollView>
-                  </View>
+                          ))}
+                      </ScrollView>
+                    </View>
+                  ) : (
+                    <View className="flex flex-col items-center justify-center pb-10">
+                      <View className="w-full items-start">
+                        <Text className="font-NobileBold text-lg text-slate-700 mt-4 ml-6">
+                          Recent recipes
+                        </Text>
+                      </View>
+                      <View className="flex items-center justify-center relative rounded-2xl w-[220] h-[270] my-1">
+                        <Image
+                          source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                          className="absolute inset-0 w-full h-full"
+                          style={styles.shadow}
+                        />
+                        <Text className="font-CreamyCookies text-center text-3xl max-w-[100]">
+                          No recent recipes viewed
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
               )}
 
               {/* Search Results */}
               {showSearch &&
-                recipesFromIngredients &&
-                recipesFromIngredients.length > 0 &&
+                recipesFromIngredients?.length > 0 &&
                 recipesFromIngredients.map((recipe) => (
                   <View
-                    className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460] mb-2"
+                    className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460] mb-2 mt-3"
                     key={recipe.id}
                   >
                     <Image
@@ -1192,27 +1292,54 @@ export default function Search() {
                       </TouchableOpacity>
                     )}
 
-                    <View className="flex items-center justify-center">
+                    <View className="flex items-center justify-start h-full pt-8">
                       <TouchableOpacity
                         onPress={() => handleGoToRecipeCard(recipe.id)}
                         key={recipe.id}
                         className="flex items-center justify-center"
                       >
-                        <Image
-                          source={
-                            recipe.image
-                              ? { uri: recipe.image }
-                              : require("../../assets/images/picMissing.png")
-                          }
-                          className="rounded-xl w-[200] h-[200] right-4"
-                        />
+                        {/* Fixed Image */}
+                        <View className="w-[200px] h-[200px]">
+                          <Image
+                            source={
+                              recipe.image
+                                ? { uri: recipe.image }
+                                : require("../../assets/images/picMissing.png")
+                            }
+                            className="rounded-xl w-full h-full top-12 right-4"
+                          />
+                        </View>
 
-                        <View className="flex items-center justify-center max-w-[200] mt-4">
-                          <Text className="text-center font-Flux text-[15px]">
-                            {recipe.title}
+                        {/* Title */}
+                        <View className="flex items-center justify-center top-16 right-4">
+                          <Text className="font-Flux text-center max-w-[200px]">
+                            {recipe.title.length > 60
+                              ? recipe.title.substring(0, 60) + "..."
+                              : recipe.title}
                           </Text>
                         </View>
                       </TouchableOpacity>
+                    </View>
+                    {/* Details */}
+                    <View className="flex-row justify-center items-center absolute bottom-10">
+                      <View className="flex justify-center items-center right-10">
+                        <Image
+                          source={require("../../assets/images/money.png")}
+                          className="w-8 h-8"
+                        />
+                        <Text className="text-md">
+                          ${(recipe.pricePerServing / 100).toFixed(2)}
+                        </Text>
+                      </View>
+                      <View className="flex justify-center items-center left-6">
+                        <Image
+                          source={require("../../assets/images/timer2.png")}
+                          className="w-8 h-8"
+                        />
+                        <Text className="text-md">
+                          {recipe.readyInMinutes} mins
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 ))}
@@ -1320,7 +1447,7 @@ export default function Search() {
       >
         {/* Filters */}
         <View className="flex justify-center items-center">
-          <View className="bg-slate-100 rounded-2xl p-12 mb-12">
+          <View className="bg-slate-100 rounded-2xl p-12 mb-16">
             <TouchableOpacity
               onPress={() => {
                 handleCloseFilterModal();
@@ -1558,7 +1685,11 @@ export default function Search() {
                   handleOkPress();
                   handleCloseFilterModal();
                 }}
-                className="flex justify-center items-center my-4"
+                className={
+                  isSmallScreen
+                    ? "flex justify-center items-center"
+                    : "flex justify-center items-center my-4"
+                }
                 style={styles.shadow}
               >
                 <Text className="text-2xl font-Nobile text-slate-800">
@@ -1567,7 +1698,7 @@ export default function Search() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleResetFilters}
-                className="absolute -bottom-10"
+                className="absolute -bottom-8"
                 style={styles.shadow}
               >
                 <Text className="text-base font-Nobile text-slate-800">

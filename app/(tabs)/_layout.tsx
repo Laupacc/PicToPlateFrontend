@@ -15,10 +15,10 @@ export default function TabLayout() {
 
   return (
     <>
-      <StatusBar
+      {/* <StatusBar
         style={colorScheme === "dark" ? "light" : "dark"}
         backgroundColor={colorScheme === "dark" ? "#000000" : "#ffffff"}
-      />
+      /> */}
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
@@ -27,20 +27,17 @@ export default function TabLayout() {
             fontSize: 14,
             fontWeight: "500",
           },
-          // tabBarIconStyle: {
-          //   marginBottom: -3,
-          //   marginTop: 3,
-          // },
+          tabBarIconStyle: {
+            marginTop: Platform.OS === "ios" ? 12 : 0,
+          },
           tabBarStyle: {
             position: "absolute",
-            height: Platform.OS === "ios" ? 90 : 60,
-            // bottom: 15,
+            height: Platform.OS === "ios" ? 80 : 60,
             left: 10,
             right: 10,
-            // borderRadius: 20,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
-            backgroundColor: "#cbd5e1", // light grey
+            backgroundColor: "#cbd5e1", 
             ...styles.shadow,
           },
           tabBarShowLabel: false,

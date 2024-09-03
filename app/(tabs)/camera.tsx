@@ -64,6 +64,9 @@ export default function Camera() {
     useState(false);
 
   const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
+  const calculatedHeight = screenWidth * (9 / 16);
+  const isSmallScreen = screenWidth < 400;
 
   // Set the status bar style
   useFocusEffect(
@@ -487,7 +490,7 @@ export default function Camera() {
                 >
                   <Image
                     source={require("../../assets/images/uploadPhoto2.png")}
-                    className="w-14 h-14"
+                    className={isSmallScreen ? "w-12 h-12" : "w-14 h-14"}
                   />
                 </TouchableOpacity>
               </View>
@@ -499,7 +502,7 @@ export default function Camera() {
                 >
                   <Image
                     source={require("../../assets/images/takeaphoto.png")}
-                    className="w-14 h-14"
+                    className={isSmallScreen ? "w-12 h-12" : "w-14 h-14"}
                   />
                 </TouchableOpacity>
                 <View className="flex justify-center items-start">
@@ -514,10 +517,7 @@ export default function Camera() {
               </View>
             </View>
 
-            <View
-              className="flex justify-center items-center"
-              // onPress={selectImage}
-            >
+            <View className="flex justify-center items-center">
               {image ? (
                 <View
                   className="border-4 border-[#E56363] rounded-2xl w-64 h-64 relative flex justify-center items-center"
@@ -567,7 +567,7 @@ export default function Camera() {
             className="absolute bg-[#E56363] rounded-2xl right-0.5 bottom-0.5"
             style={{
               width: screenWidth - 45,
-              height: 295,
+              height: isSmallScreen ? 255 : 295,
               ...styles.shadow,
             }}
           ></View>
@@ -575,7 +575,7 @@ export default function Camera() {
             className="flex justify-center items-center bg-slate-50 rounded-2xl m-2 p-2"
             style={{
               width: screenWidth - 45,
-              height: 295,
+              height: isSmallScreen ? 255 : 295,
             }}
           >
             <View className="flex justify-center items-center w-full p-2 bg-[#E56363] rounded-t-2xl mb-1">
@@ -587,7 +587,11 @@ export default function Camera() {
               {predictions.slice(0, 10).map((prediction, index) => (
                 <View
                   key={index}
-                  className="p-1 flex justify-center items-center w-[340]"
+                  className={
+                    isSmallScreen
+                      ? "p-0.5 flex justify-center items-center w-[300] mt-0.5"
+                      : "p-1 flex justify-center items-center w-[340]"
+                  }
                 >
                   <BouncyCheckbox
                     onPress={() => toggleIngredient(prediction)}
@@ -609,6 +613,7 @@ export default function Camera() {
                     }
                     textStyle={{
                       fontFamily: "SpaceMono",
+                      fontSize: isSmallScreen ? 14 : 16,
                       textDecorationLine:
                         addedIngredients.includes(prediction.name) ||
                         alreadyInFridge.includes(prediction.name)

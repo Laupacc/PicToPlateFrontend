@@ -171,7 +171,7 @@ export default function Favourites() {
               favouriteRecipes.length > 0 &&
               favouriteRecipes.map((recipe, index) => (
                 <View
-                  className="flex-1 items-center justify-center relative rounded-2xl w-[360] h-[460]"
+                  className="flex-1 items-center justify-center relative rounded-2xl w-[360px] h-[460px]"
                   key={index}
                 >
                   <Image
@@ -188,26 +188,71 @@ export default function Favourites() {
                       className="w-8 h-8"
                     />
                   </TouchableOpacity>
-                  <View className="flex items-center justify-center">
+
+                  <View className="flex items-center justify-start h-full pt-8">
                     <TouchableOpacity
                       onPress={() => handleGoToRecipeCard(recipe.id)}
                       key={recipe.id}
                       className="flex items-center justify-center"
                     >
-                      <Image
-                        source={
-                          recipe.additionalData.image
-                            ? { uri: recipe.additionalData.image }
-                            : require("../../assets/images/picMissing.png")
-                        }
-                        className="rounded-xl w-[200] h-[200] right-4"
-                      />
-                      <View className="flex items-center justify-center max-w-[200] mt-4">
-                        <Text className="font-Flux text-center">
-                          {recipe.title}
+                      {/* Fixed Image */}
+                      <View className="w-[200px] h-[200px]">
+                        <Image
+                          source={
+                            recipe.additionalData.image
+                              ? { uri: recipe.additionalData.image }
+                              : require("../../assets/images/picMissing.png")
+                          }
+                          className="rounded-xl w-full h-full top-12 right-4"
+                        />
+                      </View>
+
+                      {/* Title */}
+                      <View className="flex items-center justify-center top-16 right-4">
+                        <Text className="font-Flux text-center max-w-[200px]">
+                          {recipe.title.length > 60
+                            ? recipe.title.substring(0, 60) + "..."
+                            : recipe.title}
                         </Text>
                       </View>
                     </TouchableOpacity>
+                  </View>
+
+                  {/* Details */}
+                  <View className="flex-row justify-around items-center absolute bottom-10 right-20">
+                    <View className="flex justify-center items-center mx-3">
+                      <Image
+                        source={require("../../assets/images/money.png")}
+                        className="w-8 h-8"
+                      />
+                      <Text className="text-md">
+                        $
+                        {(recipe.additionalData.pricePerServing / 100).toFixed(
+                          2
+                        )}
+                      </Text>
+                    </View>
+                    <View className="flex justify-center items-center ml-3 mr-2">
+                      <Image
+                        source={require("../../assets/images/fire.png")}
+                        className="w-8 h-8"
+                      />
+                      <Text className="text-md">
+                        {Math.round(
+                          recipe.additionalData.nutrition.nutrients[0].amount
+                        )}{" "}
+                        kcal
+                      </Text>
+                    </View>
+                    <View className="flex justify-center items-center mx-3">
+                      <Image
+                        source={require("../../assets/images/timer2.png")}
+                        className="w-8 h-8"
+                      />
+                      <Text className="text-md">
+                        {recipe.additionalData.readyInMinutes} mins
+                      </Text>
+                    </View>
                   </View>
                 </View>
               ))}

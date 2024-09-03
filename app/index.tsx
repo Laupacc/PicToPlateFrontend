@@ -122,22 +122,28 @@ export default function Index() {
         backgroundColor="transparent"
         translucent={true}
       />
+
       <View className="w-full h-full relative flex justify-center items-center">
+        {/* Background Image */}
         <Image
           className="bg-cover bg-center relative w-full h-full"
           source={randomBackgroundImages()}
         />
+
+        {/* Background Gradient */}
         <LinearGradient
           colors={["transparent", "black"]}
           className="absolute w-full h-full"
         />
 
-        <View className="absolute">
-          <Text className="text-5xl text-slate-300 text-center m-3 top-40 font-CreamyCookies">
+        {/* Catch Phrase */}
+        <View className="absolute m-3 bottom-60">
+          <Text className="text-5xl text-slate-300 text-center font-CreamyCookies">
             {randomCatchPhrases()}
           </Text>
         </View>
 
+        {/* Button */}
         <View className="absolute bottom-32">
           <TouchableOpacity
             className="border-2 border-sky-700 p-4 rounded-xl"
@@ -148,14 +154,14 @@ export default function Index() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Logo */}
         <View className="absolute bottom-10">
           <Image
             source={require("../assets/images/logo8.png")}
             className="w-40 h-10"
           />
         </View>
-
-        <View className="absolute bottom-8"></View>
       </View>
     </ScrollView>
   );
