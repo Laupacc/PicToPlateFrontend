@@ -399,6 +399,20 @@ export default function recipesFromFridge() {
   const handleRemoveFromFavourites = async (recipeId: number) => {
     setIsFavourite((prev) => ({ ...prev, [recipeId]: false }));
     await removeRecipeFromFavourites(recipeId, user, toast);
+    // Refetch favourites after adding
+    const response = await fetch(
+      `${BACKEND_URL}/users/userInformation/${user.token}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      }
+    );
+    const data = await response.json();
+    setUserFavourites(data.favourites);
+    console.log("User favourites updated:", data.favourites.length);
     dispatch(removeFromFavouriteRecipes(recipeId));
   };
 
@@ -425,7 +439,7 @@ export default function recipesFromFridge() {
           className=" flex-1 items-start ml-8"
         >
           <Image
-            source={require("../../assets/images/yellowArrow.png")}
+            source={require("../../assets/images/arrows/yellowArrowLeft.png")}
             className="w-12 h-10"
           />
         </TouchableOpacity>
@@ -450,7 +464,7 @@ export default function recipesFromFridge() {
           className="flex-1 items-end mr-8"
         >
           <Image
-            source={require("../../assets/images/filter5.png")}
+            source={require("../../assets/images/filter.png")}
             alt="button"
             className="w-10 h-10"
           />
@@ -517,8 +531,8 @@ export default function recipesFromFridge() {
                       <Image
                         source={
                           isFavourite[recipe.id]
-                            ? require("../../assets/images/heart4.png")
-                            : require("../../assets/images/heart5.png")
+                            ? require("../../assets/images/heartFull.png")
+                            : require("../../assets/images/heartEmpty.png")
                         }
                         className="w-8 h-8"
                       />
@@ -539,14 +553,22 @@ export default function recipesFromFridge() {
                                 : require("../../assets/images/picMissing.png")
                             }
                             className="rounded-xl w-full h-full top-12 right-4"
+                            onError={() => {
+                              setRecipes((prev: any) => {
+                                const updatedRecipes = prev.map((r: any) =>
+                                  r.id === recipe.id ? { ...r, image: null } : r
+                                );
+                                return updatedRecipes;
+                              });
+                            }}
                           />
                         </View>
 
                         {/* Title */}
                         <View className="flex items-center justify-center top-16 right-4">
                           <Text className="font-Flux text-center max-w-[200px]">
-                            {recipe.title.length > 60
-                              ? recipe.title.substring(0, 60) + "..."
+                            {recipe.title.length > 65
+                              ? recipe.title.substring(0, 65) + "..."
                               : recipe.title}
                           </Text>
                         </View>
@@ -554,32 +576,21 @@ export default function recipesFromFridge() {
                     </View>
 
                     {/* Details */}
-                    <View className="flex-row justify-center items-center absolute bottom-10">
-                      <View className="flex justify-center items-center right-10">
-                        <Image
-                          source={require("../../assets/images/money.png")}
-                          className="w-8 h-8"
-                        />
-                        <Text className="text-md">
-                          ${(recipe.pricePerServing / 100).toFixed(2)}
-                        </Text>
-                      </View>
-                      <View className="flex justify-center items-center left-6">
-                        <Image
-                          source={require("../../assets/images/timer2.png")}
-                          className="w-8 h-8"
-                        />
-                        <Text className="text-md">
-                          {recipe.readyInMinutes} mins
-                        </Text>
-                      </View>
+                    <View className="flex-row justify-center items-center absolute bottom-12">
+                      <Image
+                        source={require("../../assets/images/timer.png")}
+                        className="w-8 h-8"
+                      />
+                      <Text className="text-md">
+                        {recipe.readyInMinutes} mins
+                      </Text>
                     </View>
                   </View>
                 ))}
 
               {/* Load more button */}
               {hasMoreResults && (
-                <View className="flex justify-center items-center mb-4">
+                <View className="flex justify-center items-center mb-8">
                   <TouchableOpacity
                     onPress={loadMoreRecipes}
                     className="relative flex justify-center items-center"
@@ -795,7 +806,7 @@ export default function recipesFromFridge() {
                   1
                 </Badge>
                 <Image
-                  source={require("../../assets/images/timer3.png")}
+                  source={require("../../assets/images/timer2.png")}
                   className="w-6 h-6"
                 />
                 <Text className="text-base font-Nobile text-slate-800">
@@ -863,7 +874,7 @@ export default function recipesFromFridge() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleResetFilters}
-                className="absolute -bottom-10"
+                className="absolute -bottom-8"
                 style={styles.shadow}
               >
                 <Text className="text-base font-Nobile text-slate-800">

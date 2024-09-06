@@ -130,17 +130,27 @@
     { "key": "treeNut", "label": "Tree Nut" },
     { "key": "wheat", "label": "Wheat" }
   ],
-  "conversionAmounts": [
+  "conversionUnits": [
+    { "label": "mg", "value": "mg" },
     { "label": "g", "value": "g" },
     { "label": "kg", "value": "kg" },
     { "label": "oz", "value": "oz" },
     { "label": "lb", "value": "lb" },
-    { "label": "tsp", "value": "tsp" },
-    { "label": "tbsp", "value": "tbsp" },
-    { "label": "cup", "value": "cup" },
     { "label": "ml", "value": "ml" },
-    { "label": "l", "value": "l" }
+    { "label": "l", "value": "l" },
+    { "label": "tsp", "value": "tsp" },
+    { "label": "Tbs", "value": "Tbs" },
+    { "label": "cup", "value": "cup" },
+    { "label": "fl-oz", "value": "fl-oz" },
+    { "label": "pnt", "value": "pnt" },
+    { "label": "qt", "value": "qt" },
+    { "label": "gal", "value": "gal" },
+    { "label": "C", "value": "C" },
+    { "label": "F", "value": "F" },
+    { "label": "ea", "value": "ea" },
+    { "label": "dz", "value": "dz" }
   ],
+
   "maxReadyTimeOptions": [15, 30, 45, 60, 90, 120, 150, 180],
   "cuisines": [
     "African",

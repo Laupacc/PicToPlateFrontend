@@ -129,11 +129,19 @@ export default function Favourites() {
               style={styles.shadow}
             />
             <View className="flex items-center justify-center max-w-[180]">
-              <Link href="/authentication" className="text-blue-500">
-                <Text className="font-CreamyCookies text-center text-3xl">
+              <TouchableOpacity
+                onPress={() => navigation.navigate("authentication")}
+                className="flex justify-center items-center mb-6"
+                style={styles.shadow}
+              >
+                <Image
+                  source={require("../../assets/images/keyholeSecurity.png")}
+                  className="w-16 h-16"
+                />
+                <Text className="font-CreamyCookies text-blue-500 text-center text-3xl">
                   Log in
                 </Text>
-              </Link>
+              </TouchableOpacity>
               <Text className="font-CreamyCookies text-center text-3xl">
                 to see your favourite recipes
               </Text>
@@ -184,7 +192,7 @@ export default function Favourites() {
                     onPress={() => handleRemoveFromFavourites(recipe.id)}
                   >
                     <Image
-                      source={require("../../assets/images/trash2.png")}
+                      source={require("../../assets/images/trash.png")}
                       className="w-8 h-8"
                     />
                   </TouchableOpacity>
@@ -199,19 +207,35 @@ export default function Favourites() {
                       <View className="w-[200px] h-[200px]">
                         <Image
                           source={
-                            recipe.additionalData.image
+                            recipe.additionalData?.image
                               ? { uri: recipe.additionalData.image }
                               : require("../../assets/images/picMissing.png")
                           }
                           className="rounded-xl w-full h-full top-12 right-4"
+                          onError={() => {
+                            setFavouriteRecipes((prev: any) => {
+                              const updatedRecipes = prev.map((r: any) =>
+                                r.id === recipe.id
+                                  ? {
+                                      ...r,
+                                      additionalData: {
+                                        ...r.additionalData,
+                                        image: null,
+                                      },
+                                    }
+                                  : r
+                              );
+                              return updatedRecipes;
+                            });
+                          }}
                         />
                       </View>
 
                       {/* Title */}
                       <View className="flex items-center justify-center top-16 right-4">
                         <Text className="font-Flux text-center max-w-[200px]">
-                          {recipe.title.length > 60
-                            ? recipe.title.substring(0, 60) + "..."
+                          {recipe.title.length > 65
+                            ? recipe.title.substring(0, 65) + "..."
                             : recipe.title}
                         </Text>
                       </View>
@@ -246,7 +270,7 @@ export default function Favourites() {
                     </View>
                     <View className="flex justify-center items-center mx-3">
                       <Image
-                        source={require("../../assets/images/timer2.png")}
+                        source={require("../../assets/images/timer.png")}
                         className="w-8 h-8"
                       />
                       <Text className="text-md">

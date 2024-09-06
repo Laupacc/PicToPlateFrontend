@@ -21,7 +21,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "react-native-toast-notifications";
 import { useNavigation } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { manipulateAsync } from "expo-image-manipulator";
+import { Accelerometer } from "expo-sensors";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 import {
   CameraView,
   useCameraPermissions,
@@ -49,6 +50,8 @@ export default function Camera() {
 
   const [isPredictionLoading, setPredictionLoading] = useState<boolean>(false);
   const [predictions, setPredictions] = useState<any[]>([]);
+  const [deviceOrientation, setDeviceOrientation] =
+    useState<string>("portrait");
   const [image, setImage] = useState<string | null>(null);
   const [facing, setFacing] = useState<CameraType | undefined>("back");
   const [flash, setFlash] = useState<FlashMode | undefined>("off");
@@ -79,25 +82,19 @@ export default function Camera() {
     }, [])
   );
 
-  // useEffect to get the camera permissions
-  useEffect(() => {
-    getPermissionAsync();
-  }, []);
-
-  // Request permission to access the camera roll for IOS, no need for Android
-  const getPermissionAsync = async () => {
-    if (Platform.OS === "ios") {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        alert("We need camera roll permissions to make this work!");
-      }
-    }
-  };
-
   // Select an image from the camera roll
   const selectImage = async () => {
     try {
+      // Request permission to access the camera roll for IOS, no need for Android
+      if (Platform.OS === "ios") {
+        const { status } =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+          alert("We need camera roll permissions to make this work!");
+        }
+      }
+
+      // Open the image picker
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -127,21 +124,117 @@ export default function Camera() {
     setCameraOpen(true);
   };
 
+  // Get the device orientation using the accelerometer
+  useEffect(() => {
+    const subscription = Accelerometer.addListener(({ x, y }) => {
+      if (Math.abs(x) > Math.abs(y)) {
+        if (x > 0) {
+          setDeviceOrientation("landscape-right");
+        } else {
+          setDeviceOrientation("landscape-left");
+        }
+      } else {
+        if (y > 0) {
+          setDeviceOrientation("portrait");
+        } else {
+          setDeviceOrientation("portrait-upside-down");
+        }
+      }
+    });
+
+    Accelerometer.setUpdateInterval(1000);
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   // Take a picture with the camera
   const takePicture = async () => {
     if (cameraRef.current) {
-      const photo = await cameraRef.current.takePictureAsync();
-      if (photo) {
-        setImage(photo.uri);
-        console.log("Image taken:", photo.uri);
-        classifyImage(photo.uri);
-      } else {
-        console.log("Failed to take picture");
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          skipProcessing: true,
+        });
+
+        if (photo) {
+          const fixedPhotoUri = await rotateImageBasedOnDeviceOrientation(
+            photo.uri,
+            deviceOrientation
+          );
+          setImage(fixedPhotoUri);
+          console.log("Image taken:", fixedPhotoUri);
+          classifyImage(fixedPhotoUri);
+        } else {
+          console.log("Failed to take picture");
+        }
+      } catch (error) {
+        console.log("Error taking picture:", error);
+      } finally {
+        setCameraOpen(false);
       }
-      setCameraOpen(false);
     } else {
       console.log("Camera not ready");
     }
+  };
+
+  // Rotate the image based on the device orientation
+  const rotateImageBasedOnDeviceOrientation = async (
+    uri: string,
+    orientation: string
+  ) => {
+    let rotateAngle = 0;
+
+    if (Platform.OS === "ios") {
+      switch (orientation) {
+        case "landscape-left":
+          rotateAngle = -90;
+          break;
+        case "landscape-right":
+          rotateAngle = 90;
+          break;
+        case "portrait-upside-down":
+          rotateAngle = 0;
+          break;
+        case "portrait":
+          rotateAngle = 180;
+          break;
+        default:
+          rotateAngle = 0;
+      }
+    } else {
+      // Android logic
+      switch (orientation) {
+        case "landscape-left":
+          rotateAngle = 90;
+          break;
+        case "landscape-right":
+          rotateAngle = -90;
+          break;
+        case "portrait-upside-down":
+          rotateAngle = 180;
+          break;
+        case "portrait":
+          rotateAngle = 0;
+          break;
+        default:
+          rotateAngle = 0;
+      }
+    }
+
+    if (
+      rotateAngle !== 0 ||
+      (Platform.OS === "ios" && orientation === "portrait")
+    ) {
+      const manipulatedImage = await manipulateAsync(
+        uri,
+        [{ rotate: rotateAngle }],
+        { compress: 1, format: SaveFormat.JPEG }
+      );
+      return manipulatedImage.uri;
+    }
+
+    return uri; // Return the original if no rotation is needed
   };
 
   // Toggle the camera facing
@@ -479,7 +572,7 @@ export default function Camera() {
                     Upload
                   </Text>
                   <Image
-                    source={require("../../assets/images/curvedArrowDown.png")}
+                    source={require("../../assets/images/arrows/curvedArrowDown.png")}
                     className="w-10 h-10"
                   />
                 </View>
@@ -489,7 +582,7 @@ export default function Camera() {
                   className="p-2 m-4 bg-white rounded-xl flex justify-center items-center "
                 >
                   <Image
-                    source={require("../../assets/images/uploadPhoto2.png")}
+                    source={require("../../assets/images/filmRoll.png")}
                     className={isSmallScreen ? "w-12 h-12" : "w-14 h-14"}
                   />
                 </TouchableOpacity>
@@ -501,13 +594,13 @@ export default function Camera() {
                   className="p-2 m-4 bg-white rounded-xl flex justify-center items-center"
                 >
                   <Image
-                    source={require("../../assets/images/takeaphoto.png")}
+                    source={require("../../assets/images/camera.png")}
                     className={isSmallScreen ? "w-12 h-12" : "w-14 h-14"}
                   />
                 </TouchableOpacity>
                 <View className="flex justify-center items-start">
                   <Image
-                    source={require("../../assets/images/curvedArrowUp.png")}
+                    source={require("../../assets/images/arrows/curvedArrowUp.png")}
                     className="w-10 h-10"
                   />
                   <Text className="text-white text-2xl text-center font-CreamyCookies">
@@ -536,7 +629,7 @@ export default function Camera() {
                   ></View>
                   <View className="flex justify-center items-center bg-white rounded-2xl m-2 p-2 w-64 h-64">
                     <Image
-                      source={require("../../assets/images/uploadPhoto1.png")}
+                      source={require("../../assets/images/recognition.png")}
                       className="w-52 h-52 justify-center items-center"
                     />
                   </View>
@@ -665,51 +758,54 @@ export default function Camera() {
             className="w-full h-full"
           >
             <View className="absolute top-0 left-0 right-0 flex flex-row justify-between p-4">
-              <TouchableOpacity onPress={toggleCameraFacing}>
+              <TouchableOpacity hitSlop={20} onPress={toggleCameraFacing}>
                 {Platform.OS === "ios" ? (
                   <MaterialCommunityIcons
                     name="camera-flip-outline"
-                    size={40}
+                    size={45}
                     color="white"
                   />
                 ) : (
                   <MaterialIcons
                     name="flip-camera-android"
-                    size={40}
+                    size={45}
                     color="white"
                   />
                 )}
               </TouchableOpacity>
-              <TouchableOpacity onPress={toggleFlash}>
+              <TouchableOpacity hitSlop={20} onPress={toggleFlash}>
                 {flash === "on" ? (
                   <MaterialCommunityIcons
                     name="flash"
-                    size={40}
+                    size={45}
                     color="white"
                   />
                 ) : flash === "auto" ? (
                   <MaterialCommunityIcons
                     name="flash-auto"
-                    size={40}
+                    size={45}
                     color="white"
                   />
                 ) : (
                   <MaterialCommunityIcons
                     name="flash-off"
-                    size={40}
+                    size={45}
                     color="white"
                   />
                 )}
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setCameraOpen(false)}>
-                <Ionicons name="close-circle-outline" size={40} color="white" />
+              <TouchableOpacity
+                hitSlop={20}
+                onPress={() => setCameraOpen(false)}
+              >
+                <Ionicons name="close-circle-outline" size={45} color="white" />
               </TouchableOpacity>
             </View>
             <View className="flex-1 justify-end items-center mb-10">
               <TouchableOpacity onPress={takePicture}>
                 <MaterialCommunityIcons
                   name="circle-slice-8"
-                  size={70}
+                  size={80}
                   color="white"
                 />
               </TouchableOpacity>

@@ -66,16 +66,6 @@ export const fetchAnalyzedInstructions = async (id: number) => {
   }
 };
 
-export const randomStickerImage = () => {
-  const images = [
-    require("./assets/images/stickers/stickerB1.png"),
-    require("./assets/images/stickers/stickerB2.png"),
-    require("./assets/images/stickers/stickerB3.png"),
-    require("./assets/images/stickers/stickerB4.png"),
-  ];
-  return images[Math.floor(Math.random() * images.length)];
-};
-
 export const addRecipeToFavourites = async (
   recipeId: number,
   user: any,

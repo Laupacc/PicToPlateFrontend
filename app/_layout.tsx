@@ -25,28 +25,31 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-  const [loaded] = useFonts({
+  const [fontsLoaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     Nobile: require("../assets/fonts/Nobile-Regular.ttf"),
     NobileBold: require("../assets/fonts/Nobile-Bold.ttf"),
     NobileMedium: require("../assets/fonts/Nobile-Medium.ttf"),
     Maax: require("../assets/fonts/Maax.ttf"),
     Steradian: require("../assets/fonts/Steradian-Rg.ttf"),
-    ConceptDraft: require("../assets/fonts/ConceptDraft.otf"),
     CreamyCookies: require("../assets/fonts/Creamycookies.otf"),
     Sketch: require("../assets/fonts/Sketch.ttf"),
     Flux: require("../assets/fonts/Flux_Architect_Regular.ttf"),
+    Luminous: require("../assets/fonts/Luminous.otf"),
+    OrleansCity: require("../assets/fonts/OrleansCity.otf"),
+    RowsofSunflowers: require("../assets/fonts/RowsofSunflowers.ttf"),
+    HappyWork: require("../assets/fonts/HappyWork.otf"),
   });
 
   // Hide the splash screen when the app is loaded.
   useEffect(() => {
-    if (loaded) {
+    if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [fontsLoaded]);
 
   // Wait for the fonts to load before rendering the app.
-  if (!loaded) {
+  if (!fontsLoaded) {
     return null;
   }
 

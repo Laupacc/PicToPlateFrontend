@@ -158,7 +158,7 @@ export default function Index() {
         {/* Logo */}
         <View className="absolute bottom-10">
           <Image
-            source={require("../assets/images/logo8.png")}
+            source={require("../assets/images/logo.png")}
             className="w-40 h-10"
           />
         </View>

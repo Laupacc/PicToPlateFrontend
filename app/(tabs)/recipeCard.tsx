@@ -239,12 +239,36 @@ export default function RecipeCard() {
         "recentlyViewedRecipes",
         JSON.stringify(updatedViewedRecipes)
       );
-      console.log("Recently viewed recipes updated");
+      // console.log("Recently viewed recipes updated");
+      console.log("Saving recipe:", recipe.id, "to recently viewed");
     } catch (error: any) {
       console.error("Error updating recently viewed recipes:", error.message);
     }
   };
 
+  // Fetch similar recipes
+  const fetchSimilarRecipes = async () => {
+    const recipeId = recipe.id;
+    try {
+      if (!recipe) {
+        return;
+      }
+      const response = await fetch(
+        `${BACKEND_URL}/recipes/similarRecipes/${recipeId}?number=20`
+      );
+      console.log(
+        "URL:",
+        `${BACKEND_URL}/recipes/similarRecipes/${recipeId}?number=20`
+      );
+      console.log("Fetching similar recipes for recipe ID:", recipeId);
+      const data = await response.json();
+      navigation.navigate("search", { data });
+    } catch (error: any) {
+      console.log("Error fetching similar recipes:", error.message);
+    }
+  };
+
+  // Handle fetching a random recipe
   const handleFetchRandomRecipe = async () => {
     try {
       const randomRecipe = await fetchRandomRecipe();
@@ -430,6 +454,22 @@ export default function RecipeCard() {
   const handleRemoveFromFavourites = async (recipeId: number) => {
     setIsFavourite((prev: any) => ({ ...prev, [recipeId]: false }));
     await removeRecipeFromFavourites(recipeId, user, toast);
+
+    // Refetch favourites after adding
+    const response = await fetch(
+      `${BACKEND_URL}/users/userInformation/${user.token}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      }
+    );
+    const data = await response.json();
+    setUserFavourites(data.favourites);
+    console.log("User favourites updated:", data.favourites.length);
+
     dispatch(removeFromFavouriteRecipes(recipeId));
   };
 
@@ -498,21 +538,57 @@ export default function RecipeCard() {
                         ? "w-full h-full"
                         : "w-44 h-44 top-0 bootom-0 right-0 left-0 m-auto"
                     }
+                    onError={() =>
+                      setRecipe((prev: any) => ({
+                        ...prev,
+                        image: null,
+                      }))
+                    }
                   />
                 </View>
               </View>
 
-              {/* Back Button */}
-              <TouchableOpacity
-                onPress={() => handleBackButton()}
-                className="absolute top-5 left-5"
-                style={styles.shadow}
-              >
-                <Image
-                  source={require("../../assets/images/yellowArrow.png")}
-                  className={isSmallScreen ? "w-10 h-8" : "w-12 h-10"}
-                />
-              </TouchableOpacity>
+              {/* Back, Money and Kcal Icons */}
+              <View className="flex justify-center items-center absolute top-5 left-5">
+                {/* Back Button */}
+                <View className="" style={styles.shadow}>
+                  <TouchableOpacity onPress={() => handleBackButton()}>
+                    <Image
+                      source={require("../../assets/images/arrows/yellowArrowLeft.png")}
+                      className={isSmallScreen ? "w-10 h-8" : "w-12 h-10"}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Money and Kcal Icons */}
+                <View
+                  className={
+                    isSmallScreen
+                      ? "flex justify-center items-center absolute top-[70]"
+                      : "flex justify-center items-center absolute top-20"
+                  }
+                >
+                  <View className="flex justify-center items-center my-1">
+                    <Image
+                      source={require("../../assets/images/money.png")}
+                      className={isSmallScreen ? "w-8 h-8" : "w-10 h-10"}
+                    />
+                    <Text className="text-md">
+                      ${(recipe.pricePerServing / 100).toFixed(2)}
+                    </Text>
+                  </View>
+                  <View className="flex justify-center items-center my-1">
+                    <Image
+                      source={require("../../assets/images/fire.png")}
+                      className={isSmallScreen ? "w-8 h-8" : "w-10 h-10"}
+                    />
+                    <Text className="text-md">
+                      {Math.round(recipe.nutrition?.nutrients[0]?.amount)}
+                    </Text>
+                    <Text className="text-md">kcal</Text>
+                  </View>
+                </View>
+              </View>
 
               {/* Favourite Recipe Button */}
               {user.token && (
@@ -528,14 +604,26 @@ export default function RecipeCard() {
                     <Image
                       source={
                         isFavourite[recipe.id]
-                          ? require("../../assets/images/heart4.png")
-                          : require("../../assets/images/heart5.png")
+                          ? require("../../assets/images/heartFull.png")
+                          : require("../../assets/images/heartEmpty.png")
                       }
                       className={isSmallScreen ? "w-11 h-11" : "w-12 h-12"}
                     />
                   }
                 </TouchableOpacity>
               )}
+
+              {/* Similar Recipe Button */}
+              <TouchableOpacity
+                onPress={fetchSimilarRecipes}
+                className="absolute top-24 right-5"
+                style={styles.shadow}
+              >
+                <Image
+                  source={require("../../assets/images/similarRecipe.png")}
+                  className={isSmallScreen ? "w-12 h-12" : "w-12 h-12"}
+                />
+              </TouchableOpacity>
 
               {/* Random Recipe Button */}
               <TouchableOpacity
@@ -545,33 +633,11 @@ export default function RecipeCard() {
               >
                 <BouncingImage>
                   <Image
-                    source={require("../../assets/images/surprise2.png")}
+                    source={require("../../assets/images/surprise.png")}
                     className={isSmallScreen ? "w-12 h-12" : "w-14 h-14"}
                   />
                 </BouncingImage>
               </TouchableOpacity>
-
-              {/* Money and Kcal Icons */}
-              <View className="flex justify-center items-center absolute top-28 left-3">
-                <View className="flex justify-center items-center my-1">
-                  <Image
-                    source={require("../../assets/images/money.png")}
-                    className={isSmallScreen ? "w-8 h-8" : "w-10 h-10"}
-                  />
-                  <Text className="text-md">
-                    ${(recipe.pricePerServing / 100).toFixed(2)}
-                  </Text>
-                </View>
-                <View className="flex justify-center items-center my-1">
-                  <Image
-                    source={require("../../assets/images/fire.png")}
-                    className={isSmallScreen ? "w-8 h-8" : "w-10 h-10"}
-                  />
-                  <Text className="text-md">
-                    {Math.round(recipe.nutrition.nutrients[0].amount)} kcal
-                  </Text>
-                </View>
-              </View>
 
               {/* Recipe Title */}
               <Text
@@ -713,7 +779,7 @@ export default function RecipeCard() {
                       Subs
                     </Text>
                     <Image
-                      source={require("../../assets/images/foodSubs3.png")}
+                      source={require("../../assets/images/foodSubs.png")}
                       className="w-4 h-4 ml-1"
                     />
                   </View>
@@ -879,7 +945,7 @@ export default function RecipeCard() {
                 {/* Ready in minutes */}
                 <View className="flex justify-center items-center mx-6">
                   <Image
-                    source={require("../../assets/images/timer2.png")}
+                    source={require("../../assets/images/timer.png")}
                     className="w-10 h-10"
                   />
                   <Text className="font-SpaceMono text-md">
@@ -891,17 +957,19 @@ export default function RecipeCard() {
                 <View className="flex justify-center items-center mr-4">
                   <View className="flex flex-row justify-center items-center">
                     <TouchableOpacity onPress={decrementServings}>
-                      <Ionicons
-                        name="remove-circle"
-                        size={40}
-                        color={"#075985"}
+                      <Image
+                        source={require("../../assets/images/minusSign.png")}
+                        className="w-11 h-11"
                       />
                     </TouchableOpacity>
                     <Text className="font-SpaceMono text-md mx-1">
                       {servings}
                     </Text>
                     <TouchableOpacity onPress={incrementServings}>
-                      <Ionicons name="add-circle" size={40} color={"#075985"} />
+                      <Image
+                        source={require("../../assets/images/addSign.png")}
+                        className="w-11 h-11"
+                      />
                     </TouchableOpacity>
                   </View>
                   <Text className="font-SpaceMono text-md">Servings</Text>
@@ -952,7 +1020,7 @@ export default function RecipeCard() {
                                 />
                               ) : (
                                 <Image
-                                  source={require("../../assets/images/missingIng2.png")}
+                                  source={require("../../assets/images/missingIng.png")}
                                   className="w-full h-full"
                                 />
                               )}
@@ -1064,7 +1132,7 @@ export default function RecipeCard() {
                   >
                     <View className="relative justify-center items-center mt-3 mb-2">
                       <Image
-                        source={require("../../assets/images/stickers/tape5.png")}
+                        source={require("../../assets/images/stickers/silverTape.png")}
                         className="w-40 h-10 absolute"
                       />
                       <Text className="font-SpaceMono text-lg text-center">
@@ -1448,7 +1516,7 @@ export default function RecipeCard() {
                               />
                             ) : (
                               <Image
-                                source={require("../../assets/images/missingIng2.png")}
+                                source={require("../../assets/images/missingIng.png")}
                                 className="w-full h-full"
                               />
                             )}

@@ -29,7 +29,7 @@ export default function Authentication() {
   const navigation = useNavigation<any>();
   const dispatch = useDispatch();
 
-  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
   const [signUpUsername, setSignUpUsername] = useState<string>("");
   const [signUpPassword, setSignUpPassword] = useState<string>("");
   const [signUpEmail, setSignUpEmail] = useState<string>("");
@@ -340,7 +340,7 @@ export default function Authentication() {
               {!isKeyboardVisible && (
                 <View className="flex justify-center items-center mb-2 absolute top-16">
                   <Image
-                    source={require("../assets/images/logo8.png")}
+                    source={require("../assets/images/logo.png")}
                     className="w-60 h-14"
                   />
                 </View>
@@ -361,6 +361,7 @@ export default function Authentication() {
                     <TextInput
                       placeholder="Username"
                       autoCapitalize="none"
+                      autoCorrect={false}
                       value={loginUsername}
                       onChangeText={(text) => {
                         setLoginUsername(text);
@@ -379,6 +380,7 @@ export default function Authentication() {
                         value={loginPassword}
                         secureTextEntry={isloginPasswordHidden}
                         autoCapitalize="none"
+                        autoCorrect={false}
                         onChangeText={(text) => {
                           setLoginPassword(text);
                           setLoginPasswordEmpty(false);
@@ -475,6 +477,7 @@ export default function Authentication() {
                     <TextInput
                       placeholder="Username"
                       autoCapitalize="none"
+                      autoCorrect={false}
                       value={signUpUsername}
                       onChangeText={(text) => {
                         setSignUpUsername(text);
@@ -490,6 +493,8 @@ export default function Authentication() {
                     <TextInput
                       placeholder="Email"
                       autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="email-address"
                       value={signUpEmail}
                       onChangeText={(text) => setSignUpEmail(text)}
                       className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2"
@@ -501,6 +506,7 @@ export default function Authentication() {
                         value={signUpPassword}
                         secureTextEntry={isSignUpPasswordHidden}
                         autoCapitalize="none"
+                        autoCorrect={false}
                         onChangeText={(text) => {
                           setSignUpPassword(text);
                           setSignUpPasswordEmpty(false);
@@ -569,53 +575,67 @@ export default function Authentication() {
           </ScrollView>
         </KeyboardAvoidingView>
       </TouchableWithoutFeedback>
+
       {/* Forgot Password Modal */}
       <Modal
         visible={forgotPasswordModal}
         onDismiss={toggleForgotPasswordModal}
       >
-        <View className="flex justify-center items-center">
-          <View
-            className="flex justify-around items-center bg-slate-100 rounded-lg p-10"
-            style={styles.shadow}
+        <TouchableWithoutFeedback>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
           >
-            <TouchableOpacity
-              onPress={() => {
-                toggleForgotPasswordModal();
-                setEmail("");
-              }}
-              className="absolute top-2 right-2 p-1"
+            <ScrollView
+              contentContainerStyle={{ flexGrow: 1 }}
+              keyboardShouldPersistTaps="handled"
             >
-              <Image
-                source={require("../assets/images/cross.png")}
-                className="w-6 h-6"
-              />
-            </TouchableOpacity>
-            <Text className="text-lg text-center font-Nobile mb-4">
-              Reset Password
-            </Text>
-            <TextInput
-              placeholder="Enter your email"
-              autoCapitalize="none"
-              className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
-              value={email}
-              onChangeText={(text) => setEmail(text)}
-            />
-            <TouchableOpacity
-              onPress={() => handleForgotPassword()}
-              className="relative flex justify-center items-center mt-2"
-            >
-              <Image
-                source={require("../assets/images/button/button1.png")}
-                alt="button"
-                className="w-32 h-10"
-              />
-              <Text className="text-lg text-white absolute font-Nobile">
-                Submit ✔︎
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+              <View className="flex justify-center items-center">
+                <View
+                  className="flex justify-around items-center bg-slate-100 rounded-lg p-10"
+                  style={styles.shadow}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      toggleForgotPasswordModal();
+                      setEmail("");
+                    }}
+                    className="absolute top-2 right-2 p-1"
+                  >
+                    <Image
+                      source={require("../assets/images/cross.png")}
+                      className="w-6 h-6"
+                    />
+                  </TouchableOpacity>
+                  <Text className="text-lg text-center font-Nobile mb-4">
+                    Reset Password
+                  </Text>
+                  <TextInput
+                    placeholder="Enter your email"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
+                    value={email}
+                    onChangeText={(text) => setEmail(text)}
+                  />
+                  <TouchableOpacity
+                    onPress={() => handleForgotPassword()}
+                    className="relative flex justify-center items-center mt-2"
+                  >
+                    <Image
+                      source={require("../assets/images/button/button1.png")}
+                      alt="button"
+                      className="w-32 h-10"
+                    />
+                    <Text className="text-lg text-white absolute font-Nobile">
+                      Submit ✔︎
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );

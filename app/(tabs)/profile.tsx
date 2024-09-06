@@ -677,7 +677,7 @@ export default function Profile() {
       {/* Logo */}
       <View className="flex justify-center items-center">
         <Image
-          source={require("../../assets/images/logo8.png")}
+          source={require("../../assets/images/logo.png")}
           className="w-60 h-14"
         />
       </View>
@@ -690,170 +690,237 @@ export default function Profile() {
         />
       )}
 
-      <ScrollView>
-        {!loading && (
-          <View className="flex justify-center items-center">
-            {/* Top Box */}
-            <View className="flex justify-center items-center mb-4">
+      {!loading && (
+        <View className="flex-1 justify-center items-center">
+          {/* Top Box */}
+          <View className="flex justify-center items-center mb-4">
+            <View className="flex justify-center items-center relative">
+              <View
+                className="absolute bg-[#9333ea] rounded-2xl -right-1.5 -bottom-1.5"
+                style={{
+                  width: screenWidth - 55,
+                  height: isSmallScreen
+                    ? screenHeight * 0.3
+                    : screenHeight * 0.3,
+                  ...styles.shadow,
+                }}
+              ></View>
+              <View
+                className="flex justify-center items-center bg-white rounded-2xl"
+                style={{
+                  width: screenWidth - 55,
+                  height: isSmallScreen
+                    ? screenHeight * 0.3
+                    : screenHeight * 0.3,
+                }}
+              >
+                {/* Menu Button */}
+                {user.token && (
+                  <View className="absolute top-3 right-1">
+                    <TouchableOpacity
+                      onPress={() => setOpenMenu(!openMenu)}
+                      className="flex justify-center items-center relative mx-2"
+                    >
+                      <Image
+                        source={require("../../assets/images/menuIcon.png")}
+                        className="w-10 h-10"
+                      />
+                    </TouchableOpacity>
+                    {openMenu && (
+                      <View className="flex justify-center items-center mt-3 -mr-1">
+                        <TouchableOpacity
+                          onPress={() => setIsAvatarPickerVisible(true)}
+                          className=""
+                        >
+                          <Image
+                            source={require("../../assets/images/changeImage.png")}
+                            className="w-10 h-10"
+                          />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => setIsUpdateInfoModalVisible(true)}
+                          className="mt-2"
+                        >
+                          <Image
+                            source={require("../../assets/images/updateInfo.png")}
+                            className="w-10 h-10"
+                          />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => {
+                            setJokeModalVisible(true);
+                            fetchJoke();
+                          }}
+                          className="mt-3 mr-1"
+                        >
+                          <Image
+                            source={require("../../assets/images/clown.png")}
+                            className="w-10 h-10"
+                          />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {/* Avatar */}
+                <View>
+                  <Image
+                    source={
+                      user.token &&
+                      avatarImages[selectedAvatar as keyof typeof avatarImages]
+                        ? avatarImages[
+                            selectedAvatar as keyof typeof avatarImages
+                          ]
+                        : require("../../assets/images/avatars/poutine.png")
+                    }
+                    className={
+                      isSmallScreen ? "w-16 h-16 mb-1" : "w-20 h-20 mb-2"
+                    }
+                  />
+                </View>
+
+                {/* User info */}
+                {user.token ? (
+                  <View className="flex justify-center items-center mt-2">
+                    <View className="bg-slate-100 border border-slate-200 rounded-lg w-52 h-10 font-Nobile justify-center items-center m-1">
+                      <ScrollView
+                        horizontal={true}
+                        contentContainerStyle={{
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Text className="text-xl text-cyan-600">
+                          {userInfo.username}
+                        </Text>
+                      </ScrollView>
+                    </View>
+                    <View className="bg-slate-100 border border-slate-200 rounded-lg w-52 h-10 justify-center items-center m-1">
+                      <ScrollView
+                        horizontal={true}
+                        contentContainerStyle={{
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Text className="text-md font-Nobile text-center text-cyan-600">
+                          {userInfo.email}
+                        </Text>
+                      </ScrollView>
+                    </View>
+                  </View>
+                ) : (
+                  <View className="bg-slate-100 border border-slate-200 rounded-lg w-32 h-10 font-Nobile justify-center items-center mt-4">
+                    <Text className="text-xl text-cyan-600">Guest</Text>
+                  </View>
+                )}
+
+                {/* Login, logout*/}
+                {!user.token ? (
+                  <View className="flex mt-8 items-center justify-center">
+                    <Link
+                      href="/authentication"
+                      className="flex flex-row justify-center items-center"
+                    >
+                      <View className="flex flex-row justify-center items-center">
+                        <Text
+                          className={
+                            isSmallScreen
+                              ? "text-base font-Nobile mx-1"
+                              : "text-lg font-Nobile mx-1"
+                          }
+                        >
+                          Login
+                        </Text>
+                        <AntDesign
+                          name="login"
+                          size={24}
+                          color="black"
+                          className="w-9 h-9"
+                        ></AntDesign>
+                      </View>
+                    </Link>
+                    <Text> to see your profile</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleLogout}
+                    className="flex flex-row justify-center items-center mt-2"
+                  >
+                    <Text
+                      className={
+                        isSmallScreen
+                          ? "text-base font-Nobile mx-1"
+                          : "text-lg font-Nobile mx-1"
+                      }
+                    >
+                      Logout
+                    </Text>
+                    <AntDesign
+                      name="logout"
+                      size={24}
+                      color="black"
+                      className="w-9 h-9"
+                    ></AntDesign>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </View>
+
+          {/* User not logged in, guest message */}
+          {!user.token && (
+            <View className="flex justify-center items-center mt-4">
               <View className="flex justify-center items-center relative">
                 <View
-                  className="absolute bg-[#9333ea] rounded-2xl -right-1.5 -bottom-1.5"
+                  className="absolute bg-[#f03838] rounded-2xl -right-1.5 -bottom-1.5"
                   style={{
-                    width: screenWidth - 55,
-                    height: isSmallScreen
-                      ? screenHeight * 0.28
-                      : screenHeight * 0.3,
+                    width: screenWidth - 65,
+                    height: isSmallScreen ? 160 : 220,
                     ...styles.shadow,
                   }}
                 ></View>
                 <View
                   className="flex justify-center items-center bg-white rounded-2xl"
                   style={{
-                    width: screenWidth - 55,
-                    height: isSmallScreen
-                      ? screenHeight * 0.28
-                      : screenHeight * 0.3,
+                    width: screenWidth - 65,
+                    height: isSmallScreen ? 160 : 220,
                   }}
                 >
-                  {/* Menu Button */}
-                  {user.token && (
-                    <View className="absolute top-3 right-1">
-                      <TouchableOpacity
-                        onPress={() => setOpenMenu(!openMenu)}
-                        className="flex justify-center items-center relative mx-2"
-                      >
-                        <Image
-                          source={require("../../assets/images/menuIcon.png")}
-                          className="w-10 h-10"
-                        />
-                      </TouchableOpacity>
-                      {openMenu && (
-                        <View className="flex justify-center items-center mt-3 -mr-1">
-                          <TouchableOpacity
-                            onPress={() => setIsAvatarPickerVisible(true)}
-                            className=""
-                          >
-                            <Image
-                              source={require("../../assets/images/changeImage.png")}
-                              className="w-10 h-10"
-                            />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() => setIsUpdateInfoModalVisible(true)}
-                            className="mt-2"
-                          >
-                            <Image
-                              source={require("../../assets/images/updateInfo.png")}
-                              className="w-10 h-10"
-                            />
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() => {
-                              setJokeModalVisible(true);
-                              fetchJoke();
-                            }}
-                            className="mt-3 mr-1"
-                          >
-                            <Image
-                              source={require("../../assets/images/clown.png")}
-                              className="w-10 h-10"
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
-                  )}
-
-                  {/* Avatar */}
-                  <View>
-                    <Image
-                      source={
-                        user.token &&
-                        avatarImages[
-                          selectedAvatar as keyof typeof avatarImages
-                        ]
-                          ? avatarImages[
-                              selectedAvatar as keyof typeof avatarImages
-                            ]
-                          : require("../../assets/images/avatars/poutine.png")
-                      }
-                      className="w-20 h-20 mt-2"
-                    />
-                  </View>
-
-                  {/* User info */}
-                  {user.token ? (
-                    <View className="flex justify-center items-center mt-2">
-                      <View className="bg-slate-100 border border-slate-200 rounded-lg w-52 h-10 font-Nobile justify-center items-center m-1">
-                        <Text className="text-xl text-cyan-600">
-                          {userInfo.username}
-                        </Text>
-                      </View>
-                      <View className="bg-slate-100 border border-slate-200 rounded-lg w-52 h-10 font-Nobile justify-center items-center m-1">
-                        <Text className="text-md text-cyan-600">
-                          {userInfo.email}
-                        </Text>
-                      </View>
-                    </View>
-                  ) : (
-                    <View className="bg-slate-100 border border-slate-200 rounded-lg w-32 h-10 font-Nobile justify-center items-center mt-4">
-                      <Text className="text-xl text-cyan-600">Guest</Text>
-                    </View>
-                  )}
-
-                  {/* Login, logout*/}
-                  {!user.token ? (
-                    <View className="flex mt-8 items-center justify-center">
-                      <Link
-                        href="/authentication"
-                        className="flex flex-row justify-center items-center"
-                      >
-                        <View className="flex flex-row justify-center items-center">
-                          <Text
-                            className={
-                              isSmallScreen
-                                ? "text-base font-Nobile mx-1"
-                                : "text-lg font-Nobile mx-1"
-                            }
-                          >
-                            Login
-                          </Text>
-                          <AntDesign
-                            name="login"
-                            size={24}
-                            color="black"
-                            className="w-9 h-9"
-                          ></AntDesign>
-                        </View>
-                      </Link>
-                      <Text> to see your profile</Text>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      onPress={handleLogout}
-                      className="flex flex-row justify-center items-center mt-2"
-                    >
-                      <Text
-                        className={
-                          isSmallScreen
-                            ? "text-base font-Nobile mx-1"
-                            : "text-lg font-Nobile mx-1"
-                        }
-                      >
-                        Logout
-                      </Text>
-                      <AntDesign
-                        name="logout"
-                        size={24}
-                        color="black"
-                        className="w-9 h-9"
-                      ></AntDesign>
-                    </TouchableOpacity>
-                  )}
+                  <Text
+                    className={
+                      isSmallScreen
+                        ? "text-base text-center font-SpaceMono mx-5"
+                        : "text-xl text-center font-SpaceMono mx-4"
+                    }
+                  >
+                    Create an account to save your ingredients and get recipes
+                    based on what you have!
+                  </Text>
                 </View>
               </View>
+              <View className="flex justify-center items-center mt-6 mb-10 mx-6">
+                <Text
+                  className={
+                    isSmallScreen
+                      ? "font-SpaceMono text-lg text-center"
+                      : "font-SpaceMono text-xl text-center"
+                  }
+                >
+                  Snap a picture of your ingredients and get started!
+                </Text>
+                <BouncingImage>
+                  <Image
+                    source={require("../../assets/images/arrows/arrowDown.png")}
+                    className="w-12 h-12 top-8"
+                  />
+                </BouncingImage>
+              </View>
             </View>
+          )}
 
+          <ScrollView showsVerticalScrollIndicator={false}>
             {user.token && (
               <View>
                 {/* Postits*/}
@@ -873,7 +940,7 @@ export default function Profile() {
                     />
                     <View className="relative justify-center items-center mt-4">
                       <Image
-                        source={require("../../assets/images/heart4.png")}
+                        source={require("../../assets/images/heartFull.png")}
                         className="w-14 h-14 absolute"
                       />
                       <Text className="text-center text-xl font-SpaceMono text-black">
@@ -913,8 +980,7 @@ export default function Profile() {
                   </View>
                 </View>
 
-                {/* Old ingredients */}
-                <View className="flex justify-center items-center mb-20">
+                {/* <View className="flex justify-center items-center mb-20">
                   <View className="relative m-1">
                     <View
                       className={
@@ -1014,63 +1080,147 @@ export default function Profile() {
                       )}
                     </View>
                   </View>
-                </View>
-              </View>
-            )}
+                </View> */}
 
-            {/* User not logged in, guest message */}
-            {!user.token && (
-              <View className="flex justify-center items-center mt-4">
-                <View className="flex justify-center items-center relative">
+                {/* Old ingredients */}
+                {oldIngredients.length > 0 ? (
                   <View
-                    className="absolute bg-[#f03838] rounded-2xl -right-1.5 -bottom-1.5"
-                    style={{
-                      width: screenWidth - 65,
-                      height: isSmallScreen ? 160 : 220,
-                      ...styles.shadow,
-                    }}
-                  ></View>
-                  <View
-                    className="flex justify-center items-center bg-white rounded-2xl"
-                    style={{
-                      width: screenWidth - 65,
-                      height: isSmallScreen ? 160 : 220,
-                    }}
-                  >
-                    <Text
-                      className={
-                        isSmallScreen
-                          ? "text-base text-center font-SpaceMono mx-5"
-                          : "text-xl text-center font-SpaceMono mx-4"
-                      }
-                    >
-                      Create an account to save your ingredients and get recipes
-                      based on what you have!
-                    </Text>
-                  </View>
-                </View>
-                <View className="flex justify-center items-center mt-6 mb-10 mx-6">
-                  <Text
                     className={
                       isSmallScreen
-                        ? "font-SpaceMono text-lg text-center"
-                        : "font-SpaceMono text-xl text-center"
+                        ? "flex justify-center items-center mt-9 mb-[110] relative"
+                        : "flex justify-center items-center mt-10 mb-24 relative"
                     }
                   >
-                    Snap a picture of your ingredients and get started!
-                  </Text>
-                  <BouncingImage>
                     <Image
-                      source={require("../../assets/images/arrowDown.png")}
-                      className="w-12 h-12 top-8"
+                      source={require("../../assets/images/whiteboard.png")}
+                      className="absolute"
+                      style={{
+                        width: isSmallScreen
+                          ? screenWidth - 25
+                          : screenWidth - 35,
+                        height: isSmallScreen ? 400 : 440,
+                        ...styles.shadow,
+                      }}
                     />
-                  </BouncingImage>
-                </View>
+
+                    <View
+                      className={
+                        isSmallScreen
+                          ? "flex justify-center items-center h-[330] w-full"
+                          : "flex justify-center items-center h-[360] w-full"
+                      }
+                    >
+                      <View className="flex-row justify-center items-center w-full my-2">
+                        <Image
+                          source={require("../../assets/images/warning.png")}
+                          className={
+                            isSmallScreen ? "w-8 h-8 mr-1" : "w-8 h-8 mr-1"
+                          }
+                        />
+                        <Text
+                          className={
+                            isSmallScreen
+                              ? "text-[20px] text-slate-900 font-HappyWork text-center"
+                              : "text-[22px] text-slate-900 font-HappyWork text-center"
+                          }
+                        >
+                          {oldIngredients.length} ingredient(s) added over a
+                          week ago
+                        </Text>
+                      </View>
+
+                      <ScrollView className="flex-1">
+                        {oldIngredients.map((item, index) => (
+                          <View
+                            key={index}
+                            className={
+                              isSmallScreen
+                                ? "p-1 flex justify-center items-start w-[310]"
+                                : "p-1 flex justify-center items-start w-[340]"
+                            }
+                          >
+                            <BouncyCheckbox
+                              isChecked={true}
+                              disabled={true}
+                              fillColor="#FED400"
+                              unFillColor="#e2e8f0"
+                              innerIconStyle={{ borderColor: "#334155" }}
+                              bounceEffectIn={0.6}
+                              textComponent={
+                                <ScrollView
+                                  horizontal={true}
+                                  showsHorizontalScrollIndicator={false}
+                                >
+                                  <View className="flex-row justify-center items-center ml-2">
+                                    <Text className="text-slate-700 text-2xl font-HappyWork">
+                                      {item.name &&
+                                        item.name.charAt(0).toUpperCase() +
+                                          item.name.slice(1)}
+                                    </Text>
+                                    <Text className="text-slate-600 text-lg font-HappyWork">
+                                      {" (added on " +
+                                        moment(item.dateAdded).format(
+                                          "MMM Do YYYY"
+                                        ) +
+                                        ")"}
+                                    </Text>
+                                  </View>
+                                </ScrollView>
+                              }
+                            />
+                          </View>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  </View>
+                ) : (
+                  <View
+                    className={
+                      isSmallScreen
+                        ? "flex justify-center items-center mt-8 relative mb-10"
+                        : "flex justify-center items-center mt-8 relative"
+                    }
+                  >
+                    <Image
+                      source={require("../../assets/images/whiteboard2.png")}
+                      className="absolute w-full"
+                      style={{
+                        height: isSmallScreen ? 240 : 250,
+                        ...styles.shadow,
+                      }}
+                    />
+                    <View className="flex justify-center items-center w-full">
+                      <View className="flex-row justify-center items-center w-full px-4 mb-1">
+                        <Image
+                          source={require("../../assets/images/checkGreen.png")}
+                          className={
+                            isSmallScreen ? "w-6 h-6 mr-1" : "w-8 h-8 mr-1"
+                          }
+                        />
+                        <Text className="text-center text-xl text-slate-900 font-HappyWork">
+                          No ingredients added over a week ago
+                        </Text>
+                      </View>
+                      <View className="flex justify-center items-center">
+                        <Text className="text-2xl font-HappyWork text-slate-700">
+                          Well done!
+                        </Text>
+                        <Text className="text-2xl font-HappyWork text-slate-700 mb-1">
+                          Everything is fresh!
+                        </Text>
+                        <Image
+                          source={require("../../assets/images/applause2.png")}
+                          className="w-20 h-20"
+                        />
+                      </View>
+                    </View>
+                  </View>
+                )}
               </View>
             )}
-          </View>
-        )}
-      </ScrollView>
+          </ScrollView>
+        </View>
+      )}
 
       {/* Update info modal */}
       <Modal
@@ -1112,6 +1262,8 @@ export default function Profile() {
                         value={newUsername}
                         onChangeText={(text) => setNewUsername(text)}
                         autoCapitalize="none"
+                        autoFocus={true}
+                        autoCorrect={false}
                         className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
                       />
                       <View style={styles.shadow}>
@@ -1129,6 +1281,8 @@ export default function Profile() {
                         value={newEmail}
                         onChangeText={(text) => setNewEmail(text)}
                         autoCapitalize="none"
+                        autoCorrect={false}
+                        keyboardType="email-address"
                         className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
                       />
                       <View style={styles.shadow}>
@@ -1148,6 +1302,7 @@ export default function Profile() {
                           onChangeText={(text) => setNewPassword(text)}
                           secureTextEntry={!isNewPasswordVisible}
                           autoCapitalize="none"
+                          autoCorrect={false}
                           className="bg-white w-48 h-12 rounded-xl border border-slate-400 pl-4 m-2 font-Nobile"
                         />
                         <TouchableOpacity
@@ -1183,7 +1338,7 @@ export default function Profile() {
                         Danger Zone
                       </Text>
                       <Image
-                        source={require("../../assets/images/dangerZone2.png")}
+                        source={require("../../assets/images/dangerZone.png")}
                         className="w-10 h-10"
                       />
                     </TouchableOpacity>
@@ -1347,6 +1502,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 4,
+    elevation: 8,
   },
 });

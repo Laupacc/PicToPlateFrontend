@@ -30,7 +30,7 @@ import { Entypo } from "@expo/vector-icons";
 import {
   dietOptions,
   intolerancesOptions,
-  conversionAmounts,
+  conversionUnits,
   maxReadyTimeOptions,
   cuisines,
 } from "../../_dataSets.json";
@@ -48,10 +48,10 @@ import {
   addRecipeToFavourites,
   removeRecipeFromFavourites,
   goToRecipeCard,
-  randomStickerImage,
 } from "@/_recipeUtils";
 
 export default function Search() {
+  const convert = require("convert-units");
   const navigation = useNavigation<any>();
   const toast = useToast();
   const route = useRoute();
@@ -59,6 +59,8 @@ export default function Search() {
   const transcription = route.params
     ? (route.params as { transcription: string }).transcription
     : "";
+  const similarRecipes = route.params as { data: any[] };
+
   const user = useSelector((state: RootState) => state.user.value);
   const favourites = useSelector(
     (state: RootState) => state.recipes.favourites
@@ -112,14 +114,16 @@ export default function Search() {
   >(null);
 
   // Unit Converter States
-  const [ingredientName, setIngredientName] = useState<string>("");
-  const [sourceAmount, setSourceAmount] = useState<string>("");
-  const [sourceUnit, setSourceUnit] = useState<string>("");
-  const [targetUnit, setTargetUnit] = useState<string>("");
-  const [convertedAmount, setConvertedAmount] = useState<string>("");
+  const [unitAmount, setUnitAmount] = useState<string>("");
+  const [fromUnit, setFromUnit] = useState<string>("");
+  const [toUnit, setToUnit] = useState<string>("");
+  const [convertedAmount, setConvertedAmount] = useState<number>(0);
   const [showConversion, setShowConversion] = useState<boolean>(false);
   const [showConversionResult, setShowConversionResult] =
     useState<boolean>(false);
+  const [lastConvertedAmount, setLastConvertedAmount] = useState<string>("");
+  const [lastFromUnit, setLastFromUnit] = useState<string>("");
+  const [lastToUnit, setLastToUnit] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   const screenWidth = Dimensions.get("window").width;
@@ -147,10 +151,9 @@ export default function Search() {
         );
         if (recentlyViewed) {
           setRecentlyViewedRecipes(JSON.parse(recentlyViewed));
-          console.log(
-            "Recently viewed recipes:",
-            recentlyViewedRecipes.map((recipe) => recipe.id)
-          );
+          console.log("Fetched recently viewed recipes");
+        } else {
+          console.log("No recently viewed recipes found.");
         }
       } catch (error: any) {
         console.error("Error fetching recently viewed recipes:", error.message);
@@ -370,9 +373,9 @@ export default function Search() {
       }
 
       // If offset is 0, replace the recipes, otherwise append to the existing ones
-      setRecipesFromIngredients(
-        offset === 0 ? results : recipesFromIngredients.concat(results)
-      );
+      const updatedRecipes =
+        offset === 0 ? results : recipesFromIngredients.concat(results);
+      setRecipesFromIngredients(updatedRecipes);
 
       // Check if there are more results to load
       setHasMoreResults(totalResults > number + offset);
@@ -442,6 +445,25 @@ export default function Search() {
     }
   }, [transcription]);
 
+  // Display similar recipes
+  useEffect(() => {
+    if (similarRecipes && similarRecipes.data && similarRecipes.data.length) {
+      setRecipesFromIngredients(similarRecipes.data);
+      setSearchPerformed(true);
+      setShowSearch(true);
+      setShowHome(false);
+    }
+  }, [similarRecipes]);
+
+  // Construct image URL for similar recipes
+  const constructImageUrl = (recipe: any) => {
+    const imageUrl =
+      recipe.id &&
+      recipe.imageType &&
+      `https://img.spoonacular.com/recipes/${recipe.id}-556x370.${recipe.imageType}`;
+    return imageUrl;
+  };
+
   // Load more recipes based on the current search mode
   const loadMoreRecipes = () => {
     complexSearchByIngredients(
@@ -508,40 +530,67 @@ export default function Search() {
   const handleRemoveFromFavourites = async (recipeId: number) => {
     setIsFavourite((prev: any) => ({ ...prev, [recipeId]: false }));
     await removeRecipeFromFavourites(recipeId, user, toast);
+    // Refetch favourites after adding
+    const response = await fetch(
+      `${BACKEND_URL}/users/userInformation/${user.token}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      }
+    );
+    const data = await response.json();
+    setUserFavourites(data.favourites);
+    console.log("User favourites updated:", data.favourites.length);
     dispatch(removeFromFavouriteRecipes(recipeId));
   };
 
-  // Unit Converter
-  const convertAmount = async (
-    ingredientName: string,
-    sourceAmount: string,
-    sourceUnit: string,
-    targetUnit: string
-  ) => {
-    const URL = `${BACKEND_URL}/recipes/convertAmount?ingredientName=${ingredientName}&sourceAmount=${sourceAmount}&sourceUnit=${sourceUnit}&targetUnit=${targetUnit}`;
-    try {
-      if (
-        ingredientName === "" ||
-        sourceAmount === "" ||
-        sourceUnit === "" ||
-        targetUnit === ""
-      ) {
-        setErrorMessage("Please fill in all fields");
-        return;
-      }
-
-      const response = await fetch(URL);
-      const data = await response.json();
-      console.log(data);
-      setErrorMessage("");
-      setIngredientName(ingredientName);
-      setSourceAmount(sourceAmount);
-      setSourceUnit(sourceUnit);
-      setTargetUnit(targetUnit);
-      setConvertedAmount(data.answer);
-    } catch (error) {
-      console.error("Error converting amount:", error);
+  // Helper function to convert units
+  const convertUnits = () => {
+    if (isNaN(Number(unitAmount.replace(",", ".")))) {
+      setErrorMessage("Please enter a valid number");
+      return;
     }
+
+    const unitAmountNumber = parseFloat(unitAmount.replace(",", "."));
+
+    if (!unitAmount || fromUnit === "" || toUnit === "") {
+      setErrorMessage("Please fill in all fields");
+      return;
+    }
+
+    setErrorMessage("");
+
+    // If the units are the same, no need to convert
+    if (fromUnit === toUnit) {
+      setConvertedAmount(unitAmountNumber);
+      setLastConvertedAmount(unitAmount);
+      setLastFromUnit(fromUnit);
+      setLastToUnit(toUnit);
+      setShowConversionResult(true);
+      return;
+    }
+
+    const fromUnitMeasure = convert().describe(fromUnit).measure;
+    const toUnitMeasure = convert().describe(toUnit).measure;
+
+    if (fromUnitMeasure !== toUnitMeasure) {
+      setErrorMessage(
+        `Cannot convert incompatible measures of ${fromUnitMeasure} and ${toUnitMeasure}`
+      );
+      setShowConversionResult(false);
+      return;
+    }
+
+    const convertedValue = convert(unitAmountNumber).from(fromUnit).to(toUnit);
+    setConvertedAmount(convertedValue);
+    setLastConvertedAmount(unitAmount);
+    setLastFromUnit(fromUnit);
+    setLastToUnit(toUnit);
+    setShowConversionResult(true);
+    setErrorMessage("");
   };
 
   // Trigger Search on Filter Toggle
@@ -661,10 +710,10 @@ export default function Search() {
   // Function to get random sticker images
   const setRandomStickerImages = (count: number) => {
     const images = [
-      require("../../assets/images/stickers/stickerB1.png"),
-      require("../../assets/images/stickers/stickerB2.png"),
-      require("../../assets/images/stickers/stickerB3.png"),
-      require("../../assets/images/stickers/stickerB4.png"),
+      require("../../assets/images/stickers/stickerWhite1.png"),
+      require("../../assets/images/stickers/stickerWhite2.png"),
+      require("../../assets/images/stickers/stickerWhite3.png"),
+      require("../../assets/images/stickers/stickerWhite4.png"),
     ];
 
     const stickers = Array.from(
@@ -706,7 +755,7 @@ export default function Search() {
             {/* Logo */}
             <View className="flex justify-center items-center">
               <Image
-                source={require("../../assets/images/logo8.png")}
+                source={require("../../assets/images/logo.png")}
                 className="w-60 h-14"
               />
             </View>
@@ -726,7 +775,7 @@ export default function Search() {
                       className="absolute inset-0 w-full h-full"
                     />
                     <Image
-                      source={require("../../assets/images/dice5.png")}
+                      source={require("../../assets/images/dice.png")}
                       className="w-6 h-6 bottom-2"
                     />
                   </View>
@@ -799,41 +848,32 @@ export default function Search() {
                 className="mx-2"
               >
                 <Image
-                  source={require("@/assets/images/yellowArrowRight.png")}
+                  source={require("@/assets/images/arrows/yellowArrowRight.png")}
                   alt="button"
                   className={isSmallScreen ? "w-10 h-8" : "w-12 h-10"}
                 />
               </TouchableOpacity>
             </View>
 
-            {/* Show Unit Converter */}
             {showConversion && (
               <View>
-                <View className="flex justify-center items-center mb-6 p-5 bg-slate-200 rounded-lg border border-slate-400">
+                <View className="flex justify-center items-center mb-4 py-5 w-[350px] bg-slate-200 rounded-lg border border-slate-400">
                   <View className="flex flex-row justify-center items-center m-2">
-                    <TextInput
-                      placeholder="Ingredient"
-                      placeholderTextColor={"gray"}
-                      value={ingredientName}
-                      onChangeText={setIngredientName}
-                      className="border-2 border-gray-400 rounded-lg w-40 h-10 mx-2 text-center"
-                    />
                     <TextInput
                       placeholder="Amount"
                       placeholderTextColor={"gray"}
-                      value={sourceAmount}
-                      onChangeText={setSourceAmount}
+                      value={unitAmount}
+                      onChangeText={(value) => setUnitAmount(value)}
                       className="border-2 border-gray-400 rounded-lg w-20 h-10 mx-2 text-center"
                     />
-                  </View>
-                  <View className="flex flex-row justify-center items-center m-2">
+
                     <RNPickerSelect
-                      onValueChange={(value) => setSourceUnit(value)}
-                      items={conversionAmounts}
+                      onValueChange={(value) => setFromUnit(value)}
+                      items={conversionUnits}
                       style={pickerSelectStyles}
-                      value={sourceUnit}
+                      value={fromUnit}
                       useNativeAndroidPickerStyle={false}
-                      placeholder={{ label: "Unit", value: null }}
+                      placeholder={{ label: "Unit" }}
                       Icon={() => {
                         return (
                           <Ionicons
@@ -844,13 +884,14 @@ export default function Search() {
                         );
                       }}
                     />
+                    <Text className="text-lg mx-2">to</Text>
                     <RNPickerSelect
-                      onValueChange={(value) => setTargetUnit(value)}
-                      items={conversionAmounts}
+                      onValueChange={(value) => setToUnit(value)}
+                      items={conversionUnits}
                       style={pickerSelectStyles}
-                      value={targetUnit}
+                      value={toUnit}
                       useNativeAndroidPickerStyle={false}
-                      placeholder={{ label: "Unit", value: null }}
+                      placeholder={{ label: "Unit" }}
                       Icon={() => {
                         return (
                           <Ionicons
@@ -863,15 +904,7 @@ export default function Search() {
                     />
                   </View>
                   <TouchableOpacity
-                    onPress={() => {
-                      convertAmount(
-                        ingredientName,
-                        sourceAmount,
-                        sourceUnit,
-                        targetUnit
-                      );
-                      setShowConversionResult(true);
-                    }}
+                    onPress={convertUnits}
                     className="flex justify-center items-center relative my-2"
                     style={styles.shadow}
                   >
@@ -886,11 +919,10 @@ export default function Search() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
-                      setIngredientName("");
-                      setSourceAmount("");
-                      setSourceUnit("");
-                      setTargetUnit("");
-                      setConvertedAmount("");
+                      setUnitAmount("");
+                      setFromUnit("");
+                      setToUnit("");
+                      setConvertedAmount(0);
                       setShowConversionResult(false);
                       setErrorMessage("");
                     }}
@@ -906,24 +938,40 @@ export default function Search() {
                       Clear
                     </Text>
                   </TouchableOpacity>
+                </View>
 
-                  {errorMessage !== "" && (
-                    <View className="flex justify-center items-center mt-4">
-                      <Text className="text-center font-Nobile text-red-500 text-[16px]">
+                {/* Show Error Message */}
+                {errorMessage !== "" && (
+                  <View className="relative mb-6">
+                    <View
+                      className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1 w-[350] h-20"
+                      style={styles.shadow}
+                    ></View>
+                    <View className="flex justify-center items-center bg-white rounded-2xl w-[350] h-20">
+                      <Text className="text-center font-Nobile text-red-500 text-lg w-72">
                         {errorMessage}
                       </Text>
                     </View>
-                  )}
-                </View>
+                  </View>
+                )}
+
+                {/* Show Conversion Result */}
                 {showConversionResult && !errorMessage && (
                   <View className="relative mb-6">
                     <View
-                      className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1 w-[350px] h-[50px]"
+                      className="absolute bg-[#64E6A6] rounded-2xl -right-1 -bottom-1 w-[350] h-20"
                       style={styles.shadow}
                     ></View>
-                    <View className="flex justify-center items-center bg-white rounded-2xl w-[350px] h-[50px]">
-                      <Text className="text-center font-Nobile text-[16px] text-[#475569]">
-                        {convertedAmount !== "" && `${convertedAmount}`}
+                    <View className="flex justify-center items-center bg-white rounded-2xl w-[350] h-20">
+                      <Text className="text-center font-Nobile text-xl text-slate-600">
+                        {`${lastConvertedAmount.replace(
+                          ",",
+                          "."
+                        )} ${lastFromUnit} = ${
+                          Number.isInteger(convertedAmount)
+                            ? convertedAmount
+                            : convertedAmount?.toFixed(3)
+                        } ${lastToUnit}`}
                       </Text>
                     </View>
                   </View>
@@ -941,7 +989,7 @@ export default function Search() {
                   style={styles.shadow}
                 >
                   <Image
-                    source={require("@/assets/images/filter5.png")}
+                    source={require("@/assets/images/filter.png")}
                     alt="button"
                     className={isSmallScreen ? "w-9 h-9" : "w-10 h-10"}
                   />
@@ -1013,7 +1061,7 @@ export default function Search() {
                   }
                 >
                   <Image
-                    source={require("@/assets/images/search2.png")}
+                    source={require("@/assets/images/search.png")}
                     alt="search"
                     className={isSmallScreen ? "w-8 h-8 mx-2" : "w-9 h-9 mx-2"}
                   />
@@ -1173,8 +1221,8 @@ export default function Search() {
                                   <Image
                                     source={
                                       isFavourite[recipe.id]
-                                        ? require("../../assets/images/heart4.png")
-                                        : require("../../assets/images/heart5.png")
+                                        ? require("../../assets/images/heartFull.png")
+                                        : require("../../assets/images/heartEmpty.png")
                                     }
                                     className="w-5 h-5"
                                   />
@@ -1198,14 +1246,22 @@ export default function Search() {
                                           : require("../../assets/images/picMissing.png")
                                       }
                                       className="rounded-xl w-full h-full top-12 right-2"
+                                      onError={() => {
+                                        setRecentlyViewedRecipes(
+                                          (prev: any) => ({
+                                            ...prev,
+                                            image: null,
+                                          })
+                                        );
+                                      }}
                                     />
                                   </View>
 
                                   {/* Title */}
                                   <View className="flex items-center justify-center top-14 right-2">
                                     <Text className="font-Flux text-center max-w-[140px] text-xs">
-                                      {recipe.title.length > 20
-                                        ? recipe.title.substring(0, 20) + "..."
+                                      {recipe.title.length > 23
+                                        ? recipe.title.substring(0, 23) + "..."
                                         : recipe.title}
                                     </Text>
                                   </View>
@@ -1213,25 +1269,14 @@ export default function Search() {
                               </View>
 
                               {/* Details */}
-                              <View className="flex-row justify-center items-center absolute bottom-6">
-                                <View className="flex justify-center items-center right-6">
-                                  <Image
-                                    source={require("../../assets/images/money.png")}
-                                    className="w-5 h-5"
-                                  />
-                                  <Text className="text-xs">
-                                    ${(recipe.pricePerServing / 100).toFixed(2)}
-                                  </Text>
-                                </View>
-                                <View className="flex justify-center items-center left-4">
-                                  <Image
-                                    source={require("../../assets/images/timer2.png")}
-                                    className="w-5 h-5"
-                                  />
-                                  <Text className="text-xs">
-                                    {recipe.readyInMinutes} mins
-                                  </Text>
-                                </View>
+                              <View className="justify-center items-center absolute bottom-6 ">
+                                <Image
+                                  source={require("../../assets/images/timer.png")}
+                                  className="w-5 h-5"
+                                />
+                                <Text className="text-xs">
+                                  {recipe.readyInMinutes} mins
+                                </Text>
                               </View>
                             </View>
                           ))}
@@ -1284,8 +1329,8 @@ export default function Search() {
                         <Image
                           source={
                             isFavourite[recipe.id]
-                              ? require("../../assets/images/heart4.png")
-                              : require("../../assets/images/heart5.png")
+                              ? require("../../assets/images/heartFull.png")
+                              : require("../../assets/images/heartEmpty.png")
                           }
                           className="w-8 h-8"
                         />
@@ -1304,9 +1349,19 @@ export default function Search() {
                             source={
                               recipe.image
                                 ? { uri: recipe.image }
+                                : recipe.sourceUrl
+                                ? { uri: constructImageUrl(recipe) }
                                 : require("../../assets/images/picMissing.png")
                             }
+                            defaultSource={require("../../assets/images/picMissing.png")}
                             className="rounded-xl w-full h-full top-12 right-4"
+                            onError={() => {
+                              setRecipesFromIngredients((prevRecipes) =>
+                                prevRecipes.map((r) =>
+                                  r.id === recipe.id ? { ...r, image: null } : r
+                                )
+                              );
+                            }}
                           />
                         </View>
 
@@ -1321,32 +1376,21 @@ export default function Search() {
                       </TouchableOpacity>
                     </View>
                     {/* Details */}
-                    <View className="flex-row justify-center items-center absolute bottom-10">
-                      <View className="flex justify-center items-center right-10">
-                        <Image
-                          source={require("../../assets/images/money.png")}
-                          className="w-8 h-8"
-                        />
-                        <Text className="text-md">
-                          ${(recipe.pricePerServing / 100).toFixed(2)}
-                        </Text>
-                      </View>
-                      <View className="flex justify-center items-center left-6">
-                        <Image
-                          source={require("../../assets/images/timer2.png")}
-                          className="w-8 h-8"
-                        />
-                        <Text className="text-md">
-                          {recipe.readyInMinutes} mins
-                        </Text>
-                      </View>
+                    <View className="flex justify-center items-center absolute bottom-12">
+                      <Image
+                        source={require("../../assets/images/timer.png")}
+                        className="w-8 h-8"
+                      />
+                      <Text className="text-md">
+                        {recipe.readyInMinutes} mins
+                      </Text>
                     </View>
                   </View>
                 ))}
 
               {/* Load more recipes button */}
               {showSearch && hasMoreResults && (
-                <View className="flex justify-center items-center mb-8">
+                <View className="flex justify-center items-center mb-14">
                   <TouchableOpacity
                     onPress={loadMoreRecipes}
                     className="relative flex justify-center items-center"
@@ -1369,7 +1413,7 @@ export default function Search() {
               {/* No recipes found */}
               {showSearch &&
                 searchPerformed &&
-                recipesFromIngredients.length === 0 && (
+                recipesFromIngredients?.length === 0 && (
                   <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460] mt-10">
                     <Image
                       source={require("../../assets/images/recipeBack/recipeBack4.png")}
@@ -1630,7 +1674,7 @@ export default function Search() {
                   1
                 </Badge>
                 <Image
-                  source={require("../../assets/images/timer3.png")}
+                  source={require("../../assets/images/timer2.png")}
                   className="w-6 h-6"
                 />
                 <Text className="text-base font-Nobile text-slate-800">

@@ -3,7 +3,6 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState: { favourites: any[] } = {
   favourites: [],
 };
-
 export const recipesSlice = createSlice({
   name: "recipes",
   initialState,

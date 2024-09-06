@@ -52,6 +52,7 @@ export default function Fridge() {
   const isInitialMount = useRef<boolean>(true);
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const [isKeyboardVisible, setKeyboardVisible] = useState<boolean>(false);
   const [fridgeItems, setFridgeItems] = useState<any[]>([]);
   const [selectedIngredients, setSelectedIngredients] = useState<any[]>([]);
   const [directInput, setDirectInput] = useState<string>("");
@@ -601,6 +602,27 @@ export default function Fridge() {
     }
   };
 
+  // Hide when keyboard is visible
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+      }
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardVisible(false);
+      }
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   return (
     <SafeAreaView className="flex-1 justify-center items-center pb-10">
       <StatusBar
@@ -653,7 +675,7 @@ export default function Fridge() {
                           style={styles.shadow}
                         >
                           <Image
-                            source={require("@/assets/images/filter5.png")}
+                            source={require("@/assets/images/filter.png")}
                             alt="button"
                             className={isSmallScreen ? "w-9 h-9" : "w-10 h-10"}
                           />
@@ -696,6 +718,12 @@ export default function Fridge() {
                               top: "50%",
                               transform: [{ translateY: -12.5 }],
                             }}
+                            hitSlop={{
+                              top: 20,
+                              bottom: 20,
+                              left: 20,
+                              right: 20,
+                            }}
                           >
                             <Image
                               source={require("@/assets/images/redCross.png")}
@@ -733,7 +761,7 @@ export default function Fridge() {
                         style={styles.shadow}
                       >
                         <Image
-                          source={require("@/assets/images/search2.png")}
+                          source={require("@/assets/images/search.png")}
                           alt="search"
                           className={
                             isSmallScreen ? "w-8 h-8 mx-1" : "w-9 h-9 mx-1"
@@ -748,7 +776,7 @@ export default function Fridge() {
 
                 {/* User not logged in */}
                 {!user.token ? (
-                  <View className="relative">
+                  <View className="relative flex justify-center items-center mx-4">
                     <View
                       className="absolute bg-[#FF9B50] rounded-2xl -right-1.5 -bottom-1.5"
                       style={{
@@ -760,22 +788,26 @@ export default function Fridge() {
                     <View
                       className="flex justify-center items-center bg-white rounded-2xl"
                       style={{
-                        width: screenWidth - 60,
+                        width: screenWidth - 65,
                         height: 300,
                       }}
                     >
                       <View className="flex items-center justify-center">
                         <TouchableOpacity
                           onPress={() => navigation.navigate("authentication")}
+                          className="flex justify-center items-center"
                           style={styles.shadow}
                         >
                           <Image
                             source={require("../../assets/images/keyholeSecurity.png")}
                             className="w-16 h-16"
                           />
+                          <Text className="font-CreamyCookies text-blue-500 text-3xl text-center">
+                            Log in
+                          </Text>
                         </TouchableOpacity>
-                        <Text className="font-CreamyCookies text-2xl text-center mx-10 my-4">
-                          Log into your account to see your saved ingredients
+                        <Text className="font-CreamyCookies text-3xl text-center mx-10 my-4">
+                          to see your saved ingredients
                         </Text>
                       </View>
                     </View>
@@ -802,7 +834,7 @@ export default function Fridge() {
                     </Text>
                     <View className="flex flex-row m-10 justify-center items-center">
                       <Image
-                        source={require("../../assets/images/curvedArrowDownLeft.png")}
+                        source={require("../../assets/images/arrows/curvedArrowDownLeft.png")}
                         className="w-12 h-12 top-5 mx-4"
                       />
 
@@ -834,7 +866,7 @@ export default function Fridge() {
                             source={require("../../assets/images/fridge/fridgeBottom.png")}
                             className={
                               isSmallScreen
-                                ? "absolute top-[470] left-0 right-0 h-[35]"
+                                ? "absolute top-[430] left-0 right-0 h-[35]"
                                 : "absolute top-[530] left-0 right-0 h-[35]"
                             }
                             style={{
@@ -846,7 +878,7 @@ export default function Fridge() {
                         <View
                           className={
                             isSmallScreen
-                              ? "flex justify-center items-center bg-slate-200 h-[460] p-1 mt-5 mb-8"
+                              ? "flex justify-center items-center bg-slate-200 h-[420] p-1 mt-5 mb-10"
                               : "flex justify-center items-center bg-slate-200 h-[520] p-1 mt-5 mb-6"
                           }
                           style={{
@@ -986,7 +1018,7 @@ export default function Fridge() {
                                         }
                                       >
                                         <Image
-                                          source={require("../../assets/images/trash2.png")}
+                                          source={require("../../assets/images/trash.png")}
                                           className={
                                             isSmallScreen
                                               ? "w-5 h-5"
@@ -1006,8 +1038,8 @@ export default function Fridge() {
                       <View
                         className={
                           isSmallScreen
-                            ? "flex-row justify-center items-center mb-10"
-                            : "flex-row justify-center items-center mb-6"
+                            ? "flex-row justify-center items-center mb-12"
+                            : "flex-row justify-center items-center mb-8"
                         }
                       >
                         {/* Search Recipes Button */}
@@ -1068,7 +1100,7 @@ export default function Fridge() {
                           style={styles.shadow}
                         >
                           <Image
-                            source={require("@/assets/images/yellowArrowRight.png")}
+                            source={require("@/assets/images/arrows/yellowArrowRight.png")}
                             alt="button"
                             className={
                               isSmallScreen ? "w-10 h-8 ml-4" : "w-12 h-10 ml-4"
@@ -1082,19 +1114,22 @@ export default function Fridge() {
               </View>
 
               {/* Take a picture arrow when fridge empty */}
-              {user.token && !loading && fridgeItems.length === 0 && (
-                <View className="flex m-10 justify-center items-center">
-                  <Text className="font-CreamyCookies text-2xl text-center">
-                    Or take a picture
-                  </Text>
-                  <BouncingImage>
-                    <Image
-                      source={require("../../assets/images/arrowDown.png")}
-                      className="w-12 h-12 top-8"
-                    />
-                  </BouncingImage>
-                </View>
-              )}
+              {user.token &&
+                !loading &&
+                fridgeItems.length === 0 &&
+                !isKeyboardVisible && (
+                  <View className="flex m-10 justify-center items-center">
+                    <Text className="font-CreamyCookies text-2xl text-center bottom-8">
+                      Or take a picture
+                    </Text>
+                    <BouncingImage>
+                      <Image
+                        source={require("../../assets/images/arrows/arrowDown.png")}
+                        className="w-12 h-12 mb-1"
+                      />
+                    </BouncingImage>
+                  </View>
+                )}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -1319,7 +1354,7 @@ export default function Fridge() {
                 1
               </Badge>
               <Image
-                source={require("../../assets/images/calendar2.png")}
+                source={require("../../assets/images/calendar.png")}
                 className="w-6 h-6 ml-1"
               />
               <Text className="text-base font-Nobile text-slate-800">
