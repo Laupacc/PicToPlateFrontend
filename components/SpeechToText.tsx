@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
-import { WebView } from "react-native-webview";
 import { Audio } from "expo-av";
 import * as FileSystem from "expo-file-system";
 import { useNavigation } from "expo-router";
@@ -125,87 +124,6 @@ const SpeechToText = ({ targetScreen }: { targetScreen: string }) => {
       console.log("Error sending recording to Watson:", error);
     }
   };
-
-  // const [transcription, setTranscription] = useState("");
-
-  // // Function to request microphone permission
-  // const getPermissions = async () => {
-  //   try {
-  //     const { status } = await Audio.requestPermissionsAsync();
-  //     if (status !== "granted") {
-  //       Alert.alert(
-  //         "Permission Required",
-  //         "Permission to access microphone is required for speech recognition."
-  //       );
-  //     }
-  //   } catch (error) {
-  //     console.error("Error requesting microphone permission:", error);
-  //     Alert.alert(
-  //       "Error",
-  //       "There was an error requesting microphone permission."
-  //     );
-  //   }
-  // };
-
-  // // Use effect to request permission on component mount
-  // useEffect(() => {
-  //   getPermissions();
-  // }, []);
-
-  // const handleWebViewMessage = (event) => {
-  //   console.log("Message from WebView:", event.nativeEvent.data);
-  //   setTranscription(event.nativeEvent.data);
-  // };
-
-  //   const htmlContent = `
-  //   <!DOCTYPE html>
-  //   <html>
-  //     <body>
-  //       <h1>Speech to Text</h1>
-  //       <button onclick="startRecognition()">Start Recognition</button>
-  //       <p id="result"></p>
-  //       <script>
-  //         console.log("Script loaded");
-  //         var recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  //         recognition.interimResults = true;
-  //         recognition.lang = 'en-US';
-
-  //         recognition.onresult = function(event) {
-  //           console.log("Recognition result event");
-  //           var transcript = '';
-  //           for (var i = event.resultIndex; i < event.results.length; ++i) {
-  //             transcript += event.results[i][0].transcript;
-  //           }
-  //           document.getElementById('result').innerText = transcript;
-  //           window.ReactNativeWebView.postMessage(transcript);
-  //         };
-
-  //         recognition.onerror = function(event) {
-  //           console.error("Recognition error:", event.error);
-  //         };
-
-  //         function startRecognition() {
-  //           console.log("Start recognition button clicked");
-  //           recognition.start();
-  //         }
-  //       </script>
-  //     </body>
-  //   </html>
-  // `;
-
-  // <View style={{ flex: 1 }}>
-  //   <WebView
-  //     originWhitelist={["*"]}
-  //     source={{ html: htmlContent }}
-  //     onMessage={handleWebViewMessage}
-  //     style={{
-  //       width: 100,
-  //       height: 100,
-  //       backgroundColor: "transparent",
-  //     }}
-  //   />
-  //   <Text>{transcription}</Text>
-  // </View>
 
   return (
     <View

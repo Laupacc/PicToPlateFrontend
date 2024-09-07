@@ -118,7 +118,7 @@ export default function RecipeCard() {
         }
       }
       if (recipe) {
-        addToRecentlyViewed(recipe);
+        await addToRecentlyViewed(recipe);
       }
     };
     fetchFavourites();
@@ -230,7 +230,7 @@ export default function RecipeCard() {
       updatedViewedRecipes.unshift(recipe);
 
       // Limit the list to the last 10 viewed recipes
-      if (updatedViewedRecipes.length > 12) {
+      if (updatedViewedRecipes.length > 15) {
         updatedViewedRecipes.pop();
       }
 
@@ -538,17 +538,17 @@ export default function RecipeCard() {
                         ? "w-full h-full"
                         : "w-44 h-44 top-0 bootom-0 right-0 left-0 m-auto"
                     }
-                    onError={() =>
-                      setRecipe((prev: any) => ({
-                        ...prev,
-                        image: null,
-                      }))
-                    }
+                    // onError={() =>
+                    //   setRecipe((prev: any) => ({
+                    //     ...prev,
+                    //     image: null,
+                    //   }))
+                    // }
                   />
                 </View>
               </View>
 
-              {/* Back, Money and Kcal Icons */}
+              {/* Back Button, Money and Kcal Icons */}
               <View className="flex justify-center items-center absolute top-5 left-5">
                 {/* Back Button */}
                 <View className="" style={styles.shadow}>
@@ -616,25 +616,25 @@ export default function RecipeCard() {
               {/* Similar Recipe Button */}
               <TouchableOpacity
                 onPress={fetchSimilarRecipes}
-                className="absolute top-24 right-5"
+                className="absolute top-44 right-5"
                 style={styles.shadow}
               >
                 <Image
                   source={require("../../assets/images/similarRecipe.png")}
-                  className={isSmallScreen ? "w-12 h-12" : "w-12 h-12"}
+                  className="w-12 h-12"
                 />
               </TouchableOpacity>
 
               {/* Random Recipe Button */}
               <TouchableOpacity
                 onPress={handleFetchRandomRecipe}
-                className="absolute top-44 right-4"
+                className="absolute top-28 right-5"
                 style={styles.shadow}
               >
                 <BouncingImage>
                   <Image
                     source={require("../../assets/images/surprise.png")}
-                    className={isSmallScreen ? "w-12 h-12" : "w-14 h-14"}
+                    className="w-12 h-12"
                   />
                 </BouncingImage>
               </TouchableOpacity>
@@ -1010,20 +1010,25 @@ export default function RecipeCard() {
                                 handleIngredientClick(ingredient.id);
                               }}
                             >
-                              {ingredient.image ? (
-                                <Image
-                                  source={{
-                                    uri: constructImageUrl(ingredient.image),
-                                  }}
-                                  className="w-full h-full"
-                                  resizeMode="contain"
-                                />
-                              ) : (
-                                <Image
-                                  source={require("../../assets/images/missingIng.png")}
-                                  className="w-full h-full"
-                                />
-                              )}
+                              <Image
+                                source={
+                                  ingredient.image
+                                    ? {
+                                        uri: constructImageUrl(
+                                          ingredient.image
+                                        ),
+                                      }
+                                    : require("../../assets/images/picMissing.png")
+                                }
+                                className="w-full h-full"
+                                resizeMode="contain"
+                                onError={() => {
+                                  setRecipe((prev: any) => ({
+                                    ...prev,
+                                    image: null,
+                                  }));
+                                }}
+                              />
                             </TouchableOpacity>
 
                             <View className="flex justify-center items-center">

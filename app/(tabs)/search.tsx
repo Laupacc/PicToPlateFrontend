@@ -142,26 +142,31 @@ export default function Search() {
     }, [])
   );
 
-  // Fetch Recently Viewed Recipes
-  useEffect(() => {
-    const fetchRecentlyViewedRecipes = async () => {
-      try {
-        const recentlyViewed = await AsyncStorage.getItem(
-          "recentlyViewedRecipes"
-        );
-        if (recentlyViewed) {
-          setRecentlyViewedRecipes(JSON.parse(recentlyViewed));
-          console.log("Fetched recently viewed recipes");
-        } else {
-          console.log("No recently viewed recipes found.");
+  // Fetch recently viewed recipes when the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      const fetchRecentlyViewedRecipes = async () => {
+        try {
+          const recentlyViewed = await AsyncStorage.getItem(
+            "recentlyViewedRecipes"
+          );
+          if (recentlyViewed) {
+            setRecentlyViewedRecipes(JSON.parse(recentlyViewed));
+            console.log("Fetched recently viewed recipes");
+          } else {
+            console.log("No recently viewed recipes found.");
+          }
+        } catch (error: any) {
+          console.error(
+            "Error fetching recently viewed recipes:",
+            error.message
+          );
         }
-      } catch (error: any) {
-        console.error("Error fetching recently viewed recipes:", error.message);
-      }
-    };
+      };
 
-    fetchRecentlyViewedRecipes();
-  }, []);
+      fetchRecentlyViewedRecipes();
+    }, [])
+  );
 
   // Fetch Random Recipe
   const handleFetchRandomRecipe = async () => {

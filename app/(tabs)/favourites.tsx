@@ -100,7 +100,7 @@ export default function Favourites() {
   };
 
   return (
-    <SafeAreaView className="flex-1 justify-center items-center pb-16">
+    <SafeAreaView className="flex-1 justify-center items-center pb-12">
       <Background cellSize={25} />
       <StatusBar
         barStyle="dark-content"

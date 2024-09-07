@@ -2,10 +2,10 @@ import React, { useEffect, useRef } from "react";
 import { Animated } from "react-native";
 
 const BouncingImage = ({ children }: { children: React.ReactNode }) => {
-  // Step 2: Initialize an animated value
+  // Initialize an animated value
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
-  // Step 3: Create a bouncing animation
+  // Create a bouncing animation
   useEffect(() => {
     const bounceAnimation = () => {
       Animated.sequence([

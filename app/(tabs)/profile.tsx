@@ -1087,7 +1087,7 @@ export default function Profile() {
                   <View
                     className={
                       isSmallScreen
-                        ? "flex justify-center items-center mt-9 mb-[110] relative"
+                        ? "flex justify-center items-center mt-9 mb-24 relative"
                         : "flex justify-center items-center mt-10 mb-24 relative"
                     }
                   >
@@ -1113,10 +1113,17 @@ export default function Profile() {
                       <View className="flex-row justify-center items-center w-full my-2">
                         <Image
                           source={require("../../assets/images/warning.png")}
-                          className={
-                            isSmallScreen ? "w-8 h-8 mr-1" : "w-8 h-8 mr-1"
-                          }
+                          className="w-8 h-8"
                         />
+                        <Text
+                          className={
+                            isSmallScreen
+                              ? "text-[26px] text-slate-900 font-HappyWork text-center"
+                              : "text-[28px] text-slate-900 font-HappyWork text-center"
+                          }
+                        >
+                          {oldIngredients.length}{" "}
+                        </Text>
                         <Text
                           className={
                             isSmallScreen
@@ -1124,8 +1131,7 @@ export default function Profile() {
                               : "text-[22px] text-slate-900 font-HappyWork text-center"
                           }
                         >
-                          {oldIngredients.length} ingredient(s) added over a
-                          week ago
+                          ingredient(s) added over a week ago
                         </Text>
                       </View>
 
@@ -1135,8 +1141,8 @@ export default function Profile() {
                             key={index}
                             className={
                               isSmallScreen
-                                ? "p-1 flex justify-center items-start w-[310]"
-                                : "p-1 flex justify-center items-start w-[340]"
+                                ? "p-1 flex justify-center items-start w-[310] ml-2"
+                                : "p-1 flex justify-center items-start w-[340] ml-2"
                             }
                           >
                             <BouncyCheckbox
@@ -1151,7 +1157,7 @@ export default function Profile() {
                                   horizontal={true}
                                   showsHorizontalScrollIndicator={false}
                                 >
-                                  <View className="flex-row justify-center items-center ml-2">
+                                  <View className="flex-row justify-center items-center ml-3">
                                     <Text className="text-slate-700 text-2xl font-HappyWork">
                                       {item.name &&
                                         item.name.charAt(0).toUpperCase() +
