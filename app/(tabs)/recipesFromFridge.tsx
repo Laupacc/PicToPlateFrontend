@@ -576,7 +576,7 @@ export default function recipesFromFridge() {
                     </View>
 
                     {/* Details */}
-                    <View className="flex-row justify-center items-center absolute bottom-12">
+                    <View className="flex justify-center items-center absolute bottom-12 left-0 right-8">
                       <Image
                         source={require("../../assets/images/timer.png")}
                         className="w-8 h-8"

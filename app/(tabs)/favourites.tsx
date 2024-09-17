@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
+  Dimensions,
 } from "react-native";
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useFocusEffect } from "@react-navigation/native";
@@ -37,6 +38,9 @@ export default function Favourites() {
   const isInitialMount = useRef<boolean>(true);
   const [favouriteRecipes, setFavouriteRecipes] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+
+  const screenWidth = Dimensions.get("window").width;
+  const isSmallScreen = screenWidth < 400;
 
   // Set status bar style
   useFocusEffect(
@@ -74,7 +78,6 @@ export default function Favourites() {
           data.favourites.map((fav: any) => fav.id)
         );
         setFavouriteRecipes(data.favourites);
-
         if (isInitialMount.current) {
           isInitialMount.current = false;
           setTimeout(() => setLoading(false), 1500);
@@ -100,7 +103,7 @@ export default function Favourites() {
   };
 
   return (
-    <SafeAreaView className="flex-1 justify-center items-center pb-12">
+    <SafeAreaView className="flex-1 justify-center items-center pb-16">
       <Background cellSize={25} />
       <StatusBar
         barStyle="dark-content"
@@ -120,13 +123,15 @@ export default function Favourites() {
         </Text>
       </View>
 
-      <View className="flex flex-1 items-center justify-center">
+      <View className="flex-1 items-center justify-center">
         {!user.token ? (
-          <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
+          <View
+            className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]"
+            style={styles.shadow}
+          >
             <Image
               source={require("../../assets/images/recipeBack/recipeBack4.png")}
               className="absolute inset-0 w-full h-full"
-              style={styles.shadow}
             />
             <View className="flex items-center justify-center max-w-[180]">
               <TouchableOpacity
@@ -153,12 +158,11 @@ export default function Favourites() {
             // source={require("../../assets/images/animations/Animation1722874735851.json")}
             autoPlay
             loop
-            style={{
-              width: 360,
-              height: 360,
-              position: "absolute",
-              top: 100,
-            }}
+            style={
+              isSmallScreen
+                ? { width: 300, height: 300, position: "absolute", top: 50 }
+                : { width: 360, height: 360, position: "absolute", top: 100 }
+            }
           />
         ) : user.token && favouriteRecipes.length === 0 ? (
           <View className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]">
@@ -296,6 +300,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 40,
   },
 });

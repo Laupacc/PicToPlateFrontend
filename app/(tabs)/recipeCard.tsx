@@ -20,7 +20,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "react-native-toast-notifications";
 import { useNavigation } from "expo-router";
 import { useRoute } from "@react-navigation/native";
-import Ionicons from "react-native-vector-icons/Ionicons";
 import wineCategories from "../../_dataSets.json";
 import Background from "@/components/Background";
 import BouncingImage from "@/components/Bounce";
@@ -128,6 +127,7 @@ export default function RecipeCard() {
   useEffect(() => {
     const fetchRecipeData = async () => {
       setLoading(true);
+
       try {
         let currentRecipeId = recipeId;
         let recipeData = null;
@@ -331,6 +331,11 @@ export default function RecipeCard() {
     return `https://img.spoonacular.com/ingredients_100x100/${imageFileName}`;
   };
 
+  // Construct image URL for main recipe image
+  const constructMainImageUrl = (id: number) => {
+    return `https://img.spoonacular.com/recipes/${id}-480x360.jpg`;
+  };
+
   const incrementServings = () => {
     setServings(servings + 1);
   };
@@ -509,135 +514,155 @@ export default function RecipeCard() {
         >
           {recipe && (
             <View className="flex-1 justify-center items-center">
-              {/* Recipe Image and purple box behind  */}
               <View className="relative">
-                <View
-                  className="absolute bg-[#B5A8FF] rounded-2xl -right-2 -bottom-2 rounded-br-[130px] rounded-tr-[130px]"
-                  style={{
-                    width: screenWidth,
-                    height: calculatedHeight,
-                    ...styles.shadow,
-                  }}
-                ></View>
-                <View
-                  style={{
-                    width: Math.min(screenWidth, calculatedHeight),
-                    height: Math.min(screenWidth, calculatedHeight),
-                    borderRadius: recipe.image ? 120 : 0,
-                    overflow: "hidden",
-                  }}
-                >
-                  <Image
-                    source={
-                      recipe.image
-                        ? { uri: recipe.image }
-                        : require("../../assets/images/picMissing.png")
-                    }
-                    className={
-                      recipe.image
-                        ? "w-full h-full"
-                        : "w-44 h-44 top-0 bootom-0 right-0 left-0 m-auto"
-                    }
-                    // onError={() =>
-                    //   setRecipe((prev: any) => ({
-                    //     ...prev,
-                    //     image: null,
-                    //   }))
-                    // }
-                  />
-                </View>
-              </View>
-
-              {/* Back Button, Money and Kcal Icons */}
-              <View className="flex justify-center items-center absolute top-5 left-5">
-                {/* Back Button */}
-                <View className="" style={styles.shadow}>
-                  <TouchableOpacity onPress={() => handleBackButton()}>
+                {/* Recipe Image and purple box behind  */}
+                <View className="relative">
+                  <View
+                    className="absolute bg-[#B5A8FF] rounded-2xl -right-2 -bottom-2 rounded-br-[130px] rounded-tr-[130px]"
+                    style={{
+                      width: screenWidth,
+                      height: calculatedHeight,
+                      ...styles.shadow,
+                    }}
+                  ></View>
+                  <View
+                    style={{
+                      width: Math.min(screenWidth, calculatedHeight),
+                      height: Math.min(screenWidth, calculatedHeight),
+                      borderRadius: recipe.image ? 120 : 0,
+                      overflow: "hidden",
+                    }}
+                  >
                     <Image
-                      source={require("../../assets/images/arrows/yellowArrowLeft.png")}
-                      className={isSmallScreen ? "w-10 h-8" : "w-12 h-10"}
+                      source={
+                        recipe.image
+                          ? { uri: constructMainImageUrl(recipe.id) }
+                          : require("../../assets/images/picMissing.png")
+                      }
+                      className={
+                        recipe.image
+                          ? "w-full h-full"
+                          : "w-44 h-44 top-0 bootom-0 right-0 left-0 m-auto"
+                      }
+                      onError={() =>
+                        setRecipe((prev: any) => ({
+                          ...prev,
+                          image: null,
+                        }))
+                      }
                     />
-                  </TouchableOpacity>
+                  </View>
                 </View>
 
-                {/* Money and Kcal Icons */}
+                {/* Back Button, Money and Kcal Icons */}
                 <View
                   className={
                     isSmallScreen
-                      ? "flex justify-center items-center absolute top-[70]"
-                      : "flex justify-center items-center absolute top-20"
+                      ? "flex justify-center items-center absolute top-4 -left-[70]"
+                      : "flex justify-center items-center absolute top-5 -left-[75]"
                   }
                 >
-                  <View className="flex justify-center items-center my-1">
-                    <Image
-                      source={require("../../assets/images/money.png")}
-                      className={isSmallScreen ? "w-8 h-8" : "w-10 h-10"}
-                    />
-                    <Text className="text-md">
-                      ${(recipe.pricePerServing / 100).toFixed(2)}
-                    </Text>
+                  {/* Back Button */}
+                  <View className="" style={styles.shadow}>
+                    <TouchableOpacity onPress={() => handleBackButton()}>
+                      <Image
+                        source={require("../../assets/images/arrows/yellowArrowLeft.png")}
+                        className={isSmallScreen ? "w-10 h-8" : "w-12 h-10"}
+                      />
+                    </TouchableOpacity>
                   </View>
-                  <View className="flex justify-center items-center my-1">
-                    <Image
-                      source={require("../../assets/images/fire.png")}
-                      className={isSmallScreen ? "w-8 h-8" : "w-10 h-10"}
-                    />
-                    <Text className="text-md">
-                      {Math.round(recipe.nutrition?.nutrients[0]?.amount)}
-                    </Text>
-                    <Text className="text-md">kcal</Text>
+
+                  {/* Money and Kcal Icons */}
+                  <View
+                    className={
+                      isSmallScreen
+                        ? "flex justify-center items-center absolute top-[70]"
+                        : "flex justify-center items-center absolute top-16"
+                    }
+                  >
+                    <View className="flex justify-center items-center my-1">
+                      <Image
+                        source={require("../../assets/images/money.png")}
+                        className={isSmallScreen ? "w-8 h-8" : "w-10 h-10"}
+                      />
+                      <Text className="text-md">
+                        ${(recipe.pricePerServing / 100).toFixed(2)}
+                      </Text>
+                    </View>
+                    <View className="flex justify-center items-center my-1">
+                      <Image
+                        source={require("../../assets/images/fire.png")}
+                        className={isSmallScreen ? "w-8 h-8" : "w-10 h-10"}
+                      />
+                      <Text className="text-md">
+                        {Math.round(recipe.nutrition?.nutrients[0]?.amount)}
+                      </Text>
+                      <Text className="text-md">kcal</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              {/* Favourite Recipe Button */}
-              {user.token && (
+                {/* Favourite Recipe Button */}
+                {user.token && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      isFavourite[recipe.id]
+                        ? handleRemoveFromFavourites(recipe.id)
+                        : handleAddToFavourites(recipe.id);
+                    }}
+                    className={
+                      isSmallScreen
+                        ? "absolute top-4 -right-16"
+                        : "absolute top-5 -right-[72]"
+                    }
+                  >
+                    {
+                      <Image
+                        source={
+                          isFavourite[recipe.id]
+                            ? require("../../assets/images/heartFull.png")
+                            : require("../../assets/images/heartEmpty.png")
+                        }
+                        className={isSmallScreen ? "w-10 h-10" : "w-12 h-12"}
+                      />
+                    }
+                  </TouchableOpacity>
+                )}
+
+                {/* Similar Recipe Button */}
                 <TouchableOpacity
-                  onPress={() => {
-                    isFavourite[recipe.id]
-                      ? handleRemoveFromFavourites(recipe.id)
-                      : handleAddToFavourites(recipe.id);
-                  }}
-                  className="absolute top-4 right-5"
-                >
-                  {
-                    <Image
-                      source={
-                        isFavourite[recipe.id]
-                          ? require("../../assets/images/heartFull.png")
-                          : require("../../assets/images/heartEmpty.png")
-                      }
-                      className={isSmallScreen ? "w-11 h-11" : "w-12 h-12"}
-                    />
+                  onPress={fetchSimilarRecipes}
+                  className={
+                    isSmallScreen
+                      ? "absolute top-[170] -right-16"
+                      : "absolute top-44 -right-[72]"
                   }
-                </TouchableOpacity>
-              )}
-
-              {/* Similar Recipe Button */}
-              <TouchableOpacity
-                onPress={fetchSimilarRecipes}
-                className="absolute top-44 right-5"
-                style={styles.shadow}
-              >
-                <Image
-                  source={require("../../assets/images/similarRecipe.png")}
-                  className="w-12 h-12"
-                />
-              </TouchableOpacity>
-
-              {/* Random Recipe Button */}
-              <TouchableOpacity
-                onPress={handleFetchRandomRecipe}
-                className="absolute top-28 right-5"
-                style={styles.shadow}
-              >
-                <BouncingImage>
+                  style={styles.shadow}
+                >
                   <Image
-                    source={require("../../assets/images/surprise.png")}
-                    className="w-12 h-12"
+                    source={require("../../assets/images/similarRecipe.png")}
+                    className={isSmallScreen ? "w-10 h-10" : "w-12 h-12"}
                   />
-                </BouncingImage>
-              </TouchableOpacity>
+                </TouchableOpacity>
+
+                {/* Random Recipe Button */}
+                <TouchableOpacity
+                  onPress={handleFetchRandomRecipe}
+                  className={
+                    isSmallScreen
+                      ? "absolute top-28 -right-16"
+                      : "absolute top-28 -right-[72]"
+                  }
+                  style={styles.shadow}
+                >
+                  <BouncingImage>
+                    <Image
+                      source={require("../../assets/images/surprise.png")}
+                      className={isSmallScreen ? "w-10 h-10" : "w-12 h-12"}
+                    />
+                  </BouncingImage>
+                </TouchableOpacity>
+              </View>
 
               {/* Recipe Title */}
               <Text
@@ -717,7 +742,10 @@ export default function RecipeCard() {
               </View>
 
               {/* Four Option Buttons */}
-              <View className="flex flex-row justify-center items-center mb-1">
+              <View
+                className="flex flex-row justify-center items-center mb-1"
+                style={{ width: screenWidth - 30 }}
+              >
                 {/* Macros Button */}
                 <TouchableOpacity
                   onPress={() => setShowMacros(!showMacros)}
@@ -725,7 +753,13 @@ export default function RecipeCard() {
                   style={styles.shadow}
                 >
                   <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-white text-center font-Nobile">
+                    <Text
+                      className={
+                        isSmallScreen
+                          ? "text-xs text-white text-center font-Nobile"
+                          : "text-md text-white text-center font-Nobile"
+                      }
+                    >
                       Nutrition
                     </Text>
                     <Image
@@ -734,6 +768,7 @@ export default function RecipeCard() {
                     />
                   </View>
                 </TouchableOpacity>
+
                 {/* Nutritional Values Button */}
                 <TouchableOpacity
                   onPress={() => setShowNutrition(!showNutrition)}
@@ -741,7 +776,13 @@ export default function RecipeCard() {
                   style={styles.shadow}
                 >
                   <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-white text-center font-Nobile">
+                    <Text
+                      className={
+                        isSmallScreen
+                          ? "text-xs text-white text-center font-Nobile"
+                          : "text-md text-white text-center font-Nobile"
+                      }
+                    >
                       Details
                     </Text>
                     <Image
@@ -750,6 +791,7 @@ export default function RecipeCard() {
                     />
                   </View>
                 </TouchableOpacity>
+
                 {/* Wine Pairing Button */}
                 <TouchableOpacity
                   onPress={() => {
@@ -759,7 +801,13 @@ export default function RecipeCard() {
                   style={styles.shadow}
                 >
                   <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-white text-center font-Nobile">
+                    <Text
+                      className={
+                        isSmallScreen
+                          ? "text-xs text-white text-center font-Nobile"
+                          : "text-md text-white text-center font-Nobile"
+                      }
+                    >
                       Wine
                     </Text>
                     <Image
@@ -775,7 +823,13 @@ export default function RecipeCard() {
                   style={styles.shadow}
                 >
                   <View className="flex flex-row justify-center items-center">
-                    <Text className="text-md text-white text-center font-Nobile">
+                    <Text
+                      className={
+                        isSmallScreen
+                          ? "text-xs text-white text-center font-Nobile"
+                          : "text-md text-white text-center font-Nobile"
+                      }
+                    >
                       Subs
                     </Text>
                     <Image
@@ -1258,7 +1312,13 @@ export default function RecipeCard() {
       {/* Nutritional Value Modal */}
       <Modal visible={showNutrition} onDismiss={() => setShowNutrition(false)}>
         <View className="flex justify-center items-center">
-          <View className="bg-slate-300 rounded-2xl p-2 w-[90%] bottom-10">
+          <View
+            className={
+              isSmallScreen
+                ? "bg-slate-300 rounded-2xl p-2 w-[90%] max-h-[540] bottom-10"
+                : "bg-slate-300 rounded-2xl p-2 w-[90%] bottom-10"
+            }
+          >
             {recipe && (
               <>
                 <TouchableOpacity
@@ -1290,10 +1350,11 @@ export default function RecipeCard() {
                   </DataTable.Header>
 
                   <ScrollView
-                    style={{
-                      maxHeight: 350,
-                      width: "100%",
-                    }}
+                    style={
+                      isSmallScreen
+                        ? { maxHeight: 300, width: "100%" }
+                        : { maxHeight: 350, width: "100%" }
+                    }
                   >
                     {recipe.nutrition.nutrients?.map(
                       (nutrient: any, index: number) => (
@@ -1428,7 +1489,7 @@ export default function RecipeCard() {
           <View
             className={
               isSmallScreen
-                ? "bg-slate-200 rounded-2xl p-2 justify-center items-center max-h-[630] w-[90%] bottom-10"
+                ? "bg-slate-200 rounded-2xl p-2 justify-center items-center max-h-[540] w-[90%] bottom-10"
                 : "bg-slate-200 rounded-2xl p-2 justify-center items-center max-h-[720] w-[90%] bottom-10"
             }
           >

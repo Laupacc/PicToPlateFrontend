@@ -674,14 +674,6 @@ export default function Profile() {
       />
       <Background cellSize={25} />
 
-      {/* Logo */}
-      <View className="flex justify-center items-center">
-        <Image
-          source={require("../../assets/images/logo.png")}
-          className="w-60 h-14"
-        />
-      </View>
-
       {loading && (
         <ActivityIndicator
           size="large"
@@ -692,6 +684,14 @@ export default function Profile() {
 
       {!loading && (
         <View className="flex-1 justify-center items-center">
+          {/* Logo */}
+          <View className="flex justify-center items-center">
+            <Image
+              source={require("../../assets/images/logo.png")}
+              className="w-60 h-14"
+            />
+          </View>
+
           {/* Top Box */}
           <View className="flex justify-center items-center mb-4">
             <View className="flex justify-center items-center relative">
@@ -700,7 +700,7 @@ export default function Profile() {
                 style={{
                   width: screenWidth - 55,
                   height: isSmallScreen
-                    ? screenHeight * 0.3
+                    ? screenHeight * 0.34
                     : screenHeight * 0.3,
                   ...styles.shadow,
                 }}
@@ -710,13 +710,19 @@ export default function Profile() {
                 style={{
                   width: screenWidth - 55,
                   height: isSmallScreen
-                    ? screenHeight * 0.3
+                    ? screenHeight * 0.34
                     : screenHeight * 0.3,
                 }}
               >
                 {/* Menu Button */}
                 {user.token && (
-                  <View className="absolute top-3 right-1">
+                  <View
+                    className={
+                      isSmallScreen
+                        ? "absolute top-3 right-0.5"
+                        : "absolute top-3 right-1"
+                    }
+                  >
                     <TouchableOpacity
                       onPress={() => setOpenMenu(!openMenu)}
                       className="flex justify-center items-center relative mx-2"
@@ -1087,8 +1093,8 @@ export default function Profile() {
                   <View
                     className={
                       isSmallScreen
-                        ? "flex justify-center items-center mt-9 mb-24 relative"
-                        : "flex justify-center items-center mt-10 mb-24 relative"
+                        ? "flex justify-center items-center mt-9 mb-32 relative"
+                        : "flex justify-center items-center mt-10 mb-28 relative"
                     }
                   >
                     <Image
@@ -1244,7 +1250,7 @@ export default function Profile() {
               <View
                 className={
                   isSmallScreen
-                    ? "flex justify-center items-center bottom-8 p-10"
+                    ? "flex justify-center items-center bottom-10 p-12"
                     : "flex justify-center items-center bottom-4 p-10"
                 }
               >
@@ -1417,7 +1423,13 @@ export default function Profile() {
         onDismiss={() => setIsAvatarPickerVisible(false)}
       >
         <View className="flex justify-center items-center">
-          <View className="bg-slate-100 rounded-lg p-4 w-[85%] bottom-6">
+          <View
+            className={
+              isSmallScreen
+                ? "bg-slate-100 rounded-lg p-2 w-[85%] bottom-10"
+                : "bg-slate-100 rounded-lg p-4 w-[85%] bottom-6"
+            }
+          >
             <TouchableOpacity
               onPress={() => setIsAvatarPickerVisible(false)}
               className="items-end p-1"

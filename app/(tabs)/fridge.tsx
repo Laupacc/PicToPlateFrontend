@@ -643,16 +643,18 @@ export default function Fridge() {
           >
             <View className="flex-1 justify-center items-center">
               {/* Title */}
-              <View className="relative flex justify-center items-center">
-                <Image
-                  source={require("@/assets/images/stickers/blackTape.png")}
-                  className="w-64 h-16 absolute inset-0"
-                  style={styles.shadow}
-                />
-                <Text className="font-Flux text-xl text-center text-white my-5">
-                  My Kitchen
-                </Text>
-              </View>
+              {!loading && (
+                <View className="relative flex justify-center items-center">
+                  <Image
+                    source={require("@/assets/images/stickers/blackTape.png")}
+                    className="w-64 h-16 absolute inset-0"
+                    style={styles.shadow}
+                  />
+                  <Text className="font-Flux text-xl text-center text-white my-5">
+                    My Kitchen
+                  </Text>
+                </View>
+              )}
 
               <View className="flex-1 justify-around items-center mt-1">
                 {/* Search Bar, Add, Search, Filter buttons */}

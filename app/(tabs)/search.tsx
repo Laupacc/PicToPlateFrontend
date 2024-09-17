@@ -464,8 +464,7 @@ export default function Search() {
   const constructImageUrl = (recipe: any) => {
     const imageUrl =
       recipe.id &&
-      recipe.imageType &&
-      `https://img.spoonacular.com/recipes/${recipe.id}-556x370.${recipe.imageType}`;
+      `https://img.spoonacular.com/recipes/${recipe.id}-480x360.jpg`;
     return imageUrl;
   };
 
@@ -673,7 +672,6 @@ export default function Search() {
     setTriviaLoading(true);
     const response = await fetch(`${BACKEND_URL}/recipes/trivia`);
     const data = await response.json();
-    console.log(data);
     setTrivia(data.text);
     setTriviaLoading(false);
   };
@@ -681,31 +679,31 @@ export default function Search() {
   // Cusiines images
   const imageForCuisine = (cuisine: string) => {
     const cuisineImages = {
-      African: require("../../assets/images/cuisines/african.jpg"),
+      African: require("../../assets/images/cuisines/african.png"),
       Asian: require("../../assets/images/cuisines/asian.jpg"),
-      American: require("../../assets/images/cuisines/american.jpg"),
-      British: require("../../assets/images/cuisines/british.jpg"),
-      Cajun: require("../../assets/images/cuisines/cajun.jpg"),
-      Caribbean: require("../../assets/images/cuisines/caribbean.jpg"),
-      Chinese: require("../../assets/images/cuisines/chinese.jpg"),
-      "Eastern European": require("../../assets/images/cuisines/easterneuropean.jpg"),
-      European: require("../../assets/images/cuisines/european.jpg"),
-      French: require("../../assets/images/cuisines/french.jpg"),
-      German: require("../../assets/images/cuisines/german.jpg"),
-      Greek: require("../../assets/images/cuisines/greek.jpg"),
-      Indian: require("../../assets/images/cuisines/indian.jpg"),
-      Irish: require("../../assets/images/cuisines/irish.jpg"),
-      Italian: require("../../assets/images/cuisines/italian.jpg"),
+      American: require("../../assets/images/cuisines/american.png"),
+      British: require("../../assets/images/cuisines/british.png"),
+      Cajun: require("../../assets/images/cuisines/cajun.png"),
+      Caribbean: require("../../assets/images/cuisines/caribbean.png"),
+      Chinese: require("../../assets/images/cuisines/chinese.png"),
+      "Eastern European": require("../../assets/images/cuisines/easterneuropean.png"),
+      European: require("../../assets/images/cuisines/european.png"),
+      French: require("../../assets/images/cuisines/french.png"),
+      German: require("../../assets/images/cuisines/german.png"),
+      Greek: require("../../assets/images/cuisines/greek.png"),
+      Indian: require("../../assets/images/cuisines/indian.png"),
+      Irish: require("../../assets/images/cuisines/irish.png"),
+      Italian: require("../../assets/images/cuisines/italian.png"),
       Japanese: require("../../assets/images/cuisines/japanese.jpg"),
-      Jewish: require("../../assets/images/cuisines/jewish.jpg"),
-      Korean: require("../../assets/images/cuisines/korean.jpg"),
-      "Latin American": require("../../assets/images/cuisines/latinamerican.jpg"),
-      Mediterranean: require("../../assets/images/cuisines/mediterranean.jpg"),
+      Jewish: require("../../assets/images/cuisines/jewish.png"),
+      Korean: require("../../assets/images/cuisines/korean.png"),
+      "Latin American": require("../../assets/images/cuisines/latinamerican.png"),
+      Mediterranean: require("../../assets/images/cuisines/mediterranean.png"),
       Mexican: require("../../assets/images/cuisines/mexican.jpg"),
-      "Middle Eastern": require("../../assets/images/cuisines/middleeastern.jpg"),
-      Nordic: require("../../assets/images/cuisines/nordic.jpg"),
-      Southern: require("../../assets/images/cuisines/southern.jpg"),
-      Spanish: require("../../assets/images/cuisines/spanish.jpg"),
+      "Middle Eastern": require("../../assets/images/cuisines/middleeastern.png"),
+      Nordic: require("../../assets/images/cuisines/nordic.png"),
+      Southern: require("../../assets/images/cuisines/southern.png"),
+      Spanish: require("../../assets/images/cuisines/spanish.png"),
       Thai: require("../../assets/images/cuisines/thai.jpg"),
       Vietnamese: require("../../assets/images/cuisines/vietnamese.jpg"),
     };
@@ -1190,7 +1188,7 @@ export default function Search() {
                   </View>
 
                   {/* Recent Recipes */}
-                  {recentlyViewedRecipes?.length ? (
+                  {recentlyViewedRecipes && recentlyViewedRecipes.length ? (
                     <View>
                       <Text className="font-NobileBold text-lg text-slate-700 mt-4 ml-6">
                         Recent recipes
@@ -1203,88 +1201,84 @@ export default function Search() {
                           paddingBottom: 30,
                         }}
                       >
-                        {recentlyViewedRecipes?.length > 0 &&
-                          recentlyViewedRecipes.map((recipe: any) => (
-                            <View
-                              className="flex-1 items-center justify-center relative rounded-2xl w-[220] h-[270] my-1"
-                              key={recipe.id}
-                            >
-                              <Image
-                                source={require("../../assets/images/recipeBack/recipeBack4.png")}
-                                className="absolute inset-0 w-full h-full"
-                                style={styles.shadow}
-                              />
-                              {user.token && (
-                                <TouchableOpacity
-                                  className="absolute top-10 right-3"
-                                  onPress={() =>
-                                    isFavourite[recipe.id]
-                                      ? handleRemoveFromFavourites(recipe.id)
-                                      : handleAddToFavourites(recipe.id)
-                                  }
-                                >
-                                  <Image
-                                    source={
-                                      isFavourite[recipe.id]
-                                        ? require("../../assets/images/heartFull.png")
-                                        : require("../../assets/images/heartEmpty.png")
-                                    }
-                                    className="w-5 h-5"
-                                  />
-                                </TouchableOpacity>
-                              )}
-
-                              <View className="flex items-center justify-start h-full">
-                                <TouchableOpacity
-                                  onPress={() =>
-                                    handleGoToRecipeCard(recipe.id)
-                                  }
-                                  key={recipe.id}
-                                  className="flex items-center justify-center"
-                                >
-                                  {/* Fixed Image */}
-                                  <View className="w-[115px] h-[115px]">
-                                    <Image
-                                      source={
-                                        recipe.image
-                                          ? { uri: recipe.image }
-                                          : require("../../assets/images/picMissing.png")
-                                      }
-                                      className="rounded-xl w-full h-full top-12 right-2"
-                                      onError={() => {
-                                        setRecentlyViewedRecipes(
-                                          (prev: any) => ({
-                                            ...prev,
-                                            image: null,
-                                          })
-                                        );
-                                      }}
-                                    />
-                                  </View>
-
-                                  {/* Title */}
-                                  <View className="flex items-center justify-center top-14 right-2">
-                                    <Text className="font-Flux text-center max-w-[140px] text-xs">
-                                      {recipe.title.length > 23
-                                        ? recipe.title.substring(0, 23) + "..."
-                                        : recipe.title}
-                                    </Text>
-                                  </View>
-                                </TouchableOpacity>
-                              </View>
-
-                              {/* Details */}
-                              <View className="justify-center items-center absolute bottom-6 ">
+                        {recentlyViewedRecipes.map((recipe: any) => (
+                          <View
+                            className="flex-1 items-center justify-center relative rounded-2xl w-[220] h-[270] my-1"
+                            key={recipe.id}
+                            style={Platform.OS === "ios" ? styles.shadow : null}
+                          >
+                            <Image
+                              source={require("../../assets/images/recipeBack/recipeBack4.png")}
+                              className="absolute inset-0 w-full h-full"
+                            />
+                            {/* <RecipeBack /> */}
+                            {user.token && (
+                              <TouchableOpacity
+                                className="absolute top-10 right-3"
+                                onPress={() =>
+                                  isFavourite[recipe.id]
+                                    ? handleRemoveFromFavourites(recipe.id)
+                                    : handleAddToFavourites(recipe.id)
+                                }
+                              >
                                 <Image
-                                  source={require("../../assets/images/timer.png")}
+                                  source={
+                                    isFavourite[recipe.id]
+                                      ? require("../../assets/images/heartFull.png")
+                                      : require("../../assets/images/heartEmpty.png")
+                                  }
                                   className="w-5 h-5"
                                 />
-                                <Text className="text-xs">
-                                  {recipe.readyInMinutes} mins
-                                </Text>
-                              </View>
+                              </TouchableOpacity>
+                            )}
+
+                            <View className="flex items-center justify-start h-full">
+                              <TouchableOpacity
+                                onPress={() => handleGoToRecipeCard(recipe.id)}
+                                key={recipe.id}
+                                className="flex items-center justify-center"
+                              >
+                                {/* Fixed Image */}
+                                <View className="w-[115px] h-[115px]">
+                                  <Image
+                                    source={
+                                      recipe.image
+                                        ? { uri: recipe.image }
+                                        : require("../../assets/images/picMissing.png")
+                                    }
+                                    className="rounded-xl w-full h-full top-12 right-2"
+                                    onError={() => {
+                                      setRecentlyViewedRecipes((prev: any) => ({
+                                        ...prev,
+                                        image: null,
+                                      }));
+                                    }}
+                                  />
+                                </View>
+
+                                {/* Title */}
+                                <View className="flex items-center justify-center top-14 right-2">
+                                  <Text className="font-Flux text-center max-w-[140px] text-xs">
+                                    {recipe.title.length > 23
+                                      ? recipe.title.substring(0, 23) + "..."
+                                      : recipe.title}
+                                  </Text>
+                                </View>
+                              </TouchableOpacity>
                             </View>
-                          ))}
+
+                            {/* Details */}
+                            <View className="justify-center items-center absolute bottom-6 ">
+                              <Image
+                                source={require("../../assets/images/timer.png")}
+                                className="w-5 h-5"
+                              />
+                              <Text className="text-xs">
+                                {recipe.readyInMinutes} mins
+                              </Text>
+                            </View>
+                          </View>
+                        ))}
                       </ScrollView>
                     </View>
                   ) : (
@@ -1352,13 +1346,10 @@ export default function Search() {
                         <View className="w-[200px] h-[200px]">
                           <Image
                             source={
-                              recipe.image
-                                ? { uri: recipe.image }
-                                : recipe.sourceUrl
+                              recipe.image || recipe.sourceUrl
                                 ? { uri: constructImageUrl(recipe) }
                                 : require("../../assets/images/picMissing.png")
                             }
-                            defaultSource={require("../../assets/images/picMissing.png")}
                             className="rounded-xl w-full h-full top-12 right-4"
                             onError={() => {
                               setRecipesFromIngredients((prevRecipes) =>
@@ -1381,7 +1372,7 @@ export default function Search() {
                       </TouchableOpacity>
                     </View>
                     {/* Details */}
-                    <View className="flex justify-center items-center absolute bottom-12">
+                    <View className="flex justify-center items-center absolute bottom-12 left-0 right-8">
                       <Image
                         source={require("../../assets/images/timer.png")}
                         className="w-8 h-8"
