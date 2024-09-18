@@ -127,7 +127,7 @@ export default function Favourites() {
         {!user.token ? (
           <View
             className="flex items-center justify-center relative rounded-2xl w-[360] h-[460]"
-            style={styles.shadow}
+            // style={styles.shadow}
           >
             <Image
               source={require("../../assets/images/recipeBack/recipeBack4.png")}
@@ -300,6 +300,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 40,
+    elevation: 10,
   },
 });

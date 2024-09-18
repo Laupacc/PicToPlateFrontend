@@ -318,8 +318,8 @@ export default function Camera() {
   const randomLoadingAnimation = () => {
     const animations = [
       require("../../assets/images/animations/Animation1722874735851.json"),
-      require("../../assets/images/animations/Animation1720193319067.json"),
-      require("../../assets/images/animations/Animation1720193239255.json"),
+      // require("../../assets/images/animations/Animation1720193319067.json"),
+      // require("../../assets/images/animations/Animation1720193239255.json"),
     ];
     return animations[Math.floor(Math.random() * animations.length)];
   };

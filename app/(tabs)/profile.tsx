@@ -608,7 +608,6 @@ export default function Profile() {
     setJokeLoading(true);
     const response = await fetch(`${BACKEND_URL}/recipes/joke`);
     const data = await response.json();
-    console.log(data);
     setJoke(data.text);
     setJokeLoading(false);
   };
